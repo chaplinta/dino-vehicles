@@ -5,15 +5,22 @@ let viewK = 1;
 
 function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const scale = Math.min(innerWidth / W, innerHeight / H);
+  const vw = window.visualViewport ? visualViewport.width : innerWidth;
+  const vh = window.visualViewport ? visualViewport.height : innerHeight;
+  W = Math.round(clamp(H * vw / vh, 960, 1280));   // show more world on wide phones instead of black bars
+  const scale = Math.min(vw / W, vh / H);
   const wrap = document.getElementById('wrap');
   wrap.style.width = W * scale + 'px'; wrap.style.height = H * scale + 'px';
-  wrap.style.setProperty('--s', scale);
+  // Buttons grow a bit on small phone screens so thumbs can hit them.
+  const btn = scale * (H * scale < 440 ? 1.25 : 1);
+  document.documentElement.style.setProperty('--s', btn);
   canvas.style.width = W * scale + 'px'; canvas.style.height = H * scale + 'px';
   canvas.width = Math.round(W * scale * dpr); canvas.height = Math.round(H * scale * dpr);
   viewK = scale * dpr;
 }
 addEventListener('resize', resize);
+if (window.visualViewport) visualViewport.addEventListener('resize', resize);
+const portraitPhone = matchMedia('(orientation: portrait) and (pointer: coarse)');
 
 // Sky, sun, clouds and parallax hills. Darkens as the camera goes underground.
 function drawBackdrop(c, camX, camY, t) {
@@ -230,7 +237,7 @@ const Game = {
     const dt = Math.min(0.05, (ts - (this.last || ts)) / 1000);
     this.last = ts;
     this.t += dt;
-    this.update(dt);
+    if (!portraitPhone.matches) this.update(dt);   // paused while the rotate prompt shows
     ctx.setTransform(viewK, 0, 0, viewK, 0, 0);
     this.draw(ctx);
     Input.endFrame();

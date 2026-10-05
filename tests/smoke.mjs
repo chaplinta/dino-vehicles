@@ -136,6 +136,33 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 6. Phone held sideways: buttons on screen, tap walks the dino.
+{
+  const page = await open({ width: 844, height: 390 }, { hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); });
+  const boxes = await page.evaluate(() => [...document.querySelectorAll('.btn')].filter(b => b.offsetParent).map(b => b.getBoundingClientRect().toJSON()));
+  check(boxes.every(b => b.left >= 0 && b.top >= 0 && b.right <= 844 && b.bottom <= 390), 'phone: every button is on screen');
+  check(boxes.every(b => b.width >= 44), 'phone: buttons are thumb-sized');
+  const x0 = await page.evaluate(() => Player.body.x);
+  await page.dispatchEvent('[data-key=right]', 'pointerdown', { pointerId: 1 });
+  await page.waitForTimeout(700);
+  await page.dispatchEvent('[data-key=right]', 'pointerup', { pointerId: 1 });
+  check(await page.evaluate(x0 => Player.body.x > x0 + 60, x0), 'phone: tap walks the dino');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 7. Phone held upright: rotate prompt shows and the game waits.
+{
+  const page = await open({ width: 390, height: 844 }, { hasTouch: true, isMobile: true });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); });
+  check(await page.locator('#rotate').isVisible(), 'portrait phone shows the turn-sideways prompt');
+  const t0 = await page.evaluate(() => Player.t);
+  await page.waitForTimeout(300);
+  check(await page.evaluate(t0 => Player.t === t0, t0), 'game is paused in portrait');
+  await page.close();
+}
+
 await browser.close();
 console.log(failures ? `${failures} check(s) failed` : 'all checks passed');
 process.exit(failures ? 1 : 0);

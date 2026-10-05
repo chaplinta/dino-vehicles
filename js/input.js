@@ -55,6 +55,18 @@ const UI = {
     document.getElementById('btn-mute').addEventListener('pointerdown', e => {
       e.preventDefault(); Sound.unlock(); Game.toggleMute();
     });
+    // First touch on a phone: go full screen and lock landscape where the browser allows it.
+    const goFull = () => {
+      removeEventListener('pointerdown', goFull, true);
+      if (!matchMedia('(pointer: coarse)').matches) return;
+      try {
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+        const p = req && req.call(el, { navigationUI: 'hide' });
+        if (p && p.then) p.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {});
+      } catch (e) { /* not supported (iPhone): Add to Home Screen instead */ }
+    };
+    addEventListener('pointerdown', goFull, true);
     const canvas = document.getElementById('game');
     canvas.addEventListener('pointerdown', e => {
       e.preventDefault();

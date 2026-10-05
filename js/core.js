@@ -1,5 +1,6 @@
 // Core constants, maths helpers, seeded RNG, noise and particles.
-const W = 960, H = 540;
+let W = 960;               // widens on wide screens (phones), see resize()
+const H = 540;
 const TS = 32;                 // tile size in px
 const WORLD_W = 600, WORLD_H = 80;
 const GRAVITY = 1800;

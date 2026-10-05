@@ -10,9 +10,11 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 body { display: flex; align-items: center; justify-content: center; }
-#wrap { position: relative; --s: 1; }
+#wrap { position: relative; }
+:root { --s: 1; --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px); --sb: env(safe-area-inset-bottom, 0px); }
 #game { display: block; }
-#ui { position: absolute; inset: 0; pointer-events: none; }
+/* Controls cover the whole screen, so on wide phones they sit at the edges, clear of the game. */
+#ui { position: fixed; inset: 0; pointer-events: none; }
 .btn {
   pointer-events: auto;
   position: absolute;
@@ -34,12 +36,12 @@ body { display: flex; align-items: center; justify-content: center; }
   top: calc(var(--s) * 12px);
   font-size: calc(var(--s) * 32px);
 }
-#btn-home { left: calc(var(--s) * 12px); }
-#btn-mute { right: calc(var(--s) * 12px); }
-.pad { position: absolute; bottom: calc(var(--s) * 14px); }
+#btn-home { left: calc(var(--s) * 12px + var(--sl)); }
+#btn-mute { right: calc(var(--s) * 12px + var(--sr)); }
+.pad { position: absolute; bottom: calc(var(--s) * 14px + var(--sb)); }
 .pad .btn { position: static; width: 100%; height: 100%; }
 #pad-left {
-  left: calc(var(--s) * 14px);
+  left: calc(var(--s) * 14px + var(--sl));
   display: grid;
   grid-template-columns: repeat(3, calc(var(--s) * 84px));
   grid-template-rows: repeat(2, calc(var(--s) * 84px));
@@ -54,7 +56,7 @@ body { display: flex; align-items: center; justify-content: center; }
 #pad-left.lr [data-key=right] { grid-column: 2; grid-row: 1; }
 #pad-left.lr [data-key=up], #pad-left.lr [data-key=down] { display: none; }
 #pad-right {
-  right: calc(var(--s) * 14px);
+  right: calc(var(--s) * 14px + var(--sr));
   display: flex; align-items: flex-end; gap: calc(var(--s) * 12px);
 }
 #pad-right .col { display: flex; flex-direction: column; align-items: center; gap: calc(var(--s) * 10px); }
@@ -76,3 +78,16 @@ body { display: flex; align-items: center; justify-content: center; }
 #pad-right .roar { width: calc(var(--s) * 80px); height: calc(var(--s) * 80px); background: rgba(150, 240, 140, 0.8); }
 #pad-right .action { width: calc(var(--s) * 110px); height: calc(var(--s) * 110px); font-size: calc(var(--s) * 56px); background: rgba(255, 210, 80, 0.85); }
 .hidden { display: none !important; }
+
+/* Phone held upright: ask for landscape. Pictures only. */
+#rotate { display: none; }
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate {
+    display: flex; position: fixed; inset: 0; z-index: 10;
+    flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+    background: #6cc6ff; color: #2b2233; font: 900 28px system-ui, sans-serif; text-align: center;
+  }
+  #rotate .phone { font-size: 110px; animation: tip 2s ease-in-out infinite; }
+  #rotate .dino { font-size: 80px; }
+}
+@keyframes tip { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
