@@ -145,7 +145,7 @@ defVehicle('plane', {
     poly(c, [-62, -38, -74, -68, -56, -66, -46, -40], '#ff6b6b', 3);
     rbox(c, -30, -36, 70, 10, 5, '#ffd43b', 3);
     c.save(); c.beginPath(); c.ellipse(4, -46, 18, 14, 0, Math.PI, TAU); c.closePath(); c.fillStyle = '#bdf3ff'; c.fill(); c.clip();
-    v.drawDriver(c, 0, -26, 0.34); c.restore();
+    v.drawDriver(c, 0, -38, 0.34); c.restore();
     c.beginPath(); c.ellipse(4, -46, 18, 14, 0, Math.PI, TAU); c.closePath(); fillStroke(c, null, 3);
     const k = Math.cos(v.s.prop || 0);
     rbox(c, 54, -32 - 20 * Math.abs(k), 6, 40 * Math.abs(k) + 2, 3, '#495057', 2);

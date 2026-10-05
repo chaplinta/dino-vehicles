@@ -247,7 +247,7 @@ const Game = {
       Vehicles.update(dt);
     }
     NPCs.update(dt);
-    Jobs.update(dt);
+    if (!this.overlay) Jobs.update(dt);
     Fire.update(dt);
     Fish.update(dt);
     Falling.update(dt);

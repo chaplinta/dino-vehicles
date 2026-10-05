@@ -144,7 +144,7 @@ const JOB_TYPES = {
 const Jobs = {
   list: [],
   t: 0,
-  reset() { this.list = []; this.t = 6; },
+  reset() { this.list = []; this.t = 14; },
   available() {
     return Object.keys(JOB_TYPES).filter(k => {
       const def = JOB_TYPES[k];
