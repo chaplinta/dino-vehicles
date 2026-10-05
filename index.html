@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#7fd3ff">
+<title>Dino Vehicles</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <div id="ui">
+    <button id="btn-home" class="btn small" aria-label="Back">🏠</button>
+    <button id="btn-mute" class="btn small" aria-label="Sound on or off">🔊</button>
+    <div id="palette"></div>
+    <div id="pad-left" class="pad">
+      <button class="btn dir" data-key="up" aria-label="Up">▲</button>
+      <button class="btn dir" data-key="left" aria-label="Left">◀</button>
+      <button class="btn dir" data-key="down" aria-label="Down">▼</button>
+      <button class="btn dir" data-key="right" aria-label="Right">▶</button>
+    </div>
+    <div id="pad-right" class="pad">
+      <div class="col">
+        <button class="btn whistle" data-key="whistle" aria-label="Call a vehicle">📣</button>
+        <button class="btn roar" data-key="roar" aria-label="Roar">🦖</button>
+      </div>
+      <div class="col">
+        <button class="btn enter" data-key="enter" aria-label="Get in or out">🚪</button>
+        <button class="btn action" data-key="action" aria-label="Go">⛏️</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/core.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/world/tiles.js"></script>
+<script src="js/world/gen.js"></script>
+<script src="js/world/world.js"></script>
+<script src="js/world/render.js"></script>
+<script src="js/world/sim.js"></script>
+<script src="js/entities/physics.js"></script>
+<script src="js/entities/dino.js"></script>
+<script src="js/entities/player.js"></script>
+<script src="js/ui/menus.js"></script>
+<script src="js/ui/hud.js"></script>
+<script src="js/save.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
