@@ -163,6 +163,51 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 8. Offline: every file the page loads is in the service worker's cache list.
+{
+  const fs = await import('node:fs');
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map(m => m[1]).filter(u => !/^https?:/.test(u));
+  const missing = refs.filter(r => !sw.includes(`'${r}'`));
+  check(missing.length === 0, 'offline cache lists every file: missing ' + missing.join(', '));
+  const listed = [...sw.matchAll(/'((?:js|icons)\/[^']+|[\w.]+\.(?:html|css|webmanifest))'/g)].map(m => m[1]);
+  const gone = listed.filter(f => !fs.existsSync(path.join(root, f)));
+  check(gone.length === 0, 'offline cache lists no missing files: ' + gone.join(', '));
+}
+
+// 9. Offline for real: serve over http, load once, go offline, reload.
+{
+  const http = await import('node:http');
+  const fs = await import('node:fs');
+  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
+  const server = http.createServer((req, res) => {
+    const f = path.join(root, decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/\/$/, '/index.html'));
+    if (!f.startsWith(root) || !fs.existsSync(f)) { res.writeHead(404); res.end(); return; }
+    res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' });
+    fs.createReadStream(f).pipe(res);
+  });
+  await new Promise(r => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}/`;
+  const ctx = await browser.newContext({ viewport: { width: 960, height: 540 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(base);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.waitForTimeout(500);
+  await ctx.setOffline(true);
+  server.close();
+  await page.reload();
+  await page.waitForTimeout(500);
+  check(await page.evaluate(() => typeof Game !== 'undefined' && Game.mode === 'title'), 'game loads with no connection');
+  await page.evaluate(() => Game.startPlay('rex'));
+  await page.waitForTimeout(300);
+  check(await page.evaluate(() => Game.mode === 'play'), 'game plays offline');
+  check(errors.length === 0, 'no page errors offline: ' + errors.join(' | '));
+  await ctx.close();
+}
+
 await browser.close();
 console.log(failures ? `${failures} check(s) failed` : 'all checks passed');
 process.exit(failures ? 1 : 0);

@@ -304,3 +304,8 @@ const Game = {
 };
 
 Game.init();
+
+// Offline play: cache the whole game (needs http/https; skipped when opened as a local file).
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
