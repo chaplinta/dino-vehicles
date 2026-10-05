@@ -5,8 +5,6 @@ const Sim = {
 
   update(dt, camX, camY) {
     this.acc += dt;
-    this.cropAcc += dt;
-    if (this.cropAcc > 1) { this.cropAcc = 0; this.growCrops(); }
     if (this.acc < 0.07) return;
     this.acc = 0;
     this.tick++;
@@ -23,6 +21,11 @@ const Sim = {
         const id = World.t[i];
         if (id === T.SAND) this.fallSand(x, y);
         else if (id === T.WATER) this.flowWater(x, y);
+        else if (id === T.CROP) {
+          const st = World.meta[i];
+          if (!TILES[World.get(x, y + 1)].solid) World.set(x, y, T.AIR);
+          else if (st < 3 && Math.random() < 0.004) World.setMeta(x, y, st + 1);
+        }
       }
     }
   },
@@ -56,18 +59,6 @@ const Sim = {
     if (World.get(x, y - 1) === T.WATER) {
       for (const dx of [dir, -dir]) {
         if (World.get(x + dx, y) === T.AIR) { this.move(x, y, x + dx, y, T.WATER, false); return; }
-      }
-    }
-  },
-  growCrops() {
-    for (const p of World.props) {
-      if (p.type !== 'field') continue;
-      for (let x = p.x0; x < p.x1; x++) {
-        for (let y = SURF - 3; y <= SURF + 2; y++) {
-          if (World.get(x, y) !== T.CROP) continue;
-          const st = World.getMeta(x, y);
-          if (st < 3 && Math.random() < 0.06) World.setMeta(x, y, st + 1);
-        }
       }
     }
   },

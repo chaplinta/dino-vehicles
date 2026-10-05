@@ -71,6 +71,23 @@ function drawProps(c, camX, camY) {
       rbox(c, sx - 26, sy - 104, 52, 34, 8, '#fff', 3);
       c.font = `24px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
       c.fillText('🚂', sx, sy - 86);
+    } else if (p.type === 'bin') {
+      const sy = p.y * TS - camY;
+      if (sx < -60 || sx > W + 60) continue;
+      rbox(c, sx - 14, sy - 40, 28, 40, 4, '#2f9e44', 3);
+      rbox(c, sx - 17, sy - 46, 34, 8, 3, '#2b8a3e', 3);
+      if (p.full) {
+        ell(c, sx - 6, sy - 48, 7, 5, '#ffd43b', 2); ell(c, sx + 6, sy - 50, 6, 5, '#f783ac', 2);
+        const fx = Math.sin(Game.t * 7) * 10, fy = Math.cos(Game.t * 9) * 6;
+        ell(c, sx + fx, sy - 70 + fy, 3, 3, OUT, 0);
+      }
+    } else if (p.type === 'chest') {
+      const sy = p.y * TS - camY;
+      if (sx < -60 || sx > W + 60) continue;
+      rbox(c, sx - 22, sy - 26, 44, 26, 4, '#c98a4b', 3);
+      if (p.open) { poly(c, [sx - 22, sy - 26, sx + 22, sy - 26, sx + 26, sy - 46, sx - 18, sy - 44], '#a86d35', 3); }
+      else { rbox(c, sx - 24, sy - 36, 48, 14, 7, '#a86d35', 3); ell(c, sx, sy - 24, 5, 5, '#ffd43b', 2);
+        if (Math.floor(Game.t * 2) % 3 === 0) drawStar(c, sx + 18, sy - 40, 6, Game.t, '#fff', 0); }
     } else if (p.type === 'tower') {
       const sy = p.y * TS - camY;
       if (sx < -200 || sx > W + 300) continue;
@@ -106,9 +123,10 @@ const Game = {
     Render.clear();
     this.stars = 0;
     Player.init(Player.type || 'rex', 12 * TS, World.surfaceAt(12) * TS);
-    if (typeof Vehicles !== 'undefined') Vehicles.spawnDefaults();
-    if (typeof NPCs !== 'undefined') NPCs.spawnDefaults();
-    if (typeof Jobs !== 'undefined') Jobs.reset();
+    Vehicles.spawnDefaults();
+    Fish.reset(); Fire.cells.clear();
+    NPCs.spawnDefaults();
+    Jobs.reset();
     this.worldReady = true;
     this.snapCamera();
   },
@@ -119,9 +137,10 @@ const Game = {
     this.stars = s.stars || 0;
     const p = s.player || {};
     Player.init(DINO_TYPES[p.type] ? p.type : 'rex', p.x || 12 * TS, p.y || SURF * TS);
-    if (typeof Vehicles !== 'undefined') { if (s.vehicles) Vehicles.load(s.vehicles); else Vehicles.spawnDefaults(); }
-    if (typeof NPCs !== 'undefined') NPCs.spawnDefaults();
-    if (typeof Jobs !== 'undefined') Jobs.reset();
+    if (s.vehicles) Vehicles.load(s.vehicles); else Vehicles.spawnDefaults();
+    Fish.reset(); Fire.cells.clear();
+    NPCs.spawnDefaults();
+    Jobs.reset();
     if (this.loadExtra) this.loadExtra(s.extra);
     this.worldReady = true;
     this.snapCamera();
@@ -140,14 +159,14 @@ const Game = {
   },
   configurePlay() {
     const v = Player.vehicle;
-    if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, enter: true, whistle: false, palette: !!v.builds });
-    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: typeof Vehicles !== 'undefined', palette: true });
+    if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', enter: true, whistle: false, palette: !!v.builds });
+    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: true, palette: true });
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (!v) UI.setEnter(false);
   },
   home() {
-    if (this.mode === 'play') { if (this.overlay) { this.overlay = null; return; } Save.write(); this.setMode('pick'); }
+    if (this.mode === 'play') { if (this.overlay) { if (this.overlay.close) this.overlay.close(); else this.overlay = null; return; } Save.write(); this.setMode('pick'); }
     else if (this.mode === 'pick') this.setMode('title');
   },
   toggleMute() {
@@ -155,23 +174,39 @@ const Game = {
     document.getElementById('btn-mute').textContent = Sound.muted ? '🔇' : '🔊';
     if (Sound.muted && 'speechSynthesis' in window) speechSynthesis.cancel();
   },
-  addStars(n, wx, wy) {
+  addStars(n) {
+    const before = this.stars;
     this.stars += n;
     Hud.starBump = 1;
+    for (const k of VEHICLE_ORDER) {
+      const def = VEHICLE_DEFS[k];
+      if (def && def.unlock > before && def.unlock <= this.stars) {
+        setTimeout(() => {
+          Hud.celebrate('New: ' + def.name + '!');
+          Sound.say(`You can now drive the ${def.name}! Press the whistle to call it.`);
+        }, 2600);
+      }
+    }
   },
+  popupStar(wx, wy) { Hud.popups.push({ id: 'star', sx: wx - this.cam.x, sy: wy - this.cam.y, t: 0 }); Hud.starBump = 1; },
   popup(id, wx, wy) { Hud.popups.push({ id, sx: wx - this.cam.x, sy: wy - this.cam.y, t: 0 }); },
   celebrate(text, say) { Hud.celebrate(text); Sound.say(say || text); },
   bodies() {
     const list = [Player.body];
-    if (typeof Vehicles !== 'undefined') for (const v of Vehicles.list) list.push(v.body);
-    if (typeof NPCs !== 'undefined') for (const n of NPCs.list) if (!n.vehicle) list.push(n.body);
+    for (const v of Vehicles.list) list.push(v.body);
+    for (const n of NPCs.list) if (!n.vehicle && !n.ride) list.push(n.body);
     return list;
   },
 
   tap(x, y) {
     if (this.mode !== 'play') { this.modes[this.mode].tap(x, y); return; }
     if (this.overlay && this.overlay.tap(x, y)) return;
+    if (Jobs.tap(x, y)) return;
     const wx = x + this.cam.x, wy = y + this.cam.y;
+    if (!Player.vehicle) {
+      const v = Vehicles.at(wx, wy);
+      if (v && !v.driver && dist(v.body.x, v.body.y, Player.body.x, Player.body.y) < 220) { Vehicles.enter(Player, v); return; }
+    }
     Player.tapTile(Math.floor(wx / TS), Math.floor(wy / TS));
   },
 
@@ -205,11 +240,14 @@ const Game = {
     if (this.overlay) { this.overlay.update(dt); }
     else {
       Player.update(dt);
-      if (typeof Vehicles !== 'undefined') Vehicles.update(dt);
+      Vehicles.update(dt);
     }
-    if (typeof NPCs !== 'undefined') NPCs.update(dt);
-    if (typeof Jobs !== 'undefined') Jobs.update(dt);
-    if (typeof Fire !== 'undefined') Fire.update(dt);
+    NPCs.update(dt);
+    Jobs.update(dt);
+    Fire.update(dt);
+    Fish.update(dt);
+    Falling.update(dt);
+    for (const p of World.props) if (p.type === 'bin' && !p.full && (p.refill -= dt) <= 0) p.full = true;
     Sim.update(dt, this.cam.x, this.cam.y);
     Fx.update(dt);
     this.updateCamera(dt);
@@ -220,22 +258,24 @@ const Game = {
     const cx = Math.round(this.cam.x), cy = Math.round(this.cam.y);
     drawBackdrop(c, cx, cy, this.t);
     drawTrack(c, cx, cy);
-    if (typeof Train !== 'undefined') Train.drawAll(c, cx, cy);
+    c.save(); c.translate(-cx, -cy); Vehicles.drawBack(c); c.restore();
     Render.draw(c, cx, cy);
     drawProps(c, cx, cy);
     c.save(); c.translate(-cx, -cy);
-    if (typeof Fire !== 'undefined') Fire.draw(c);
-    if (typeof NPCs !== 'undefined') NPCs.draw(c);
-    if (typeof Vehicles !== 'undefined') Vehicles.draw(c);
+    Fish.draw(c);
+    Fire.draw(c);
+    Falling.draw(c);
+    NPCs.draw(c);
+    Vehicles.draw(c);
     Player.draw(c);
-    if (typeof Jobs !== 'undefined') Jobs.drawWorld(c);
+    Jobs.drawWorld(c);
     Fx.draw(c);
     this.drawDigHint(c);
     c.restore();
     // Underground gloom.
     const depth = (cy + H / 2) / TS - SURF - 6;
     if (depth > 0) { c.fillStyle = `rgba(10,5,20,${Math.min(0.35, depth * 0.03)})`; c.fillRect(0, 0, W, H); }
-    if (typeof Jobs !== 'undefined') Jobs.drawHud(c);
+    Jobs.drawHud(c);
     if (this.overlay) this.overlay.draw(c);
     Hud.draw(c);
   },

@@ -116,16 +116,20 @@ function generateWorld(world, seed) {
   building(world, 182, SURF, 10, 6, { wall: T.CONCRETE, roof: T.ROOF, sign: 'police', door: 3 });
   building(world, 198, SURF, 8, 9, { wall: T.BRICK, roof: T.ROOF });
 
+  for (const bx of [113, 134, 147, 166, 179, 196, 211]) props.push({ type: 'bin', x: bx, y: SURF, full: true, refill: 0 });
+
   // Building site: concrete pad, dirt piles, half-built wooden frame.
   for (let x = 215; x < 300; x++) { surf[x] = SURF; }
   for (let x = 218; x < 232; x++) put(x, SURF, T.CONCRETE);
   const pile = (cx, r) => { for (let x = cx - r; x <= cx + r; x++) { const hh = r - Math.abs(x - cx); for (let i = 1; i <= hh; i++) put(x, SURF - i, T.DIRT); } };
-  pile(240, 3); pile(252, 2);
+  pile(241, 3); pile(251, 2);
   for (let x = 262; x < 272; x++) put(x, SURF, T.CONCRETE);
   for (let y = SURF - 5; y < SURF; y++) { put(262, y, T.WOOD); put(271, y, T.WOOD); }
-  for (let x = 262; x < 272; x++) put(x, SURF - 5, T.WOOD);
   for (let x = 278; x < 296; x++) for (let y = SURF; y < SURF + 4; y++) if (x > 280 && x < 294) put(x, y, y === SURF + 3 ? T.DIRT : T.AIR);
   props.push({ type: 'sign', x: 216, y: SURF, kind: 'site' });
+
+  // Sunken treasure on the sea floor.
+  for (const cx of [345, 362, 384]) props.push({ type: 'chest', x: cx + 0.5, y: surf[cx], open: false });
 
   // Mountains: trees on lower slopes, a few flowers.
   for (let x = 424; x < 556; x += 6 + Math.floor(rng() * 7)) if (surf[x] > SURF - 9) tree(x);

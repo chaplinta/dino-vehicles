@@ -30,17 +30,18 @@ const Hud = {
   draw(c) {
     // Stars.
     const s = 1 + this.starBump * 0.4;
-    c.save(); c.translate(W - 130, 44); c.scale(s, s);
+    c.save(); c.translate(W - 205, 44); c.scale(s, s);
     drawStar(c, 0, 0, 24, 0, '#ffd43b', 4);
     c.restore();
-    bigText(c, String(Game.stars), W - 98, 46, 36, '#fff', 'left');
+    bigText(c, String(Game.stars), W - 176, 46, 36, '#fff', 'left');
     // Treasure popups.
     for (const p of this.popups) {
       const k = Math.min(1, p.t / 1.2);
-      const x = lerp(p.sx, W - 130, k * k), y = lerp(p.sy, 44, k * k) - Math.sin(k * Math.PI) * 80;
+      const x = lerp(p.sx, W - 205, k * k), y = lerp(p.sy, 44, k * k) - Math.sin(k * Math.PI) * 80;
       const sc = 2 - k;
       c.save(); c.translate(x, y); c.scale(sc, sc);
-      TILES[p.id].draw(c, -TS / 2, -TS / 2, 3, 3);
+      if (p.id === 'star') drawStar(c, 0, 0, 18, p.t * 4, '#ffd43b', 3);
+      else TILES[p.id].draw(c, -TS / 2, -TS / 2, 3, 3);
       c.restore();
     }
     // Confetti and banner.

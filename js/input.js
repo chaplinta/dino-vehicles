@@ -75,7 +75,9 @@ const UI = {
     const act = document.querySelector('[data-key=action]');
     act.classList.toggle('hidden', !cfg.action);
     if (cfg.action) act.textContent = cfg.action;
-    document.querySelector('[data-key=roar]').classList.toggle('hidden', !cfg.roar);
+    const roarBtn = document.querySelector('[data-key=roar]');
+    roarBtn.classList.toggle('hidden', !cfg.roar);
+    roarBtn.textContent = cfg.roarIcon || '🦖';
     document.querySelector('[data-key=enter]').classList.toggle('hidden', !cfg.enter);
     document.querySelector('[data-key=whistle]').classList.toggle('hidden', !cfg.whistle);
     show('palette', !!cfg.palette);

@@ -49,7 +49,7 @@ const Player = {
     this.roarT = Math.max(0, this.roarT - dt);
     this.digAnim = Math.max(0, this.digAnim - dt * 4);
     this.placeCool = Math.max(0, this.placeCool - dt);
-    if (Input.pressed.roar) this.roar();
+    if (Input.pressed.roar && !this.vehicle) this.roar();
     if (this.vehicle) return;
 
     const b = this.body;
