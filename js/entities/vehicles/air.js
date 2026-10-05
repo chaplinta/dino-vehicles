@@ -31,9 +31,9 @@ defVehicle('helicopter', {
     const b = v.body, s = v.s;
     const vdir = (inp.down ? 1 : 0) - (inp.up ? 1 : 0);
     const flying = v.driver != null;
-    s.spin = lerp(s.spin || 0, flying ? 1 : 0, dt * 1.5);
+    s.spin = lerp(s.spin || 0, flying ? 1 : 0, dt * 3);
     s.rotor += dt * 30 * s.spin;
-    if (s.spin > 0.6) {
+    if (s.spin > 0.35) {
       b.vx = lerp(b.vx, dir * this.speed, Math.min(1, dt * 2));
       b.vy = lerp(b.vy, vdir * 220 + Math.sin(v.t * 2) * 10, Math.min(1, dt * 2.5));
       moveBody(b, dt, { gravity: 0 });

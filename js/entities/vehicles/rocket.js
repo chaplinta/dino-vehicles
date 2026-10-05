@@ -35,7 +35,6 @@ defVehicle('rocket', {
   },
   act(v, dt, inp) {
     if (inp.actionP && v.s.state === 'idle') {
-      if (v.body.y > (SURF - 2) * TS && Math.abs(v.body.x - 578 * TS) > 600) { Sound.say('Rockets launch from the launch pad!'); }
       v.s.state = 'count'; v.s.t = 0; v.s.lastN = 4;
     }
   },

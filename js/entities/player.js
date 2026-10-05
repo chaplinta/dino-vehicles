@@ -65,6 +65,9 @@ const Player = {
       else if (dinoDef.flies) { b.vy = -520; this.flap = 0; Sound.flap(); }
     }
     if (b.inWater && Input.held.up) b.vy -= 1200 * dt;
+    // Climb walls while holding up, so no one gets stuck at the bottom of a hole.
+    const wall = bodySolidAt(b, b.x - 3, b.y - 2) || bodySolidAt(b, b.x + 3, b.y - 2);
+    if (Input.held.up && wall && !b.onGround && b.vy > -260) { b.vy = -260; this.climbing = true; } else this.climbing = false;
     if (dinoDef.flies && !b.onGround && Input.held.up && b.vy > 90) b.vy = 90;   // glide
     if (dinoDef.flies && !b.onGround) this.flap += dt * (Input.held.up ? 14 : 6);
     else this.flap = lerp(this.flap, 0, dt * 6);

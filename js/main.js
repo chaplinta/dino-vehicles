@@ -22,7 +22,7 @@ function drawBackdrop(c, camX, camY, t) {
   c.fillStyle = g; c.fillRect(0, 0, W, H);
   const surfY = SURF * TS - camY;   // screen y of normal ground level
   const off = surfY - 440;          // shift scenery with vertical camera
-  drawSun(c, W - 260, 110 + off * 0.1, t);
+  drawSun(c, 170, 130 + off * 0.1, t);
   for (let i = 0; i < 6; i++) {
     const x = ((i * 260 + 40 - camX * 0.08 - t * 6) % (W + 300) + W + 300) % (W + 300) - 150;
     drawCloud(c, x, 70 + (i * 37 % 90) + off * 0.15, 0.8 + (i % 3) * 0.2);
@@ -156,6 +156,10 @@ const Game = {
     this.setMode('play');
     this.snapCamera();
     Save.write();
+    if (!this.hinted) {
+      this.hinted = true;
+      setTimeout(() => Sound.say('Walk with the arrows. Press the yellow button to dig. Press the horn to call a vehicle!'), 1800);
+    }
   },
   configurePlay() {
     const v = Player.vehicle;
@@ -192,7 +196,7 @@ const Game = {
   popup(id, wx, wy) { Hud.popups.push({ id, sx: wx - this.cam.x, sy: wy - this.cam.y, t: 0 }); },
   celebrate(text, say) { Hud.celebrate(text); Sound.say(say || text); },
   bodies() {
-    const list = [Player.body];
+    const list = Player.vehicle ? [] : [Player.body];
     for (const v of Vehicles.list) list.push(v.body);
     for (const n of NPCs.list) if (!n.vehicle && !n.ride) list.push(n.body);
     return list;

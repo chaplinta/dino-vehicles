@@ -1,5 +1,104 @@
 # Dino Vehicles
 
-A side-on sandbox game for young kids. Pick a dinosaur, drive diggers, fire trucks, tractors, trains, boats, helicopters and rockets, and dig and build in the world.
+A side-on sandbox game for young kids (made for a 5-year-old). Pick a dinosaur, then drive, dig and build in a big world full of other dinos doing their jobs.
 
-Runs in any modern browser. No install: open `index.html`.
+No reading needed: every menu is pictures, and the game talks (browser speech).
+
+## Play
+
+Open `index.html` in a modern browser (Chrome, Safari, Edge, Firefox). No install or server needed. It also works from GitHub Pages and on tablets. Use "Add to Home Screen" for full screen.
+
+Progress saves automatically in the browser. To start a new world, use the 🌱 button on the title screen and tap it twice.
+
+### Controls
+
+| | Keyboard | Touch |
+|---|---|---|
+| Walk / drive | Arrows or WASD | ◀ ▶ ▲ ▼ |
+| Jump / fly / climb walls | Up | ▲ |
+| Dig / vehicle action | Space | big yellow button |
+| Get in / out | E or Enter | 🚪 |
+| Roar / horn | R | 🦖 / 📢 |
+| Call a vehicle | Q | 📣 |
+| Pick a block | 1–6 | block strip at top |
+| Dig or build a block | click | tap the world |
+| Back | Esc | 🏠 |
+| Sound on/off | M | 🔊 |
+
+## The world
+
+From left to right: farm, town (fire station, hospital, police), building site, beach and sea, mountains, then the rocket launch pad. A train line runs the whole way, through tunnels and over a bridge.
+
+Everything except the bedrock at the bottom can be dug. Bones, eggs, gems and fossils are hidden underground and earn stars.
+
+## Dinosaurs
+
+T-Rex, Triceratops, Stegosaurus, Brachiosaurus, Raptor, Ankylosaurus and Pterodactyl. The Pterodactyl can fly.
+
+## Vehicles
+
+Stars unlock more vehicles. The whistle menu brings any unlocked vehicle to you.
+
+| Vehicle | Button does |
+|---|---|
+| Digger | scoop, then dump (into the dump truck for a star). Up/down aims the bucket |
+| Dump truck | tip the load |
+| Fire truck | spray water. Up/down aims the hose |
+| Tractor | plough and plant corn |
+| Train | whistle. Stops at stations for passengers |
+| Bulldozer | push dirt and walls, drop the pile |
+| Crane | drop the chosen block. Up/down moves the hook |
+| Ambulance, Police car | lights and siren. Give dinos a lift |
+| Tugboat | throw a tow rope to another boat |
+| Helicopter | lower the hook to lift blocks; rescue dinos |
+| Combine harvester | harvests ripe corn as you drive; button unloads |
+| Wrecking ball | swing the ball and smash things |
+| Garbage truck | empty the bins |
+| Drill | drill straight down for deep treasure |
+| Fishing boat | drop and lift the net |
+| Submarine | light. Find treasure chests on the sea floor |
+| Plane | water the crops while flying (up to take off) |
+| Rocket | countdown, blast off to space, catch stars, parachute home |
+
+## Jobs
+
+Jobs pop up now and then, with a voice prompt, a bubble in the world and an arrow at the screen edge (tap the arrow to hear it again):
+
+- fire in a house
+- dino with a sore toe
+- lost baby dino
+- climber stuck on the mountain
+- train passenger
+- ripe corn
+- buried fossil
+- house to build
+- broken-down boat
+- full bins
+
+There is no failing and no dying.
+
+## Code
+
+Plain JavaScript and canvas, no build step and no dependencies at runtime.
+
+- `js/world/` holds the tile world. That's the generator, the chunk-cached renderer, falling sand, flowing water and growing crops, plus fire and water spray.
+- `js/entities/` holds the dinos, the player, NPCs and the vehicle base class. Each vehicle is in `vehicles/*.js`. To add one, call `defVehicle(...)` and list it in `registry.js`.
+- `js/jobs.js` holds the job system.
+- `js/ui/` holds the menus and HUD.
+- `js/save.js` saves to localStorage. It stores the world seed plus only the tiles that changed.
+
+## Tests
+
+```
+npm install
+npx playwright install chromium
+npm test
+```
+
+`tests/smoke.mjs` plays the game headless and checks:
+- walking, digging and building;
+- saving and reloading;
+- every vehicle;
+- the rocket trip;
+- a fire job;
+- the touch buttons.

@@ -138,7 +138,7 @@ function generateWorld(world, seed) {
 
   // Launch pad.
   for (let x = 560; x < WORLD_W; x++) { surf[x] = SURF; for (let y = SURF - 12; y < SURF; y++) put(x, y, T.AIR); put(x, SURF, x >= 566 && x < 590 ? T.CONCRETE : T.GRASS); }
-  props.push({ type: 'tower', x: 572, y: SURF });
+  props.push({ type: 'tower', x: 588, y: SURF });
 
   // Edges: tall walls so nobody walks off the world.
   for (let y = 0; y < Ht; y++) { put(0, y, T.BEDROCK); put(Wt - 1, y, T.BEDROCK); }
@@ -148,7 +148,7 @@ function generateWorld(world, seed) {
   props.push({ type: 'station', x: 140, name: 'town' });
   props.push({ type: 'station', x: 256, name: 'site' });
   props.push({ type: 'station', x: 470, name: 'mount' });
-  props.push({ type: 'station', x: 578, name: 'pad' });
+  props.push({ type: 'station', x: 564, name: 'pad' });
 
   // Record generated surface for underground backdrop.
   world.genSurf = Int16Array.from(surf);
@@ -167,7 +167,7 @@ function generateWorld(world, seed) {
     // Upper floor.
     if (h >= 7) for (let x = x0 + 1; x < x0 + w - 1; x++) if (x > x0 + 2) put(x, top + 3, T.WOOD);
     // Doors: 2-tile gaps in both side walls.
-    const door = o.door || 2;
+    const door = Math.max(3, o.door || 3);   // tall enough for vehicles to drive through
     for (let y = base - door; y < base; y++) { put(x0, y, T.AIR); put(x0 + w - 1, y, T.AIR); }
     if (o.windows !== false) for (let x = x0 + 2; x < x0 + w - 2; x += 3) putBg(x, top + 2, T.GLASS);
     if (o.sign) props.push({ type: 'sign', x: x0 + w / 2, y: top - 1, kind: o.sign });

@@ -156,11 +156,20 @@ const Vehicles = {
       v.update(dt, inp);
     }
     if (p.vehicle) {
+      const v = p.vehicle;
+      v.engT = (v.engT || 0) - dt;
+      const sp = Math.abs(v.body.vx) + (v.def.mover === 'air' ? 120 : 0);
+      if (v.engT <= 0 && sp > 25 && v.kind !== 'rocket') {
+        if (v.kind === 'helicopter') { Sound.noise(0.06, 0.05, 'lowpass', 300); v.engT = 0.09; }
+        else if (v.kind === 'train') { Sound.noise(0.07, 0.04, 'bandpass', 700); v.engT = clamp(30 / sp, 0.1, 0.5); }
+        else { Sound.tone(55 + sp * 0.12, 0.09, 'sawtooth', 0.025); v.engT = 0.11; }
+      }
       if (Input.pressed.enter) this.exit(p);
       else if (Input.pressed.roar) { p.vehicle.hornSound(); }
     } else {
       const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver);
       UI.setEnter(!!near, '🚪');
+      if (near && !this.doorHint) { this.doorHint = true; Sound.say('Press the door button to get in!'); }
       if (near && Input.pressed.enter) this.enter(p, near);
       else if (Input.pressed.whistle) Whistle.open();
     }
