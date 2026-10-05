@@ -70,9 +70,11 @@ defTile(T.BRICK, { name: 'brick', draw(c, x, y, tx, ty) {
   c.fillStyle = '#d9534f';
   for (let r = 0; r < 4; r++) {
     const off = (r + ty) % 2 ? 0 : -8;
-    for (let k = 0; k < 3; k++) c.fillRect(x + off + k * 16 + 1, y + r * 8 + 1, 14, 6);
+    for (let k = 0; k < 3; k++) {
+      const a = Math.max(x, x + off + k * 16 + 1), b = Math.min(x + TS, x + off + k * 16 + 15);
+      if (b > a) c.fillRect(a, y + r * 8 + 1, b - a, 6);
+    }
   }
-  c.clearRect(x - 8, y, 8, TS); c.clearRect(x + TS, y, 8, TS);
 } });
 defTile(T.GLASS, { name: 'glass', draw(c, x, y) {
   c.fillStyle = 'rgba(190,240,255,0.55)'; c.fillRect(x, y, TS, TS);
