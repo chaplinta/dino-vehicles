@@ -6,6 +6,8 @@ No reading needed: every menu is pictures, and the game talks (browser speech).
 
 ## Play
 
+**Play now: https://chaplinta.github.io/dino-vehicles/** (on a phone, hold it sideways; use Share → Add to Home Screen for a full-screen app).
+
 Open `index.html` in a modern browser (Chrome, Safari, Edge, Firefox). No install or server needed. It also works from GitHub Pages and on tablets. Use "Add to Home Screen" for full screen.
 
 Progress saves automatically in the browser. To start a new world, use the 🌱 button on the title screen and tap it twice.
