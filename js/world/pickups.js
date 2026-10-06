@@ -2,7 +2,7 @@
 // for flyers, some underwater. They come back a while after being caught.
 const Pickups = {
   list: [],
-  RESPAWN: 90,
+  RESPAWN: 60,
   generate(seed) {
     const rng = mulberry32(seed + 5);
     this.list = [];

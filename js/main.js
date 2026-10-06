@@ -135,7 +135,7 @@ const Game = {
     World.generate((Math.random() * 1e9) | 0);
     Render.clear();
     this.stars = 0;
-    Player.init(Player.type || 'rex', 12 * TS, World.surfaceAt(12) * TS);
+    Player.init(Player.type || 'rex', 12 * TS + TS / 2, World.surfaceAt(12) * TS - 0.01);
     Vehicles.spawnDefaults();
     Fish.reset(); Fire.cells.clear(); Pickups.generate(World.seed);
     NPCs.spawnDefaults();

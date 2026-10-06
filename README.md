@@ -36,7 +36,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 
 From left to right: farm, town (fire station, hospital, police), building site, beach and sea, mountains, then the rocket launch pad. A train line runs the whole way, through tunnels and over a bridge.
 
-Everything except the bedrock at the bottom can be dug. Bones, eggs, gems and fossils are hidden underground and earn stars.
+Everything except the bedrock at the bottom can be dug. Sparkly stars float around the world to catch (some up high for flyers, some underwater) and come back after a minute. Vehicles bounce over walls they can't drive up, and dinos climb walls by walking into them, so nobody gets stuck. Bones, eggs, gems and fossils are hidden underground and earn stars.
 
 ## Dinosaurs
 
@@ -69,7 +69,7 @@ Stars unlock more vehicles. The whistle menu brings any unlocked vehicle to you.
 
 ## Jobs
 
-Jobs pop up now and then, with a voice prompt, a bubble in the world and an arrow at the screen edge (tap the arrow to hear it again):
+Jobs pop up now and then, with a voice prompt, a bubble in the world and an arrow at the screen edge. Tap the arrow or the bubble and the right vehicle for the job comes to you:
 
 - fire in a house
 - dino with a sore toe
@@ -101,6 +101,8 @@ npm install
 npx playwright install chromium
 npm test
 ```
+
+`npm run playtest` runs a bot that plays like a 5-year-old (mashing buttons, wandering, calling vehicles, chasing jobs) for 5 minutes per dinosaur and reports bugs, stuck spots and how often rewards come.
 
 `tests/smoke.mjs` plays the game headless and checks:
 - walking, digging and building;

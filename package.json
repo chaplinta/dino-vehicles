@@ -4,7 +4,8 @@
   "private": true,
   "description": "A side-on sandbox game for young kids: dinosaurs driving vehicles.",
   "scripts": {
-    "test": "node tests/smoke.mjs"
+    "test": "node tests/smoke.mjs",
+    "playtest": "node tests/playtest.mjs 5"
   },
   "devDependencies": {
     "playwright": "^1.56.1"
