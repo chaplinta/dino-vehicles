@@ -93,7 +93,7 @@ function generateWorld(world, seed) {
   }
 
   // Farm: barn, fields, trees.
-  for (let x = 6; x < 96; x += 9 + Math.floor(rng() * 8)) if (x < 14 || x > 70) tree(x);
+  for (let x = 6; x < 14; x += 9 + Math.floor(rng() * 8)) tree(x);
   const fields = [[18, 34], [42, 58]];
   for (const [a, b] of fields) {
     for (let x = a; x < b; x++) {
@@ -105,6 +105,15 @@ function generateWorld(world, seed) {
   }
   building(world, 62, SURF, 9, 6, { wall: T.WOOD, roof: T.ROOF, sign: 'barn', windows: false });
   flowers(4, 96, 0.12);
+
+  // Airport: a concrete apron and a terminal. The FIFO jet flies from here to the Pilbara.
+  for (let x = 72; x < 92; x++) {
+    surf[x] = SURF;
+    for (let y = SURF - 10; y < SURF; y++) put(x, y, T.AIR);
+    put(x, SURF, T.CONCRETE); put(x, SURF + 1, T.DIRT);
+  }
+  building(world, 92, SURF, 7, 5, { wall: T.CONCRETE, roof: T.ROOF, sign: 'airport' });
+  props.push({ type: 'windsock', x: 73, y: SURF });
 
   // Town: road, houses, fire station, hospital, police.
   for (let x = 100; x < 215; x++) { surf[x] = SURF; put(x, SURF, T.ROAD); for (let y = SURF - 8; y < SURF; y++) put(x, y, T.AIR); }

@@ -4,6 +4,7 @@ const T = {
   GLASS: 9, ROAD: 10, RAIL: 11, BONE: 12, EGG: 13, GEM: 14, FOSSIL: 15, LEAVES: 16, TRUNK: 17,
   CROP: 18, ROOF: 19, CONCRETE: 20, FLOWER: 21,
   MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25, GOLDEGG: 26,
+  REDDIRT: 27, IRONORE: 28, BROKENORE: 29, WASTE: 30, SPINIFEX: 31,
 };
 
 // Per-tile hash so textures look varied but stable.
@@ -181,6 +182,40 @@ defTile(T.GOLDEGG, { name: 'golden egg', treasure: true, hard: 2, draw: treasure
   ell(c, cx - 3, cy - 4, 3, 4, '#fff3bf', 0);
   drawStar(c, cx + 4, cy + 4, 4, 0, '#fab005', 0);
 }) });
+
+// ---------- Pilbara ----------
+defTile(T.REDDIRT, { name: 'red dirt', draw(c, x, y, tx, ty) {
+  c.fillStyle = '#c4532a'; c.fillRect(x, y, TS, TS);
+  speckle(c, x, y, tx, ty, '#a8441f', 4, 4);
+  speckle(c, x, y, tx + 77, ty, '#dc6b3c', 2, 3);
+} });
+// Banded iron: the rock iron ore comes from. Too hard to dig until it's blasted.
+defTile(T.IRONORE, { name: 'iron ore', hard: 3, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#7a2e22'; c.fillRect(x, y, TS, TS);
+  c.fillStyle = '#4b3b47';
+  const off = Math.floor(tileHash(tx >> 2, ty) * 4);
+  for (let i = 0; i < 3; i++) c.fillRect(x, y + 4 + i * 10 + off, TS, 4);
+  speckle(c, x, y, tx, ty, '#b7b2c4', 2, 3);   // shiny haematite flecks
+} });
+defTile(T.BROKENORE, { name: 'broken ore', falls: true, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#5a2a22'; c.fillRect(x, y, TS, TS);
+  for (let i = 0; i < 5; i++) {
+    const a = tileHash(tx * 3 + i, ty * 7 - i), b = tileHash(tx - i * 5, ty * 3 + i);
+    ell(c, x + 5 + a * 22, y + 5 + b * 22, 5 + a * 3, 4 + b * 3, i % 2 ? '#8a3a2a' : '#5c4a58', 1.5);
+  }
+} });
+defTile(T.WASTE, { name: 'rock', hard: 2, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#9a6a52'; c.fillRect(x, y, TS, TS);
+  speckle(c, x, y, tx, ty, '#7f5440', 3, 6);
+  speckle(c, x, y, tx + 40, ty, '#b5866c', 2, 4);
+} });
+defTile(T.SPINIFEX, { name: 'spinifex', solid: false, draw(c, x, y, tx, ty) {
+  c.strokeStyle = '#b5a642'; c.lineWidth = 2.5; c.lineCap = 'round';
+  for (let i = 0; i < 9; i++) {
+    const a = -Math.PI / 2 + (i - 4) * 0.28;
+    c.beginPath(); c.moveTo(x + 16, y + TS); c.lineTo(x + 16 + Math.cos(a) * 16, y + TS + Math.sin(a) * (14 + tileHash(tx, i) * 6)); c.stroke();
+  }
+} });
 
 // Blocks the player can build with.
 const BUILD_BLOCKS = [T.DIRT, T.BRICK, T.WOOD, T.GLASS, T.STONE, T.ROAD];

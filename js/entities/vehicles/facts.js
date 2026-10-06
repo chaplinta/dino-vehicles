@@ -95,6 +95,31 @@ const VEHICLE_FACTS = {
     'Rockets have to go really fast, more than ten times faster than a jet plane, to get to space.',
     'Astronauts first walked on the Moon in 1969.',
   ],
+  jet: [
+    'FIFO means fly in, fly out. Miners fly to the mine, work for a couple of weeks, then fly home.',
+    'A jet\'s wings are shaped to push air down, and that lifts the plane up into the sky.',
+    'Jet engines suck in air, squeeze it, burn fuel in it and blast it out the back.',
+  ],
+  blastrig: [
+    'A blast hole drill spins a long steel rod with a hard bit on the end to make deep holes in rock.',
+    'The holes are filled with explosives so the rock breaks into pieces small enough to dig.',
+    'Blast holes are drilled in neat rows, called a drill pattern.',
+  ],
+  haultruck: [
+    'Mining haul trucks can carry as much as three hundred tonnes. That\'s like two hundred cars!',
+    'A haul truck driver climbs a ladder to get up to the cab.',
+    'Each giant tyre is taller than a grown up and costs as much as a car.',
+  ],
+  oretrain: [
+    'Pilbara ore trains can be over two kilometres long, with more than two hundred wagons.',
+    'At the port a car dumper turns each wagon upside down to empty it, without unhooking it!',
+    'Some Pilbara ore trains drive themselves, with no driver on board.',
+  ],
+  shiploader: [
+    'A ship loader runs along rails on the wharf, pouring ore into the ship\'s holds.',
+    'The holds are filled a bit at a time so the ship stays level in the water.',
+    'Iron ore ships are huge. One ship can carry more than two thousand train wagons of ore.',
+  ],
   moonbuggy: [
     'Astronauts drove a real moon buggy, called the lunar rover, on the Moon.',
     'The Moon has much less gravity than Earth, so everything is lighter and you can jump really high.',

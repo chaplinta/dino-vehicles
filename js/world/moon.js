@@ -45,28 +45,10 @@ function generateMoon(world, seed) {
 }
 
 const Moon = {
-  earth: null,
   firstFlag: false,
 
   enter(rocket) {
-    const cam = Game.cam;
-    this.earth = {
-      t: World.t, bg: World.bg, meta: World.meta, surf: World.surf, genSurf: World.genSurf, props: World.props,
-      diff: World.diff, seed: World.seed, vehicles: Vehicles.list, npcs: NPCs.list, fish: Fish.list,
-      fires: Fire.cells, pickups: Pickups.list, cam: { x: cam.x, y: cam.y },
-    };
-    const N = WORLD_W * WORLD_H;
-    World.t = new Uint8Array(N); World.bg = new Uint8Array(N); World.meta = new Uint8Array(N);
-    World.surf = new Int16Array(WORLD_W);
-    World.diff = new Map();
-    generateMoon(World, World.seed);
-    World.gravity = 0.3;
-    World.limitW = MOON_W;
-    Game.onMoon = true;
-    Render.clear();
-    Water.drops = []; Falling.list = []; Fx.list = [];
-    Fish.list = []; Fire.cells = new Map();
-    Pickups.generate(World.seed + 1);
+    Away.go('moon', generateMoon, { gravity: 0.3, limitW: MOON_W });
     // Rocket floats down onto the pad.
     rocket.body.x = (MOON_PAD[0] + MOON_PAD[1]) / 2 * TS;
     rocket.body.y = (SURF - 30) * TS;
@@ -102,7 +84,7 @@ const Moon = {
   },
 
   leave(rocket, quiet) {
-    const e = this.earth;
+    const e = Away.earth;
     if (!e) return;
     if (this.earthWasHit) {
       // The asteroid hit while we were away: a brand new Earth to go home to.
@@ -117,15 +99,7 @@ const Moon = {
       Game.stars = keepStars;
       if (!quiet) setTimeout(() => Sound.say('A brand new Earth after the asteroid!'), 2500);
     }
-    World.t = e.t; World.bg = e.bg; World.meta = e.meta; World.surf = e.surf; World.genSurf = e.genSurf;
-    World.props = e.props; World.diff = e.diff; World.seed = e.seed;
-    World.gravity = 1;
-    World.limitW = WORLD_W;
-    Vehicles.list = e.vehicles; NPCs.list = e.npcs; Fish.list = e.fish; Fire.cells = e.fires; Pickups.list = e.pickups;
-    Water.drops = []; Falling.list = []; Fx.list = [];
-    this.earth = null;
-    Game.onMoon = false;
-    Render.clear();
+    Away.home();
     if (rocket) {
       if (!Vehicles.list.includes(rocket)) Vehicles.list.push(rocket);
       rocket.body.x = 578 * TS + rand(-200, 200);

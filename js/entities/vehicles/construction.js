@@ -36,7 +36,7 @@ defVehicle('digger', {
   },
   act(v, dt, inp) {
     const s = v.s;
-    s.rep -= dt;
+    s.rep -= dt; s.hardT = (s.hardT || 0) - dt;
     if (inp.upP || (inp.up && s.rep < 0)) { s.aim = Math.max(-3, s.aim - 1); s.rep = 0.25; }
     if (inp.downP || (inp.down && s.rep < 0)) { s.aim = Math.min(4, s.aim + 1); s.rep = 0.25; }
     const row = v.groundRow() + s.aim;
@@ -48,13 +48,22 @@ defVehicle('digger', {
           const id = vehicleDig(tx, row, false);
           if (id >= 0 && LOOSE(id) >= 0) s.load.push(LOOSE(id));
         }
-        if (s.load.length) Sound.dig(); else Sound.bonk();
+        if (s.load.length) Sound.dig();
+        else {
+          Sound.bonk();
+          if (Game.away === 'pilbara' && this.targetCols(v).some(tx => World.get(tx, row) === T.IRONORE) && !(s.hardT > 0)) {
+            s.hardT = 4; Sound.say('Too hard! Drill and blast the rock first.');
+          }
+        }
       }
       if (s.mode === 'dump' && s.anim < 0.3 && !s.done) {
         s.done = true;
-        const truck = Vehicles.list.find(o => o.kind === 'dumptruck' && Math.abs(o.body.x - (v.body.x + v.facing * 110)) < 90 && Math.abs(o.body.y - v.body.y) < 70);
+        const truck = Vehicles.list.find(o => o.def.hauls && Math.abs(o.body.x - (v.body.x + v.facing * 110)) < o.body.w / 2 + 70 && Math.abs(o.body.y - v.body.y) < 100);
         if (truck) {
-          truck.s.load = Math.min(12, truck.s.load + s.load.length);
+          const cap = truck.def.cap || 12, ore = s.load.filter(id => id === T.BROKENORE).length;
+          truck.s.load = Math.min(cap, truck.s.load + s.load.length);
+          truck.s.ore = Math.min(truck.s.load, (truck.s.ore || 0) + ore);
+          if (truck.s.load >= cap && v.driver === Player) Sound.say('The truck is full! Drive it away and tip it out.');
           Fx.burst(truck.body.x, truck.body.y - 60, 12, { speed: 140, g: 600, life: 0.6, r: 6, color: ['#a0662e', '#8a5524'], shape: 'rect' });
           Sound.dig(); Sound.collect();
           if (v.driver === Player) { Game.addStars(1); Hud.starBump = 1; }
@@ -116,29 +125,9 @@ defVehicle('digger', {
 // ---------- Dump truck ----------
 defVehicle('dumptruck', {
   name: 'Dump truck', exhaust: [16, -76], say: 'Dump truck!', icon: '⤵️', w: 112, h: 66, speed: 260, unlock: 0,
-  init(v) { v.s.load = 0; v.s.tip = 0; v.s.tipping = false; },
-  act(v, dt, inp) {
-    const s = v.s;
-    if (inp.actionP && !s.tipping) {
-      if (s.load > 0) { s.tipping = true; Sound.tone(150, 0.6, 'sawtooth', 0.06, 90); }
-      else { Sound.bonk(); }
-    }
-    if (s.tipping) {
-      s.tip = Math.min(1, s.tip + dt * 1.6);
-      if (s.tip >= 1 && s.load > 0) {
-        const back = Math.floor((v.body.x - v.facing * (v.body.w / 2 + 6)) / TS);
-        const cols = [back, back - v.facing, back - 2 * v.facing];
-        const row = v.feetRow() - 6;
-        let k = 0;
-        while (s.load > 0 && k < 30) { dropTileInColumn(cols[k % 3], T.DIRT, row); s.load--; k++; }
-        s.load = 0;
-        Sound.dig(); Sound.place();
-        Fx.burst(v.body.x - v.facing * 70, v.body.y - 20, 14, { speed: 160, up: 50, g: 500, life: 0.7, r: 6, color: ['#a0662e', '#8a5524'], shape: 'rect' });
-      }
-      if (s.load === 0 && s.tip >= 1) s.tipping = false;
-    } else s.tip = Math.max(0, s.tip - dt * 1.2);
-    v.s.slow = s.tip > 0 ? 0.3 : 1;
-  },
+  hauls: true, cap: 12,
+  init(v) { v.s.load = 0; v.s.ore = 0; v.s.tip = 0; v.s.tipping = false; },
+  act(v, dt, inp) { truckTip(v, dt, inp); },
   draw(c, v) {
     const s = v.s;
     rbox(c, -56, -32, 112, 16, 6, '#555', 4);

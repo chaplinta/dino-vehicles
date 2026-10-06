@@ -208,12 +208,12 @@ const Vehicles = {
       else if (Input.pressed.roar) { p.vehicle.hornSound(); }
     } else {
       const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver);
-      const table = !near && !Game.onMoon && World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - p.body.x) < 110 && Math.abs(t.y * TS - p.body.y) < 80);
+      const table = !near && !Game.away && World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - p.body.x) < 110 && Math.abs(t.y * TS - p.body.y) < 80);
       UI.setEnter(!!near || !!table, table ? '♟️' : '🚪');
       if (table && Input.pressed.enter) { Chess.open(); return; }
       if (near && !this.doorHint) { this.doorHint = true; Sound.say('Press the door button to get in!'); }
       if (near && Input.pressed.enter) this.enter(p, near);
-      else if (Input.pressed.whistle && !Game.onMoon) Whistle.open();
+      else if (Input.pressed.whistle && !Game.away) Whistle.open();
     }
   },
   // Called vehicles drive themselves to the player.
@@ -279,7 +279,7 @@ const Vehicles = {
 // Whistle menu: a picture grid of vehicles. Picking one brings it to you.
 const Whistle = {
   open() {
-    if (Game.onMoon) return;   // only the rocket on the Moon
+    if (Game.away) return;   // no whistle on trips away
     Game.overlay = this;
     this.t = 0;
     this.sel = 0;

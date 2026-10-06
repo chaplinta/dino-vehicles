@@ -542,6 +542,51 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 19. FIFO to the Pilbara: drill, blast, dig, haul, crush, train, ship, fly home.
+{
+  const page = await open({ width: 960, height: 540 });
+  check(await page.evaluate(() => typeof GAME_VERSION === 'string' && /\d{4}/.test(RELEASE_DATE)), 'title shows a version and release date');
+  await page.evaluate(() => {
+    Game.loop = () => {}; window.said = []; Sound.say = t => said.push(t); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
+    window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0 && !Input.held[k]) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); };
+    window.drive = (v, x, max = 1200) => { for (let i = 0; i < max && Math.abs(v.body.x - x) > 40; i++) run(1, v.body.x < x ? { right: 1 } : { left: 1 }); run(30); };
+    window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
+    World.set(20, 30, T.BRICK); Save.write();
+  });
+  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(1, { action: 1 }); run(60 * 5); });
+  check(await page.evaluate(() => Game.overlay === Flight), 'the FIFO jet takes off and flies to the Pilbara');
+  await page.evaluate(() => { run(60 * 11); run(60 * 5); });
+  check(await page.evaluate(() => Game.away === 'pilbara' && Player.vehicle.s.state === 'idle' && Pilbara.visits === 1), 'lands on the Pilbara airstrip');
+  check(await page.evaluate(() => onSite() && Mine.step === 'drill'), 'hi-vis on, first step is drilling');
+  await page.evaluate(() => { window.__save = localStorage.getItem('dinoVehicles.save.v1'); Save.write(); });
+  await page.evaluate(() => { const r = Mine.vehicle('blastrig'); into(r); for (const x of [76, 80, 84]) { drive(r, x * TS); run(120, { action: 1 }); } });
+  check(await page.evaluate(() => Mine.holes.length === 3 && Mine.step === 'blast'), 'drill three blast holes');
+  await page.evaluate(() => { Vehicles.exit(Player); Player.body.x = PIL.DET * TS; Player.body.y = SURF * TS - 0.01; run(10); run(1, { enter: 1 }); run(60 * 6); });
+  check(await page.evaluate(() => !Mine.holes.length && Mine.broken > 20 && Mine.step === 'dig'), 'blast breaks up the iron ore');
+  await page.evaluate(() => {
+    const h = Mine.vehicle('haultruck'); h.body.x = 90 * TS; h.body.y = World.surfaceAt(90) * TS - 0.01;
+    const d = Mine.vehicle('digger'); d.body.x = 82 * TS; d.body.y = World.surfaceAt(82) * TS - 0.01; d.facing = 1; into(d); run(30);
+    for (let i = 0; i < 10; i++) { run(1, { action: 1 }); run(45); if (d.s.load.length) { run(1, { action: 1 }); run(45); } else { run(1, { down: 1 }); run(10); } }
+  });
+  check(await page.evaluate(() => Mine.vehicle('haultruck').s.ore >= 12), 'digger loads the haul truck with ore');
+  await page.evaluate(() => { const h = Mine.vehicle('haultruck'); into(h); drive(h, PIL.HOPPER * TS + 60, 2400); run(1, { action: 1 }); run(90); });
+  check(await page.evaluate(() => Mine.stock + Mine.train().s.ore.reduce((a, b) => a + b, 0) >= 12), 'haul truck tips the ore into the crusher');
+  await page.evaluate(() => { const t = Mine.train(); into(t); run(10); drive(t, PIL.LOADOUT * TS); run(60 * 6); drive(t, PIL.DUMPER * TS, 3000); run(60 * 6); });
+  check(await page.evaluate(() => Mine.port >= 12 && Mine.train().s.ore.every(o => o === 0) && Mine.step === 'ship'), 'ore train loads, then empties at the port');
+  await page.evaluate(() => { Mine.port = 18; window.__stars = Game.stars; const l = Mine.vehicle('shiploader'); into(l); for (const h of PIL.HOLDS) { drive(l, h * TS + 16 - LOADER_BOOM, 900); run(60 * 3, { action: 1 }); } });
+  check(await page.evaluate(() => Mine.ship.state === 'leave' && Game.stars >= window.__stars + 10), 'ship loader fills the ship and it sails: 10 stars');
+  check(await page.evaluate(() => localStorage.getItem('dinoVehicles.save.v1') === window.__save), 'nothing saved while away');
+  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(1, { action: 1 }); run(60 * 5); run(60 * 11); run(60 * 5); });
+  check(await page.evaluate(() => !Game.away && Player.vehicle.kind === 'jet' && Player.vehicle.s.state === 'idle' && World.get(20, 30) === T.BRICK && Vehicles.list.filter(v => v.kind === 'jet').length === 1 && !onSite()), 'fly home: Earth as it was');
+  // Asteroid while at the mine: game over and a fresh Earth.
+  await page.evaluate(() => { const j = Player.vehicle; Flight.start(j); Flight.finish(); run(60 * 5); Asteroid.left = 1; run(120); });
+  check(await page.evaluate(() => Game.overlay === Doom), 'asteroid hits while at the mine: game over');
+  await page.evaluate(() => { run(60 * 4); Game.tap(W / 2, H * 0.78); });
+  check(await page.evaluate(() => !Game.away && !Game.overlay && World.get(20, 30) !== T.BRICK && Vehicles.list.filter(v => v.kind === 'jet').length === 1), 'play again: back on a fresh Earth');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

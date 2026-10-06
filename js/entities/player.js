@@ -14,7 +14,11 @@ const DUST = {
   [T.GLASS]: ['#bdf3ff', '#ffffff'], [T.LEAVES]: ['#3fae49', '#5cc84a'], [T.ROOF]: ['#4263eb', '#364fc7'],
   [T.CONCRETE]: ['#c9cdd4', '#b3b8c0'], [T.ROAD]: ['#4a4a55', '#ffd43b'],
   [T.MOONDUST]: ['#c8c9d2', '#e2e3ea'], [T.MOONROCK]: ['#8b8d9b', '#737584'],
+  [T.REDDIRT]: ['#c4532a', '#dc6b3c'], [T.IRONORE]: ['#7a2e22', '#4b3b47'], [T.BROKENORE]: ['#5a2a22', '#8a3a2a'], [T.WASTE]: ['#9a6a52', '#b5866c'],
 };
+
+// Seconds of digging a tile takes by hand.
+function digTime(id) { const h = TILES[id].hard; return h >= 3 ? 0.9 : h >= 2 ? 0.45 : 0.18; }
 
 function digEffects(tx, ty, id) {
   const cx = tx * TS + TS / 2, cy = ty * TS + TS / 2;
@@ -127,7 +131,7 @@ const Player = {
         if (k !== this.digKey) { this.digKey = k; this.digT = 0; }
         this.digT += dt;
         this.digAnim = 1;
-        const need = TILES[World.get(tgt[0], tgt[1])].hard >= 2 ? 0.45 : 0.18;
+        const need = digTime(World.get(tgt[0], tgt[1]));
         if (this.digT >= need) {
           const id = World.dig(tgt[0], tgt[1]);
           if (id >= 0) { Sound.dig(); digEffects(tgt[0], tgt[1], id); }

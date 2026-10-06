@@ -39,6 +39,8 @@ const Title = {
       c.font = `800 19px ${FONT}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillStyle = '#2b8a3e';
       c.fillText('✈️ ✔ Ready to play offline', 30, H - 33);
     }
+    c.font = `800 16px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = 'rgba(255,255,255,0.85)';
+    c.fillText(`Version ${GAME_VERSION} · ${RELEASE_DATE}`, W / 2, H - 22);
   },
 };
 

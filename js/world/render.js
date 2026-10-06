@@ -49,7 +49,7 @@ const Render = {
         const d = TILES[id];
         if (d.solid && !d.treasure && id !== T.GLASS) continue;
         let bg = World.getBg(tx, ty);
-        if (!bg && gs && ty > gs[tx]) bg = Game.onMoon ? (ty > gs[tx] + 4 ? T.MOONROCK : T.MOONDUST) : (ty > gs[tx] + 6 ? T.STONE : T.DIRT);
+        if (!bg && gs && ty > gs[tx]) bg = Game.onMoon ? (ty > gs[tx] + 4 ? T.MOONROCK : T.MOONDUST) : Game.away === 'pilbara' ? (ty > gs[tx] + 5 ? T.WASTE : T.REDDIRT) : (ty > gs[tx] + 6 ? T.STONE : T.DIRT);
         if (!bg) continue;
         const px = (tx - x0) * TS, py = (ty - y0) * TS;
         TILES[bg].draw(c, px, py, tx, ty);

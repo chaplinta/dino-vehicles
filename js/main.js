@@ -43,17 +43,25 @@ function drawMoonSky(c, camX, camY, t) {
 }
 function drawBackdrop(c, camX, camY, t, zoom = 1) {
   if (Game.onMoon) { drawMoonSky(c, camX, camY, t); return; }
+  const pil = Game.away === 'pilbara';
   const g = c.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#6cc6ff'); g.addColorStop(1, '#d4f1ff');
+  g.addColorStop(0, pil ? '#4fb3f0' : '#6cc6ff'); g.addColorStop(1, pil ? '#ffe3bf' : '#d4f1ff');
   c.fillStyle = g; c.fillRect(0, 0, W, H);
   const surfY = (SURF * TS - camY) * zoom;   // screen y of normal ground level
   const off = surfY - 440;          // shift scenery with vertical camera
   Game.sunAt = { x: 170, y: 130 + off * 0.1 };
   drawSun(c, 170, 130 + off * 0.1, t, Eggs.sunCool);
   Asteroid.drawSky(c, t);
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < (pil ? 2 : 6); i++) {
     const x = ((i * 260 + 40 - camX * 0.08 - t * 6) % (W + 300) + W + 300) % (W + 300) - 150;
     drawCloud(c, x, 70 + (i * 37 % 90) + off * 0.15, 0.8 + (i % 3) * 0.2);
+  }
+  if (pil) {
+    // Flat-topped red ranges of the Pilbara.
+    drawHills(c, camX, 0.15, 340 + off * 0.3, 30, '#d9a07a', 1.3);
+    drawHills(c, camX, 0.3, 390 + off * 0.5, 22, '#c66a3f', 0.2);
+    drawHills(c, camX, 0.5, 425 + off * 0.7, 14, '#b4532e', 2.1);
+    return;
   }
   drawHills(c, camX, 0.15, 330 + off * 0.3, 40, '#a5d8ff', 1.3);
   drawHills(c, camX, 0.3, 380 + off * 0.5, 35, '#8fd18a', 0.2);
@@ -63,7 +71,7 @@ function drawBackdrop(c, camX, camY, t, zoom = 1) {
 // Background train track. Drawn behind tiles, so mountains become tunnels.
 const TRACK_Y = SURF * TS;
 function drawTrack(c, camX, camY) {
-  if (Game.onMoon) return;
+  if (Game.away) { if (Game.away === 'pilbara') drawOreTrack(c, camX, camY); return; }
   const y = TRACK_Y - camY;
   if (y < -40 || y > Game.viewH + 300) return;
   const x0 = Math.floor(camX / 24) * 24;
@@ -79,14 +87,15 @@ function drawTrack(c, camX, camY) {
   c.fillStyle = '#5b6170'; c.fillRect(0, y - 11, Game.viewW, 5);
 }
 
+const PILBARA_PROPS = new Set(['donga', 'windsock', 'pilsign', 'detonator', 'opf', 'loadout', 'termite', 'dumper', 'ship']);
 function drawProps(c, camX, camY) {
   for (const p of World.props) {
     const sx = p.x * TS - camX;
     if (p.type === 'sign') {
       const sy = p.y * TS - camY;
       if (sx < -100 || sx > Game.viewW + 100) continue;
-      const icon = { fire: '🚒', hospital: '🏥', police: '🚓', barn: '🐄', site: '🚧' }[p.kind] || '⭐';
-      const col = { fire: '#e8262b', hospital: '#ffffff', police: '#3b5bdb', barn: '#c0392b', site: '#ffd43b' }[p.kind];
+      const icon = { fire: '🚒', hospital: '🏥', police: '🚓', barn: '🐄', site: '🚧', airport: '✈️' }[p.kind] || '⭐';
+      const col = { fire: '#e8262b', hospital: '#ffffff', police: '#3b5bdb', barn: '#c0392b', site: '#ffd43b', airport: '#a5d8ff' }[p.kind];
       if (p.kind === 'site') { limb(c, [sx, sy, sx, sy - 70], 6, '#777'); }
       rbox(c, sx - 34, sy - (p.kind === 'site' ? 110 : 64), 68, 52, 12, col, 4);
       c.font = `34px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -162,6 +171,9 @@ function drawProps(c, camX, camY) {
       rbox(c, sx + 50, sy - 22, 26, 6, 2, '#8a5a2b', 2); limb(c, [sx + 63, sy - 16, sx + 63, sy], 4, '#8a5a2b');
       drawDinoSeated(c, sx + 62, sy - 28, 0.55, Chess.opp, { t: Game.t, flip: true });
       if (Math.floor(Game.t / 3) % 2 === 0) bubble(c, sx + 50, sy - 90, '♟️', Game.t);
+    } else if (PILBARA_PROPS.has(p.type)) {
+      if (sx < -700 || sx > Game.viewW + 700) continue;
+      drawPilbaraProp(c, p, sx, p.y * TS - camY);
     } else if (p.type === 'tower') {
       const sy = p.y * TS - camY;
       if (sx < -200 || sx > Game.viewW + 300) continue;
@@ -181,7 +193,9 @@ const Game = {
   mode: 'title', t: 0, stars: 0, worldReady: false,
   cam: { x: 0, y: 0 },
   drove: {},   // vehicles driven at least once (first drive earns a star)
-  onMoon: false, moonVisits: 0,
+  away: null,   // 'moon' or 'pilbara' while on a trip
+  get onMoon() { return this.away === 'moon'; },
+  moonVisits: 0,
   saveExtra() { return { drove: this.drove, moonVisits: this.moonVisits, eggs: Eggs.save(), doom: Asteroid.save() }; },
   loadExtra(e) { this.drove = (e && e.drove) || {}; this.moonVisits = (e && e.moonVisits) || 0; Eggs.load(e && e.eggs); Asteroid.load(e && e.doom); },
   zoom: 1,
@@ -214,7 +228,7 @@ const Game = {
   },
   // New world but keep stars and unlocks (title screen hold button).
   resetWorld() {
-    if (this.onMoon) Moon.leave(null, true);
+    Away.abandon();
     Asteroid.reset();
     const stars = this.stars;
     if (Player.vehicle) { Player.vehicle.driver = null; Player.vehicle = null; }
@@ -273,10 +287,10 @@ const Game = {
   configurePlay() {
     const v = Player.vehicle;
     if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, info: !!VEHICLE_FACTS[v.kind], enter: true, whistle: false, palette: !!v.builds });
-    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: !this.onMoon, palette: true, reset: true });
+    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: !this.away, palette: true, reset: true });
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
-    if (!v) UI.setEnter(false);
+    if (!v) UI.setEnter(false); else UI.setEnter(true, '🚪');
     Player.actIcon = '';
   },
   home() {
@@ -316,11 +330,13 @@ const Game = {
     if (this.mode !== 'play') { this.modes[this.mode].tap(x, y); return; }
     if (this.overlay && this.overlay.tap(x, y)) return;
     if (Jobs.tap(x, y)) return;
+    if (this.away === 'pilbara' && Mine.tap(x, y)) return;
     if (!this.onMoon && this.sunAt && dist(x, y, this.sunAt.x, this.sunAt.y) < 55) { Eggs.tapSun(); return; }
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
     if (this.onMoon && Eggs.tapSaucer(wx, wy)) return;
+    if (this.away === 'pilbara' && Mine.tapWorld(wx, wy)) return;
     if (Jobs.tapWorld(wx, wy)) return;
-    if (!Player.vehicle && !this.onMoon) {
+    if (!Player.vehicle && !this.away) {
       const table = World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - wx) < 90 && wy > t.y * TS - 120 && wy < t.y * TS + 10);
       if (table && Math.abs(table.x * TS - Player.body.x) < 260) { Chess.open(); return; }
     }
@@ -383,7 +399,8 @@ const Game = {
       Vehicles.update(dt);
     }
     NPCs.update(dt);
-    if (!this.overlay && !this.onMoon) Jobs.update(dt);
+    if (!this.overlay && !this.away) Jobs.update(dt);
+    if (this.away === 'pilbara') Mine.update(dt);
     Fire.update(dt);
     Fish.update(dt);
     Falling.update(dt);
@@ -400,6 +417,7 @@ const Game = {
     const cx = Math.round(this.cam.x), cy = Math.round(this.cam.y);
     drawBackdrop(c, cx, cy, this.t, this.zoom);
     c.save();
+    if (this.away === 'pilbara' && Mine.shake > 0) c.translate(rand(-1, 1) * Mine.shake * 14, rand(-1, 1) * Mine.shake * 10);
     c.scale(this.zoom, this.zoom);   // world layer; zooms out when flying high
     drawTrack(c, cx, cy);
     c.save(); c.translate(-cx, -cy); Vehicles.drawBack(c); c.restore();
@@ -414,14 +432,16 @@ const Game = {
     Vehicles.draw(c);
     Eggs.drawPet(c);
     Player.draw(c);
-    if (!this.onMoon) Jobs.drawWorld(c);
+    if (!this.away) Jobs.drawWorld(c);
+    if (this.away === 'pilbara') Mine.drawWorld(c);
     Fx.draw(c);
     this.drawDigHint(c);
     c.restore();
     // Underground gloom.
     const depth = (cy + this.viewH / 2) / TS - SURF - 6;
     if (depth > 0) { c.fillStyle = `rgba(10,5,20,${Math.min(0.35, depth * 0.03)})`; c.fillRect(0, 0, W, H); }
-    if (!this.onMoon) Jobs.drawHud(c);
+    if (!this.away) Jobs.drawHud(c);
+    if (this.away === 'pilbara') Mine.drawHud(c);
     Asteroid.drawHud(c);
     if (this.overlay) this.overlay.draw(c);
     Hud.draw(c);
@@ -432,7 +452,7 @@ const Game = {
     if (!tgt) return;
     const x = tgt[0] * TS, y = tgt[1] * TS;
     c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeRect(x + 1, y + 1, TS - 2, TS - 2);
-    const need = TILES[World.get(tgt[0], tgt[1])].hard >= 2 ? 0.45 : 0.18;
+    const need = digTime(World.get(tgt[0], tgt[1]));
     const k = clamp(Player.digT / need, 0, 1);
     c.strokeStyle = OUT; c.lineWidth = 2; c.beginPath();
     c.moveTo(x + 16, y + 4); c.lineTo(x + 16 - 10 * k, y + 16); c.lineTo(x + 18, y + 20 + 8 * k); c.stroke();

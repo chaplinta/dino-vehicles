@@ -19,7 +19,7 @@ const Sim = {
         const i = y * WORLD_W + x;
         if (this.stamp[i] === this.tick) continue;
         const id = World.t[i];
-        if (id === T.SAND) this.fallSand(x, y);
+        if (TILES[id].falls) this.fallSand(x, y, id);
         else if (id === T.WATER) this.flowWater(x, y);
         else if (id === T.CROP) {
           const st = World.meta[i];
@@ -35,14 +35,14 @@ const Sim = {
     World.set(x, y, other, record);
     this.stamp[ny * WORLD_W + nx] = this.tick;
   },
-  fallSand(x, y) {
+  fallSand(x, y, id = T.SAND) {
     const below = World.get(x, y + 1);
-    if (below === T.AIR || below === T.WATER) { this.move(x, y, x, y + 1, T.SAND, true); return; }
+    if (below === T.AIR || below === T.WATER) { this.move(x, y, x, y + 1, id, true); return; }
     const dir = Math.random() < 0.5 ? -1 : 1;
     for (const dx of [dir, -dir]) {
       const side = World.get(x + dx, y), diag = World.get(x + dx, y + 1);
       if ((side === T.AIR || side === T.WATER) && (diag === T.AIR || diag === T.WATER)) {
-        this.move(x, y, x + dx, y + 1, T.SAND, true); return;
+        this.move(x, y, x + dx, y + 1, id, true); return;
       }
     }
   },

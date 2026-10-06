@@ -34,9 +34,13 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 
 ## The world
 
-From left to right: farm, town (fire station, hospital, police), building site, beach and sea, mountains, then the rocket launch pad. A train line runs the whole way, through tunnels and over a bridge.
+From left to right: farm and airport, town (fire station, hospital, police), building site, beach and sea, mountains, then the rocket launch pad. A train line runs the whole way, through tunnels and over a bridge.
 
 Everything except the bedrock at the bottom can be dug. Sparkly stars float around the world to catch (some up high for flyers, some underwater) and come back after a minute. Vehicles bounce over walls they can't drive up, and dinos climb walls by walking into them, so nobody gets stuck. Bones, eggs, gems and fossils are hidden underground and earn stars.
+
+**Asteroid:** a 10-minute clock (top right) counts down to an asteroid hitting Earth. When it hits it's game over; tap ▶ for a new world (stars are kept). Be on the Moon when it hits and you escape with bonus stars.
+
+**Chess:** a Triceratops plays chess at a table by the road into town. Walk up and press ♟️ (or tap the table) to play a real game from your own seat, with dino hands moving the pieces. He's very bad at it. Checkmate him for 10 stars.
 
 ## Dinosaurs
 
@@ -65,9 +69,25 @@ Stars unlock more vehicles. The whistle menu brings any unlocked vehicle to you.
 | Fishing boat | drop and lift the net |
 | Submarine | light. Find treasure chests on the sea floor |
 | Plane | water the crops while flying (up to take off) |
+| FIFO jet | take off from the airport and fly to the Pilbara mine (and home again) |
 | Rocket | countdown, blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
 
 On the Moon there's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
+
+Hop in any vehicle and it says its name and a real fact. Press ℹ️ for another fact.
+
+## The Pilbara
+
+The FIFO jet at the airport flies to an iron ore mine in the Pilbara. On site everyone wears hi-vis and a hard hat. Icons top left show the six steps, and an arrow points to what's next:
+
+1. **Drill:** drive the blast hole drill into the pit and hold the button to drill holes in the rock.
+2. **Blast:** press the red blast button. Siren, 3-2-1, boom: the iron ore breaks up.
+3. **Dig:** the digger scoops broken ore into the giant haul truck (solid ore is too hard to dig).
+4. **Haul:** drive up out of the pit and tip into the crusher at the OPF.
+5. **Train:** stop the ore train under the loader to fill the wagons, then drive to the port. The car dumper empties them.
+6. **Ship:** the ship loader pours ore into the ship's three holds. Full ship sails for 10 stars.
+
+Fly home on the jet. The mine isn't saved; Earth is left as it was.
 
 ## Secrets (spoilers for grown-ups)
 
@@ -99,9 +119,10 @@ There is no failing and no dying.
 
 Plain JavaScript and canvas, no build step and no dependencies at runtime.
 
-- `js/world/` holds the tile world. That's the generator, the chunk-cached renderer, falling sand, flowing water and growing crops, plus fire and water spray.
+- `js/world/` holds the tile world. That's the generator, the chunk-cached renderer, falling sand, flowing water and growing crops, plus fire and water spray. `away.js` swaps Earth out for trips to the Moon (`moon.js`) and the Pilbara (`pilbara.js`, which also runs the mine steps).
 - `js/entities/` holds the dinos, the player, NPCs and the vehicle base class. Each vehicle is in `vehicles/*.js`. To add one, call `defVehicle(...)` and list it in `registry.js`.
-- `js/jobs.js` holds the job system.
+- `js/jobs.js` holds the job system. `js/asteroid.js` is the 10-minute clock, `js/chess.js` the chess game.
+- The title screen shows `GAME_VERSION` and `RELEASE_DATE` from `js/core.js`. Bump them with each release.
 - `js/ui/` holds the menus and HUD.
 - `js/save.js` saves to localStorage. It stores the world seed plus only the tiles that changed.
 
