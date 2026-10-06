@@ -34,6 +34,7 @@ function drawMoonSky(c, camX, camY, t) {
   }
   // Earth hanging in the sky.
   const ex = W * 0.78, ey = 110;
+  if (Moon.earthHit > 0) { Moon.earthHit -= 1 / 60; c.fillStyle = `rgba(255,200,120,${Moon.earthHit / 3})`; c.beginPath(); c.arc(ex, ey, 58 + (3 - Moon.earthHit) * 30, 0, TAU); c.fill(); }
   ell(c, ex, ey, 58, 58, '#4dabf7', 4);
   c.fillStyle = '#69db7c';
   c.beginPath(); c.ellipse(ex - 18, ey - 12, 20, 13, 0.5, 0, TAU); c.fill();
@@ -49,6 +50,7 @@ function drawBackdrop(c, camX, camY, t, zoom = 1) {
   const off = surfY - 440;          // shift scenery with vertical camera
   Game.sunAt = { x: 170, y: 130 + off * 0.1 };
   drawSun(c, 170, 130 + off * 0.1, t, Eggs.sunCool);
+  Asteroid.drawSky(c, t);
   for (let i = 0; i < 6; i++) {
     const x = ((i * 260 + 40 - camX * 0.08 - t * 6) % (W + 300) + W + 300) % (W + 300) - 150;
     drawCloud(c, x, 70 + (i * 37 % 90) + off * 0.15, 0.8 + (i % 3) * 0.2);
@@ -169,8 +171,8 @@ const Game = {
   cam: { x: 0, y: 0 },
   drove: {},   // vehicles driven at least once (first drive earns a star)
   onMoon: false, moonVisits: 0,
-  saveExtra() { return { drove: this.drove, moonVisits: this.moonVisits, eggs: Eggs.save() }; },
-  loadExtra(e) { this.drove = (e && e.drove) || {}; this.moonVisits = (e && e.moonVisits) || 0; Eggs.load(e && e.eggs); },
+  saveExtra() { return { drove: this.drove, moonVisits: this.moonVisits, eggs: Eggs.save(), doom: Asteroid.save() }; },
+  loadExtra(e) { this.drove = (e && e.drove) || {}; this.moonVisits = (e && e.moonVisits) || 0; Eggs.load(e && e.eggs); Asteroid.load(e && e.doom); },
   zoom: 1,
   get viewW() { return W / this.zoom; },
   get viewH() { return H / this.zoom; },
@@ -202,6 +204,7 @@ const Game = {
   // New world but keep stars and unlocks (title screen hold button).
   resetWorld() {
     if (this.onMoon) Moon.leave(null, true);
+    Asteroid.reset();
     const stars = this.stars;
     if (Player.vehicle) { Player.vehicle.driver = null; Player.vehicle = null; }
     this.overlay = null;
@@ -358,6 +361,7 @@ const Game = {
     Hud.update(dt);
     if (this.mode !== 'play') { this.modes[this.mode].update(dt); return; }
     this.updateResetHold(dt);
+    Asteroid.update(dt);
     if (this.overlay) { this.overlay.update(dt); }
     else {
       Player.update(dt);
@@ -403,6 +407,7 @@ const Game = {
     const depth = (cy + this.viewH / 2) / TS - SURF - 6;
     if (depth > 0) { c.fillStyle = `rgba(10,5,20,${Math.min(0.35, depth * 0.03)})`; c.fillRect(0, 0, W, H); }
     if (!this.onMoon) Jobs.drawHud(c);
+    Asteroid.drawHud(c);
     if (this.overlay) this.overlay.draw(c);
     Hud.draw(c);
   },

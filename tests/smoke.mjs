@@ -475,6 +475,34 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 17. The asteroid: 10 minutes, then game over (or escape on the Moon).
+{
+  const page = await open({ width: 960, height: 540 });
+  const run = n => page.evaluate(n => { for (let i = 0; i < n; i++) { Game.update(1 / 60); Input.endFrame(); } ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); }, n);
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 20; });
+  check(await page.evaluate(() => Math.abs(Asteroid.left - 600) < 2), 'asteroid due in 10 minutes');
+  await page.evaluate(() => { Asteroid.left = 100; World.set(20, 30, T.BRICK); });
+  await run(60);
+  await page.evaluate(() => Save.write());
+  await page.reload(); await page.waitForTimeout(300);
+  check(await page.evaluate(() => Asteroid.left < 100 && Asteroid.left > 90), 'time left is saved');
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; Game.startPlay('rex'); Asteroid.left = 1; });
+  await run(90);
+  check(await page.evaluate(() => Game.overlay === Doom), 'asteroid hits: game over');
+  await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/doom.png' : '/dev/null' }).catch(() => {});
+  await run(60 * 4);
+  await page.evaluate(() => Game.tap(W / 2, H * 0.78));
+  check(await page.evaluate(() => !Game.overlay && Game.mode === 'play' && World.get(20, 30) !== T.BRICK && Game.stars >= 20 && Asteroid.left > 590), 'play again: new world, stars kept, clock reset');
+  // On the Moon when it hits: you escape.
+  await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v); Moon.enter(v); Asteroid.left = 1; window.__stars = Game.stars; });
+  await run(120);
+  check(await page.evaluate(() => !Game.overlay && Game.onMoon && Game.stars >= window.__stars + 10), 'on the Moon when it hits: escaped, bonus stars');
+  await page.evaluate(() => { Player.vehicle.s.state = 'idle'; Moon.leave(Player.vehicle); });
+  check(await page.evaluate(() => !Game.onMoon && Vehicles.list.filter(v => v.kind === 'rocket').length === 1), 'back home to a fresh Earth with one rocket');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

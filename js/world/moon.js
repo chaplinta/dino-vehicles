@@ -104,6 +104,19 @@ const Moon = {
   leave(rocket, quiet) {
     const e = this.earth;
     if (!e) return;
+    if (this.earthWasHit) {
+      // The asteroid hit while we were away: a brand new Earth to go home to.
+      this.earthWasHit = false;
+      const keepStars = Game.stars;
+      World.t = e.t; World.bg = e.bg; World.meta = e.meta; World.surf = e.surf;
+      World.generate((Math.random() * 1e9) | 0);
+      e.genSurf = World.genSurf; e.props = World.props; e.diff = World.diff; e.seed = World.seed;
+      Vehicles.spawnDefaults(); NPCs.spawnDefaults(); Jobs.reset(); Fish.reset(); Fire.cells.clear(); Pickups.generate(World.seed);
+      e.vehicles = Vehicles.list; e.npcs = NPCs.list; e.fish = Fish.list; e.fires = Fire.cells; e.pickups = Pickups.list;
+      e.vehicles = e.vehicles.filter(v => v.kind !== 'rocket');
+      Game.stars = keepStars;
+      if (!quiet) setTimeout(() => Sound.say('A brand new Earth after the asteroid!'), 2500);
+    }
     World.t = e.t; World.bg = e.bg; World.meta = e.meta; World.surf = e.surf; World.genSurf = e.genSurf;
     World.props = e.props; World.diff = e.diff; World.seed = e.seed;
     World.gravity = 1;
