@@ -355,5 +355,14 @@ Game.init();
 
 // Offline play: cache the whole game (needs http/https; skipped when opened as a local file).
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  // When an update arrives, reload once so it shows straight away (not on the launch after).
+  const hadWorker = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadWorker || reloading) return;
+    reloading = true;
+    Save.write();
+    location.reload();
+  });
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
