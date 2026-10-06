@@ -28,7 +28,7 @@ const LOOSE = id => (id === T.GRASS ? T.DIRT : TILES[id].treasure ? -1 : id);
 
 // ---------- Digger ----------
 defVehicle('digger', {
-  name: 'Digger', say: 'Digger! Dig dig dig!', icon: '🪣', dirs: 'all', w: 84, h: 64, speed: 170, unlock: 0,
+  name: 'Digger', exhaust: [-34, -66], say: 'Digger! Dig dig dig!', icon: '🪣', dirs: 'all', w: 84, h: 64, speed: 170, unlock: 0,
   init(v) { Object.assign(v.s, { aim: 0, load: [], anim: 0, mode: '', bx: 90, by: -70, rep: 0 }); },
   targetCols(v) {
     const c0 = Math.floor(v.frontX(6) / TS);
@@ -80,8 +80,10 @@ defVehicle('digger', {
   draw(c, v) {
     const s = v.s;
     drawTracks(c, -44, 30, 0, 22, v.wheel);
+    drawStack(c, -34, -46, 16);
     rbox(c, -40, -48, 62, 28, 8, '#ffc21a');
-    rbox(c, -46, -36, 16, 10, 4, '#555', 3);
+    rbox(c, -52, -46, 16, 22, 6, '#495057', 3);   // counterweight
+    c.fillStyle = 'rgba(0,0,0,0.25)'; for (let i = 0; i < 3; i++) c.fillRect(-28 + i * 8, -42, 4, 14);   // engine grille
     cabWindow(c, v, -30, -86, 40, 40, 10, [-8, -50, 0.5]);
     rbox(c, -34, -92, 48, 10, 5, '#ffc21a');
     // Arm: boom to elbow to bucket.
@@ -90,6 +92,8 @@ defVehicle('digger', {
     const ex = (px + bx) / 2 + 6, ey = Math.min(py, by) - 46;
     limb(c, [px, py, ex, ey], 13, '#ffc21a');
     limb(c, [ex, ey, bx, by - 10], 10, '#ffc21a');
+    drawRam(c, px - 4, py + 8, lerp(px, ex, 0.6), lerp(py, ey, 0.6) + 6);       // boom ram
+    drawRam(c, lerp(px, ex, 0.75), lerp(py, ey, 0.75) - 8, lerp(ex, bx, 0.45), lerp(ey, by, 0.45) - 8);   // stick ram
     ell(c, ex, ey, 6, 6, '#555', 3);
     const tilt = (s.anim > 0 && s.mode === 'dump') ? 1.2 : (s.anim > 0.3 ? -0.8 : 0);
     c.save(); c.translate(bx, by); c.rotate(tilt);
@@ -111,7 +115,7 @@ defVehicle('digger', {
 
 // ---------- Dump truck ----------
 defVehicle('dumptruck', {
-  name: 'Dump truck', say: 'Dump truck!', icon: '⤵️', w: 112, h: 66, speed: 260, unlock: 0,
+  name: 'Dump truck', exhaust: [16, -76], say: 'Dump truck!', icon: '⤵️', w: 112, h: 66, speed: 260, unlock: 0,
   init(v) { v.s.load = 0; v.s.tip = 0; v.s.tipping = false; },
   act(v, dt, inp) {
     const s = v.s;
@@ -138,6 +142,7 @@ defVehicle('dumptruck', {
   draw(c, v) {
     const s = v.s;
     rbox(c, -56, -32, 112, 16, 6, '#555', 4);
+    drawRam(c, 10, -30, 10 - Math.sin((s.tip || 0) * 0.7) * 50, -32 - (s.tip || 0) * 40);   // tipping ram
     // Tipping bed hinged at the back.
     c.save(); c.translate(-54, -30); c.rotate(-(s.tip || 0) * 0.7);
     poly(c, [0, 0, 70, 0, 74, -40, -4, -40], '#ff8c1a', 4);
@@ -145,16 +150,19 @@ defVehicle('dumptruck', {
     if (fill > 0) { c.save(); rrPath(c, 2, -40 - 14 * fill, 70, 20 * fill + 2, 10); c.fillStyle = '#a0662e'; c.fill(); c.restore(); ell(c, 36, -40, 34 * Math.max(0.5, fill), 12 * fill, '#a0662e', 3); }
     c.fillStyle = '#e67700'; c.fillRect(8, -34, 54, 4); c.fillRect(8, -22, 54, 4);
     c.restore();
+    drawStack(c, 16, -60, 16);
     rbox(c, 18, -64, 38, 44, 8, '#ff8c1a');
     cabWindow(c, v, 24, -60, 26, 22, 6, [30, -30, 0.38]);
-    rbox(c, 54, -34, 6, 12, 3, '#ffe066', 3);
+    limb(c, [56, -54, 62, -54, 62, -44], 3, '#343a40', 2); rbox(c, 58, -50, 7, 10, 2, '#adb5bd', 2);   // mirror
+    drawHeadlight(c, 55, -30);
+    rbox(c, -50, -16, 6, 12, 2, '#343a40', 0);   // mudflap
     drawWheel(c, -34, -12, 14, v.wheel); drawWheel(c, -8, -12, 14, v.wheel); drawWheel(c, 38, -12, 14, v.wheel);
   },
 });
 
 // ---------- Bulldozer ----------
 defVehicle('bulldozer', {
-  name: 'Bulldozer', say: 'Bulldozer! Push push!', icon: '⬆️', w: 90, h: 58, speed: 150, unlock: 3,
+  name: 'Bulldozer', exhaust: [-6, -64], say: 'Bulldozer! Push push!', icon: '⬆️', w: 90, h: 58, speed: 150, unlock: 3,
   init(v) { v.s.pile = 0; v.s.blade = 0; },
   move(v, dt, inp, dir) {
     const b = v.body, s = v.s;
@@ -196,10 +204,13 @@ defVehicle('bulldozer', {
   draw(c, v) {
     const s = v.s;
     drawTracks(c, -44, 30, 0, 22, v.wheel);
+    drawStack(c, -6, -46, 14);
     rbox(c, -42, -46, 70, 26, 8, '#ffc21a');
     cabWindow(c, v, -32, -84, 40, 40, 10, [-10, -50, 0.5]);
     rbox(c, -36, -90, 48, 10, 5, '#ffc21a');
     limb(c, [24, -30, 40, -18], 8, '#555');
+    drawRam(c, 18, -44, 42, -30 - (s.blade || 0) * 10);       // blade lift ram
+    limb(c, [-44, -30, -56, -26, -58, -10], 6, '#6b6f78');   // ripper tooth at the back
     const lift = (s.blade || 0) * 10;
     if (s.pile > 0) ell(c, 58, -14 - lift, 10 + s.pile * 1.8, 8 + s.pile * 1.4, '#a0662e', 3);
     c.beginPath(); c.moveTo(40, -48 - lift); c.quadraticCurveTo(54, -24 - lift, 44, 0 - lift); c.lineTo(50, 0 - lift);
@@ -252,7 +263,11 @@ defVehicle('crane', {
   draw(c, v) {
     const s = v.s;
     rbox(c, -56, -36, 112, 18, 6, '#555', 4);
+    const legs = Math.abs(v.body.vx) < 10 && v.driver ? 1 : 0;
+    v.s.legs = lerp(v.s.legs || 0, legs, 0.08);
+    drawOutrigger(c, -52, -26, v.s.legs); drawOutrigger(c, 52, -26, v.s.legs);
     drawWheel(c, -36, -14, 14, v.wheel); drawWheel(c, -6, -14, 14, v.wheel); drawWheel(c, 34, -14, 14, v.wheel);
+    rbox(c, -62, -62, 16, 24, 4, '#495057', 3);   // counterweight
     rbox(c, -50, -66, 60, 32, 8, '#ffa94d');
     cabWindow(c, v, 14, -70, 34, 34, 8, [26, -38, 0.42]);
     const reachPx = v.def.w / 2 + (s.reach || 3) * TS - TS / 2;

@@ -57,6 +57,7 @@ defVehicle('firetruck', {
         s.aim = lerp(s.aim, pick.aim, Math.min(1, dt * 5));
       }
     }
+    if (!inp.action) s.spray = 0;
     if (inp.action) {
       s.spray += dt;
       const L = 76, px = -10, py = -78;
@@ -73,8 +74,11 @@ defVehicle('firetruck', {
   },
   draw(c, v) {
     const s = v.s;
+    v.s.legs = lerp(v.s.legs || 0, s.spray > 0 && Math.abs(v.body.vx) < 20 ? 1 : 0, 0.1);
+    drawOutrigger(c, -58, -24, v.s.legs); drawOutrigger(c, 22, -24, v.s.legs);
     rbox(c, -64, -54, 128, 36, 8, '#e8262b');
     rbox(c, 26, -84, 40, 36, 8, '#e8262b');
+    drawHeadlight(c, 64, -30);
     cabWindow(c, v, 32, -80, 26, 26, 6, [40, -50, 0.42]);
     c.fillStyle = '#ffd43b'; c.fillRect(-60, -34, 84, 6);
     for (let i = 0; i < 3; i++) rbox(c, -56 + i * 26, -50, 20, 12, 3, '#c92a2a', 2);

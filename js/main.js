@@ -261,7 +261,7 @@ const Game = {
   },
   configurePlay() {
     const v = Player.vehicle;
-    if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, enter: true, whistle: false, palette: !!v.builds });
+    if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, info: !!VEHICLE_FACTS[v.kind], enter: true, whistle: false, palette: !!v.builds });
     else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: !this.onMoon, palette: true, reset: true });
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });

@@ -1,7 +1,7 @@
 // Farm vehicles: tractor (plough and sow), combine harvester.
 
 defVehicle('tractor', {
-  name: 'Tractor', say: 'Tractor! Let us plant some corn!', icon: '🌱', w: 96, h: 70, speed: 200, horn: 'tractor', unlock: 0,
+  name: 'Tractor', exhaust: [37, -82], say: 'Tractor! Let us plant some corn!', icon: '🌱', w: 96, h: 70, speed: 200, horn: 'tractor', unlock: 0,
   init(v) { v.s.sow = false; v.s.planted = 0; },
   act(v, dt, inp) {
     const s = v.s;
@@ -39,6 +39,12 @@ defVehicle('tractor', {
     v.drawDriver(c, -14, -56, 0.5);
     rbox(c, -38, -112, 52, 10, 4, '#2f9e44');
     drawWheel(c, -18, -26, 26, v.wheel, '#ffd43b');
+    c.save(); c.translate(-18, -26); c.rotate(v.wheel);
+    c.fillStyle = '#212529';
+    for (let i = 0; i < 12; i++) { c.rotate(TAU / 12); c.fillRect(22, -3, 7, 6); }   // deep tread lugs
+    c.restore();
+    c.fillStyle = 'rgba(0,0,0,0.3)'; for (let i = 0; i < 3; i++) c.fillRect(30 + i * 4, -44, 2, 18);   // grille
+    drawHeadlight(c, 44, -40);
     drawWheel(c, 30, -14, 14, v.wheel * 1.8, '#ffd43b');
   },
 });

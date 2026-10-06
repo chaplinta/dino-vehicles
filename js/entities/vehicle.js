@@ -45,6 +45,10 @@ class Vehicle {
       this.wheel += b.vx * dt / 16;
     }
     if (d.act) d.act(this, dt, inp);
+    if (d.exhaust && this.driver && Math.random() < (Math.abs(b.vx) > 20 ? 0.25 : 0.05)) {
+      const [ex, ey] = d.exhaust;
+      Fx.add({ x: b.x + this.facing * ex, y: b.y + ey, vx: -this.facing * rand(10, 30), vy: rand(-50, -25), life: 1.1, r: 6, color: 'rgba(90,90,100,0.45)', shape: 'grow' });
+    }
   }
   hornSound() {
     const h = this.def.horn;
@@ -89,6 +93,23 @@ function vehicleHop(v, dir, dt = 1 / 60) {
       return;
     }
   }
+}
+
+// Hydraulic ram: a fat cylinder with a shiny rod sliding out of it.
+function drawRam(c, x0, y0, x1, y1) {
+  const mx = lerp(x0, x1, 0.55), my = lerp(y0, y1, 0.55);
+  limb(c, [x0, y0, mx, my], 7, '#495057', 3);
+  limb(c, [mx, my, x1, y1], 3, '#dee2e6', 2);
+}
+function drawStack(c, x, y, h) {
+  rbox(c, x - 4, y - h, 8, h, 3, '#495057', 3);
+  rbox(c, x - 5, y - h - 3, 10, 5, 2, '#343a40', 2);
+}
+function drawHeadlight(c, x, y) { ell(c, x, y, 5, 4, '#fff3bf', 2); }
+// Steadying legs that come down while working.
+function drawOutrigger(c, x, y, k) {
+  limb(c, [x, y, x, y + 4 + k * 22], 6, '#868e96', 2);
+  rbox(c, x - 10, y + 2 + k * 22, 20, 5, 2, '#495057', 2);
 }
 
 // Wheels, used by lots of vehicles.
@@ -182,6 +203,7 @@ const Vehicles = {
         else if (v.kind === 'train') { Sound.noise(0.07, 0.04, 'bandpass', 700); v.engT = clamp(30 / sp, 0.1, 0.5); }
         else { Sound.tone(55 + sp * 0.12, 0.09, 'sawtooth', 0.025); v.engT = 0.11; }
       }
+      if (Input.pressed.info) Facts.sayNext(v.kind);
       if (Input.pressed.enter) this.exit(p);
       else if (Input.pressed.roar) { p.vehicle.hornSound(); }
     } else {
@@ -206,7 +228,9 @@ const Vehicles = {
     v.facing = v.facing || 1;
     delete v.autoTarget;
     Sound.click(); v.hornSound();
-    Sound.say(v.def.say || v.def.name);
+    // Name, then a real fact about it.
+    const fact = p === Player ? Facts.next(v.kind) : null;
+    Sound.say((v.def.say || v.def.name) + (fact ? ' ' + fact : ''));
     if (p === Player && !Game.drove[v.kind]) {
       Game.drove[v.kind] = true;
       Game.addStars(1);

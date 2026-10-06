@@ -91,6 +91,7 @@ defVehicle('tugboat', {
     cabWindow(c, v, -18, -70, 30, 22, 6, [-4, -42, 0.4]);
     rbox(c, -40, -96, 16, 40, 3, '#ffd43b', 3); c.fillStyle = OUT; c.fillRect(-40, -92, 16, 6);
     for (let i = 0; i < 3; i++) ell(c, -40 + i * 40, -18, 7, 7, '#adb5bd', 3);
+    for (const fx of [-48, -16, 16, 44]) { ell(c, fx, -10, 8, 8, '#343a40', 3); ell(c, fx, -10, 3, 3, '#868e96', 0); }   // tyre fenders
     if (Math.random() < 0.08 && v.floating) Fx.add({ x: v.body.x - v.facing * 32, y: v.body.y - 96, vx: rand(-10, 10), vy: -40, life: 1.5, r: 9, color: 'rgba(240,240,240,0.8)', shape: 'grow' });
   },
   drawWorld(c, v) {
