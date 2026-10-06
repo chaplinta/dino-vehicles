@@ -63,13 +63,12 @@ Stars unlock more vehicles. The whistle menu brings any unlocked vehicle to you.
 | Tugboat | throw a tow rope to another boat |
 | Helicopter | lower the hook to lift blocks; rescue dinos |
 | Combine harvester | harvests ripe corn as you drive; button unloads |
-| Wrecking ball | swing the ball and smash things |
+| Wrecking ball | swing the ball: it smashes any material. Knock out a building's base and the whole thing comes down |
 | Garbage truck | empty the bins |
 | Drill | drill straight down for deep treasure |
 | Fishing boat | drop and lift the net |
 | Submarine | light. Find treasure chests on the sea floor |
 | Plane | water the crops while flying (up to take off) |
-| FIFO jet | take off from the airport and fly to the Pilbara mine (and home again) |
 | Rocket | countdown, blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
 
 On the Moon there's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
@@ -78,7 +77,7 @@ Hop in any vehicle and it says its name and a real fact. Press ℹ️ for anothe
 
 ## The Pilbara
 
-The FIFO jet at the airport flies to an iron ore mine in the Pilbara. On site everyone wears hi-vis and a hard hat. Icons top left show the six steps, and an arrow points to what's next:
+Walk up to the big FIFO jet at the airport and hop aboard: the pilot flies you to an iron ore mine in the Pilbara, no driving needed. On site everyone wears hi-vis and a hard hat. Icons top left show the six steps, and an arrow points to what's next:
 
 1. **Drill:** drive the blast hole drill into the pit and hold the button to drill holes in the rock.
 2. **Blast:** press the red blast button. Siren, 3-2-1, boom: the iron ore breaks up.
@@ -87,7 +86,7 @@ The FIFO jet at the airport flies to an iron ore mine in the Pilbara. On site ev
 5. **Train:** stop the ore train under the loader to fill the wagons, then drive to the port. The car dumper empties them.
 6. **Ship:** the ship loader pours ore into the ship's three holds. Full ship sails for 10 stars.
 
-Fly home on the jet. The mine isn't saved; Earth is left as it was.
+Board the jet at the camp to fly home. The mine isn't saved; Earth is left as it was.
 
 ## Secrets (spoilers for grown-ups)
 

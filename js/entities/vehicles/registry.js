@@ -2,7 +2,7 @@
 const VEHICLE_ORDER = [
   'digger', 'dumptruck', 'firetruck', 'tractor', 'train', 'bulldozer',
   'crane', 'ambulance', 'police', 'tugboat', 'helicopter', 'harvester',
-  'wrecker', 'garbage', 'drill', 'fishboat', 'submarine', 'plane', 'jet', 'rocket',
+  'wrecker', 'garbage', 'drill', 'fishboat', 'submarine', 'plane', 'rocket',
 ];
 const DEFAULT_VEHICLES = [
   ['tractor', 12, 1], ['harvester', 38, -1], ['plane', 76, -1], ['jet', 86, -1],

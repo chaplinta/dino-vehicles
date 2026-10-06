@@ -297,6 +297,56 @@ defVehicle('crane', {
 });
 
 // ---------- Wrecking ball ----------
+// Building materials hold each other up. Knock out enough of what a building stands on
+// and the whole thing comes down in a heap of bricks.
+const STRUCTURE = new Set([T.BRICK, T.WOOD, T.GLASS, T.CONCRETE, T.ROOF]);
+function isStructure(x, y) {
+  if (World.getBg(x, y) > 0) return true;
+  const id = World.get(x, y);
+  if (!STRUCTURE.has(id)) return false;
+  // Concrete laid straight on the ground is paving (floors, the launch pad), not a wall.
+  return !(id === T.CONCRETE && World.solid(x, y + 1) && !STRUCTURE.has(World.get(x, y + 1)));
+}
+function collapseNear(tx, ty) {
+  for (const [sx, sy] of [[tx - 1, ty], [tx + 1, ty], [tx, ty - 1], [tx, ty + 1], [tx, ty]]) {
+    if (!isStructure(sx, sy)) continue;
+    // Gather the connected building.
+    const seen = new Set([sy * WORLD_W + sx]), stack = [[sx, sy]], parts = [];
+    while (stack.length && parts.length < 600) {
+      const [x, y] = stack.pop();
+      parts.push([x, y]);
+      for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
+        const k = ny * WORLD_W + nx;
+        if (seen.has(k) || Math.abs(nx - tx) > 24 || !isStructure(nx, ny)) continue;
+        seen.add(k); stack.push([nx, ny]);
+      }
+    }
+    if (parts.length >= 600) continue;
+    // Columns standing on the ground (solid, not part of the building).
+    const cols = new Set(), footed = new Set();
+    for (const [x, y] of parts) {
+      cols.add(x);
+      if (World.solid(x, y + 1) && !isStructure(x, y + 1)) footed.add(x);
+    }
+    if (footed.size * 2 >= cols.size && footed.size > 0) continue;
+    // Down it comes.
+    let n = 0;
+    for (const [x, y] of parts) {
+      const id = World.get(x, y);
+      World.clearBg(x, y);
+      if (STRUCTURE.has(id)) {
+        World.set(x, y, T.AIR);
+        if (id !== T.GLASS && (n++ % 2 === 0)) Falling.add(id, x * TS + TS / 2, y * TS);
+      }
+    }
+    for (let i = 0; i < 6; i++) Fx.burst(tx * TS + rand(-120, 120), ty * TS - rand(0, 120), 8, { speed: 200, life: 1.2, r: 14, color: ['rgba(220,210,200,0.8)', 'rgba(180,170,160,0.8)'], shape: 'grow' });
+    Sound.noise(1.2, 0.35, 'lowpass', 500);
+    if (Player.vehicle && Player.vehicle.kind === 'wrecker') { Game.addStars(2); Game.popupStar(tx * TS, ty * TS - 100); Hud.celebrate('CRASH!'); Sound.say('Crash! Down it comes!'); }
+    return;
+  }
+}
+
+// ---------- Wrecking ball (the machine) ----------
 defVehicle('wrecker', {
   name: 'Wrecking ball', iconScale: 0.4, iconX: -10, say: 'Wrecking ball! Smash!', icon: '💥', w: 104, h: 66, speed: 160, accel: 2, unlock: 15,
   init(v) { v.s.th = 0; v.s.om = 0; v.s.lastVx = 0; },
@@ -312,19 +362,23 @@ defVehicle('wrecker', {
     const tip = this.tip(v);
     const bx = tip.x + Math.sin(s.th) * L, by = tip.y + Math.cos(s.th) * L;
     const speed = Math.abs(s.om) * L;
-    // Hit tiles around the ball.
-    const r = 26;
-    let hit = false;
+    // Hit tiles around the ball: anything but bedrock breaks, back walls too.
+    const r = 28;
+    let hit = false, smashed = [];
     for (let ty = Math.floor((by - r) / TS); ty <= Math.floor((by + r) / TS); ty++) {
       for (let tx = Math.floor((bx - r) / TS); tx <= Math.floor((bx + r) / TS); tx++) {
-        if (!World.solid(tx, ty)) continue;
         const cx = clamp(bx, tx * TS, tx * TS + TS), cy = clamp(by, ty * TS, ty * TS + TS);
         if (dist(cx, cy, bx, by) > r) continue;
-        if (speed > 140 && TILES[World.get(tx, ty)].dig) { vehicleDig(tx, ty, true); hit = true; }
-        else if (!hit) { s.om = -s.om * 0.4; s.th += s.om * dt * 2; Sound.bonk(); hit = true; }
+        if (speed > 90 && World.getBg(tx, ty)) { World.clearBg(tx, ty); smashed.push([tx, ty]); Fx.burst(tx * TS + 16, ty * TS + 16, 5, { speed: 160, life: 0.5, r: 5, color: DUST[World.getBg(tx, ty)] || ['#d9534f', '#e8e0d4'], shape: 'rect' }); }
+        if (!World.solid(tx, ty)) continue;
+        const id = World.get(tx, ty);
+        if (speed > 90 && id !== T.BEDROCK) {
+          if (TILES[id].dig) vehicleDig(tx, ty, true); else { World.set(tx, ty, T.AIR); digEffects(tx, ty, id); }
+          smashed.push([tx, ty]); hit = true;
+        } else if (!hit) { s.om = -s.om * 0.4; s.th += s.om * dt * 2; Sound.bonk(); hit = true; }
       }
     }
-    if (hit && speed > 140) { s.om *= 0.8; Sound.bonk(); Sound.dig(); }
+    if (smashed.length) { s.om *= 0.85; Sound.bonk(); Sound.dig(); for (const [tx, ty] of smashed) collapseNear(tx, ty); }
     s.ball = { x: bx, y: by };
   },
   draw(c, v) {

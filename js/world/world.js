@@ -74,6 +74,16 @@ const World = {
     for (let k = 0; k + 1 < arr.length; k += 2) {
       const i = arr[k], id = arr[k + 1];
       if (i >= 0 && i < this.t.length && TILES[id]) { this.t[i] = id; this.diff.set(i, id); }
+      else if (i < 0 && -i - 1 < this.bg.length) { this.bg[-i - 1] = 0; this.diff.set(i, 0); }   // knocked-down back wall
     }
+  },
+  // Knock out a building's back wall (saved as a negative index in the diff).
+  clearBg(x, y) {
+    if (!this.inside(x, y)) return;
+    const i = y * this.w + x;
+    if (!this.bg[i]) return;
+    this.bg[i] = 0;
+    this.diff.set(-i - 1, 0);
+    Render.dirtyTile(x, y);
   },
 };

@@ -553,10 +553,12 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
     World.set(20, 30, T.BRICK); Save.write();
   });
-  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(1, { action: 1 }); run(60 * 5); });
-  check(await page.evaluate(() => Game.overlay === Flight), 'the FIFO jet takes off and flies to the Pilbara');
+  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(60); });
+  check(await page.evaluate(() => { const b = document.querySelector('[data-key=action]'); return Player.vehicle.s.state === 'board' && (b.classList.contains('hidden') || getComputedStyle(b).display === 'none'); }), 'board the FIFO jet as a passenger: no controls');
+  await page.evaluate(() => run(60 * 8));
+  check(await page.evaluate(() => Game.overlay === Flight), 'the FIFO jet takes off by itself and flies to the Pilbara');
   await page.evaluate(() => { run(60 * 11); run(60 * 5); });
-  check(await page.evaluate(() => Game.away === 'pilbara' && Player.vehicle.s.state === 'idle' && Pilbara.visits === 1), 'lands on the Pilbara airstrip');
+  check(await page.evaluate(() => Game.away === 'pilbara' && Vehicles.list.find(v => v.kind === 'jet').s.state === 'idle' && !Player.vehicle && Pilbara.visits === 1), 'lands on the Pilbara airstrip and lets you off');
   check(await page.evaluate(() => onSite() && Mine.step === 'drill'), 'hi-vis on, first step is drilling');
   await page.evaluate(() => { window.__save = localStorage.getItem('dinoVehicles.save.v1'); Save.write(); });
   await page.evaluate(() => { const r = Mine.vehicle('blastrig'); into(r); for (const x of [76, 80, 84]) { drive(r, x * TS); run(120, { action: 1 }); } });
@@ -576,13 +578,37 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.evaluate(() => { Mine.port = 18; window.__stars = Game.stars; const l = Mine.vehicle('shiploader'); into(l); for (const h of PIL.HOLDS) { drive(l, h * TS + 16 - LOADER_BOOM, 900); run(60 * 3, { action: 1 }); } });
   check(await page.evaluate(() => Mine.ship.state === 'leave' && Game.stars >= window.__stars + 10), 'ship loader fills the ship and it sails: 10 stars');
   check(await page.evaluate(() => localStorage.getItem('dinoVehicles.save.v1') === window.__save), 'nothing saved while away');
-  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(1, { action: 1 }); run(60 * 5); run(60 * 11); run(60 * 5); });
-  check(await page.evaluate(() => !Game.away && Player.vehicle.kind === 'jet' && Player.vehicle.s.state === 'idle' && World.get(20, 30) === T.BRICK && Vehicles.list.filter(v => v.kind === 'jet').length === 1 && !onSite()), 'fly home: Earth as it was');
+  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(60 * 9); run(60 * 11); run(60 * 5); });
+  check(await page.evaluate(() => !Game.away && !Player.vehicle && Vehicles.list.find(v => v.kind === 'jet').s.state === 'idle' && World.get(20, 30) === T.BRICK && Vehicles.list.filter(v => v.kind === 'jet').length === 1 && !onSite()), 'fly home: Earth as it was');
   // Asteroid while at the mine: game over and a fresh Earth.
-  await page.evaluate(() => { const j = Player.vehicle; Flight.start(j); Flight.finish(); run(60 * 5); Asteroid.left = 1; run(120); });
+  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); Flight.start(j); Flight.finish(); run(60 * 5); Asteroid.left = 1; run(120); });
   check(await page.evaluate(() => Game.overlay === Doom), 'asteroid hits while at the mine: game over');
   await page.evaluate(() => { run(60 * 4); Game.tap(W / 2, H * 0.78); });
   check(await page.evaluate(() => !Game.away && !Game.overlay && World.get(20, 30) !== T.BRICK && Vehicles.list.filter(v => v.kind === 'jet').length === 1), 'play again: back on a fresh Earth');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 20. Wrecking ball: smashes any material and brings a building down.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; });
+  const r = await page.evaluate(() => {
+    const run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
+    // The house at x 106-113 in town.
+    const brickBefore = () => { let n = 0; for (let x = 106; x < 114; x++) for (let y = SURF - 8; y < SURF; y++) if (World.get(x, y) === T.BRICK || World.getBg(x, y)) n++; return n; };
+    const before = brickBefore();
+    const w = Vehicles.spawn('wrecker', 102 * TS, SURF * TS - 0.01, 1);
+    Player.body.x = w.body.x; Vehicles.enter(Player, w);
+    for (let k = 0; k < 40 && brickBefore() > before * 0.3; k++) { run(1, { action: 1 }); run(50); run(20, { right: 1 }); }
+    const after = brickBefore();
+    run(120);
+    return { before, after, x: w.body.x / TS };
+  });
+  check(r.after < r.before * 0.3, `wrecking ball knocks the house down (${r.before} -> ${r.after} blocks)`);
+  await page.evaluate(() => { Save.write(); });
+  await page.reload(); await page.waitForTimeout(300);
+  check(await page.evaluate(() => { let n = 0; for (let x = 106; x < 114; x++) for (let y = SURF - 8; y < SURF; y++) if (World.getBg(x, y)) n++; return n < 12; }), 'knocked-down walls stay down after reload');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

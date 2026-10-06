@@ -286,11 +286,12 @@ const Game = {
   },
   configurePlay() {
     const v = Player.vehicle;
-    if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, info: !!VEHICLE_FACTS[v.kind], enter: true, whistle: false, palette: !!v.builds });
+    if (v && v.def.passenger) UI.configure({ dirs: 'none', action: null, roar: false, reset: true, info: true, enter: false, whistle: false, palette: false });
+    else if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, info: !!VEHICLE_FACTS[v.kind], enter: true, whistle: false, palette: !!v.builds });
     else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: !this.away, palette: true, reset: true });
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
-    if (!v) UI.setEnter(false); else UI.setEnter(true, '🚪');
+    if (!v) UI.setEnter(false); else UI.setEnter(!v.def.passenger, '🚪');
     Player.actIcon = '';
   },
   home() {

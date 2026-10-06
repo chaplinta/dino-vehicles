@@ -2,10 +2,16 @@
 
 // ---------- FIFO jet ----------
 defVehicle('jet', {
-  name: 'FIFO jet', iconScale: 0.36, iconX: 0, say: 'The FIFO jet! Press the button to take off.', icon: '🛫', w: 210, h: 74, speed: 110, unlock: 0, look: 220, camY: -40,
+  // A big airliner flown by its own pilot: hop aboard and it takes you there.
+  name: 'FIFO jet', iconScale: 0.24, iconX: 0, say: 'The FIFO jet!', icon: '🛫', w: 330, h: 118, speed: 0, unlock: 0, look: 260, camY: -60, passenger: true,
   init(v) { Object.assign(v.s, { state: 'idle', t: 0, pitch: 0, gear: 1 }); },
   reset(v) { v.s.state = 'idle'; v.s.pitch = 0; v.s.gear = 1; },
   canExit(v) { return v.s.state === 'idle'; },
+  onEnter(v) {
+    if (v.driver !== Player) return;
+    v.s.state = 'board'; v.s.t = 0;
+    setTimeout(() => Sound.say(Game.away === 'pilbara' ? 'All aboard! Flying home.' : 'All aboard! Next stop, the Pilbara.'), 1600);
+  },
   // Glide down onto column tx from the side the jet faces away from.
   landAt(v, tx) {
     const x1 = tx * TS + 16;
@@ -15,12 +21,12 @@ defVehicle('jet', {
   move(v, dt, inp, dir) {
     const b = v.body, s = v.s;
     s.t += dt;
-    if (s.state === 'idle') {
-      b.vx = lerp(b.vx, dir * this.speed, Math.min(1, dt * 2));
-      if (dir) v.facing = dir;
+    if (s.state === 'idle' || s.state === 'board') {
+      b.vx = 0;
       moveBody(b, dt, { step: 1 });
-      v.wheel += b.vx * dt / 12;
       s.pitch = lerp(s.pitch, 0, dt * 4);
+      // Doors shut, engines spool up, off we go.
+      if (s.state === 'board' && s.t > 3.5) { s.state = 'roll'; s.t = 0; Sound.noise(2.5, 0.3, 'lowpass', 700, 0, 1800); }
     } else if (s.state === 'roll') {
       // Take-off run: engines roar, wheels spin, the nose lifts.
       b.vx += v.facing * 650 * dt;
@@ -45,6 +51,7 @@ defVehicle('jet', {
       if (k >= 1) {
         s.state = 'idle'; b.vx = 0; b.vy = 0; s.pitch = 0;
         Sound.land(); Sound.noise(0.6, 0.1, 'lowpass', 600);
+        if (v.driver === Player) Vehicles.exit(Player);   // everybody off
         if (Game.away === 'pilbara') Pilbara.landed();
         else Game.celebrate('Home!', 'Home again! That was a long swing. Time to rest.');
       }
@@ -53,17 +60,9 @@ defVehicle('jet', {
       Fx.add({ x: b.x - v.facing * 30, y: b.y - 22, vx: -v.facing * rand(60, 140), vy: rand(-10, 10), life: 0.8, r: 7, color: 'rgba(230,230,240,0.6)', shape: 'grow' });
     }
   },
-  act(v, dt, inp) {
-    if (inp.actionP && v.s.state === 'idle') {
-      v.s.state = 'roll'; v.s.t = 0;
-      v.body.vx = 0;
-      Sound.noise(2.5, 0.3, 'lowpass', 700, 0, 1800);
-      Sound.say(Game.away === 'pilbara' ? 'Flying home! Buckle up.' : 'Off to the Pilbara! Buckle up.');
-    }
-  },
   draw(c, v) {
     const s = v.s;
-    c.save(); c.translate(0, -40); c.rotate(s.pitch || 0); c.translate(0, 40);
+    c.save(); c.scale(1.6, 1.6); c.translate(0, -40); c.rotate(s.pitch || 0); c.translate(0, 40);
     // Gear first, so it tucks up under the body.
     const g = s.gear === undefined ? 1 : s.gear;
     if (g > 0.05) {
@@ -78,14 +77,21 @@ defVehicle('jet', {
     c.quadraticCurveTo(108, -26, 80, -24); c.lineTo(-90, -24); c.quadraticCurveTo(-112, -30, -108, -60); c.closePath();
     fillStroke(c, '#f8f9fa');
     c.fillStyle = '#1971c2'; c.fillRect(-100, -38, 180, 5);
-    // Passenger windows with dinos heading to site in hi-vis.
-    for (let i = 0; i < 6; i++) {
-      const wx = -70 + i * 22;
+    // Passenger windows: you in the front one, other FIFO dinos in hi-vis behind.
+    for (let i = 0; i < 7; i++) {
+      const wx = -84 + i * 22;
+      if (i === 6 && v.driver) {
+        c.save(); ell(c, wx, -48, 8, 9, '#bdf3ff', 0); c.beginPath(); c.ellipse(wx, -48, 8, 9, 0, 0, TAU); c.clip(); v.drawDriver(c, wx - 1, -36, 0.17); c.restore();
+        ell(c, wx, -48, 8, 9, null, 2.5);
+        continue;
+      }
       ell(c, wx, -48, 7, 8, '#bdf3ff', 2.5);
       if (i % 2 === 0) { ell(c, wx, -46, 4, 4, ['#5ccf4a', '#ff9f40', '#6f8dff'][i / 2], 0); c.fillStyle = '#ff7a1a'; c.fillRect(wx - 4, -43, 8, 3); }
     }
-    // Cockpit with the driver.
-    c.save(); rrPath(c, 74, -60, 30, 20, 8); c.clip(); c.fillStyle = '#bdf3ff'; c.fillRect(74, -60, 30, 20); v.drawDriver(c, 84, -34, 0.32); c.restore();
+    // Cockpit with the pilot.
+    c.save(); rrPath(c, 74, -60, 30, 20, 8); c.clip(); c.fillStyle = '#bdf3ff'; c.fillRect(74, -60, 30, 20);
+    drawDinoSeated(c, 86, -36, 0.3, 'raptor', { t: v.t || 0, hivis: false }); rbox(c, 88, -66, 16, 5, 2, '#1c4e80', 1.5);
+    c.restore();
     rrPath(c, 74, -60, 30, 20, 8); fillStroke(c, null, 3);
     // Wing and engine.
     poly(c, [-20, -34, 40, -34, 10, -4, -30, -6], '#adb5bd', 4);
@@ -153,7 +159,7 @@ const Flight = {
     const x = (1 - u) * (1 - u) * a[0] + 2 * (1 - u) * u * mx + u * u * b[0];
     const y = (1 - u) * (1 - u) * a[1] + 2 * (1 - u) * u * my + u * u * b[1];
     const dx = 2 * (1 - u) * (mx - a[0]) + 2 * u * (b[0] - mx), dy = 2 * (1 - u) * (my - a[1]) + 2 * u * (b[1] - my);
-    c.save(); c.translate(x, y); c.rotate(Math.atan2(dy, dx)); c.scale(0.4, 0.4);
+    c.save(); c.translate(x, y); c.rotate(Math.atan2(dy, dx)); c.scale(0.26, 0.26);
     if (Math.atan2(dy, dx) > Math.PI / 2 || Math.atan2(dy, dx) < -Math.PI / 2) c.scale(1, -1);
     VEHICLE_DEFS.jet.draw(c, { s: { pitch: 0, gear: 0 }, wheel: 0, t: this.t, driver: Player, drawDriver: Vehicle.prototype.drawDriver });
     c.restore();
