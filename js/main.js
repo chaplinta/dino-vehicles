@@ -202,6 +202,7 @@ const Game = {
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (!v) UI.setEnter(false);
+    Player.actIcon = '';
   },
   home() {
     if (this.mode === 'play') { if (this.overlay) { if (this.overlay.close) this.overlay.close(); else this.overlay = null; return; } Save.write(); this.setMode('pick'); }
@@ -242,6 +243,11 @@ const Game = {
     if (Jobs.tap(x, y)) return;
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
     if (!Player.vehicle) {
+      const pb = Player.body;
+      const dino = NPCs.list.find(n => !n.vehicle && !n.ride && Math.abs(n.body.x - wx) < 30 && wy > n.body.y - n.body.h - 20 && wy < n.body.y + 6);
+      if (dino && Math.abs(dino.body.x - pb.x) < 110 && Math.abs(dino.body.y - pb.y) < 80) {
+        Player.facing = dino.body.x < pb.x ? -1 : 1; Player.attack(); return;
+      }
       const v = Vehicles.at(wx, wy);
       if (v && !v.driver && dist(v.body.x, v.body.y, Player.body.x, Player.body.y) < 220) { Vehicles.enter(Player, v); return; }
     }

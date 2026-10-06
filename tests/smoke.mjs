@@ -214,6 +214,30 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 11. Play-fighting: bite, headbutt or tail whack sends dinos running.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; });
+  check(await page.evaluate(() => NPCs.list.filter(n => !n.vehicle).length) === 9, 'nine wandering dinos');
+  for (const type of await page.evaluate(() => DINO_KEYS)) {
+    const r = await page.evaluate(type => {
+      Game.startPlay(type);
+      const n = NPCs.list.find(n => !n.vehicle && !n.baby && n.type !== 'ptero');
+      Player.body.x = n.body.x - 50; Player.body.y = n.body.y; Player.facing = 1; Player.body.vx = 0;
+      n.scaredT = 0; n.need = null;
+      Game.snapCamera();
+      return { x: n.body.x, id: n.id };
+    }, type);
+    await page.waitForTimeout(100);
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(1000);
+    const after = await page.evaluate(id => { const n = NPCs.list.find(n => n.id === id); return { x: n.body.x, scared: n.scaredT > 0 }; }, r.id);
+    check(after.scared && after.x - r.x > 64, `${type}: ${await page.evaluate(t => DINO_TYPES[t].attack, type)} sends the dino running (${Math.round((after.x - r.x) / 32)} tiles)`);
+  }
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

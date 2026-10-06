@@ -1,14 +1,15 @@
 // Dinosaur types and their parametric cartoon drawing.
 const DINO_TYPES = {
-  rex:     { name: 'T-Rex', say: 'T-Rex!', body: '#5ccf4a', dark: '#3b9b2f', belly: '#e3f7a6', legs: 2 },
-  tri:     { name: 'Triceratops', say: 'Triceratops!', body: '#ff9f40', dark: '#e0761b', belly: '#ffe2b0', legs: 4, horn: '#fff3d6' },
-  stego:   { name: 'Stegosaurus', say: 'Stegosaurus!', body: '#6f8dff', dark: '#4a63d8', belly: '#d6e2ff', legs: 4, accent: '#ff6b81' },
-  brachio: { name: 'Brachiosaurus', say: 'Brachiosaurus!', body: '#c77dff', dark: '#9b4fd9', belly: '#f1d9ff', legs: 4 },
-  raptor:  { name: 'Raptor', say: 'Velociraptor!', body: '#20c9b5', dark: '#139a8a', belly: '#d5fff8', legs: 2, accent: '#ffd43b' },
-  ankylo:  { name: 'Ankylosaurus', say: 'Ankylosaurus!', body: '#c49a62', dark: '#93703f', belly: '#f3dfc2', legs: 4, accent: '#e9c46a' },
-  ptero:   { name: 'Pterodactyl', say: 'Pterodactyl! I can fly!', body: '#ff6b6b', dark: '#d64545', belly: '#ffe3e3', legs: 2, accent: '#ffd43b', flies: true },
+  rex:     { name: 'T-Rex', say: 'T-Rex!', body: '#5ccf4a', dark: '#3b9b2f', belly: '#e3f7a6', legs: 2, attack: 'bite' },
+  tri:     { name: 'Triceratops', say: 'Triceratops!', body: '#ff9f40', dark: '#e0761b', belly: '#ffe2b0', legs: 4, horn: '#fff3d6', attack: 'headbutt' },
+  stego:   { name: 'Stegosaurus', say: 'Stegosaurus!', body: '#6f8dff', dark: '#4a63d8', belly: '#d6e2ff', legs: 4, accent: '#ff6b81', attack: 'tail' },
+  brachio: { name: 'Brachiosaurus', say: 'Brachiosaurus!', body: '#c77dff', dark: '#9b4fd9', belly: '#f1d9ff', legs: 4, attack: 'tail' },
+  raptor:  { name: 'Raptor', say: 'Velociraptor!', body: '#20c9b5', dark: '#139a8a', belly: '#d5fff8', legs: 2, accent: '#ffd43b', attack: 'bite' },
+  ankylo:  { name: 'Ankylosaurus', say: 'Ankylosaurus!', body: '#c49a62', dark: '#93703f', belly: '#f3dfc2', legs: 4, accent: '#e9c46a', attack: 'tail' },
+  ptero:   { name: 'Pterodactyl', say: 'Pterodactyl! I can fly!', body: '#ff6b6b', dark: '#d64545', belly: '#ffe3e3', legs: 2, accent: '#ffd43b', flies: true, attack: 'bite' },
 };
 const DINO_KEYS = Object.keys(DINO_TYPES);
+const ATTACK_ICON = { bite: '🦷', headbutt: '💥', tail: '🌀' };
 
 function drawEye(c, x, y, r, blink, look = 1.5) {
   if (blink) {

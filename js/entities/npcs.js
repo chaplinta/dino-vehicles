@@ -27,11 +27,10 @@ const NPCs = {
     const g = tx => World.groundBelow(tx, World.genSurf[tx] - 3) * TS - 0.01;
     const walker = (tx, extra = {}) => this.list.push(makeNPC(Object.assign({ x: tx * TS + 16, y: g(tx) }, extra)));
     // Wanderers.
-    walker(8, { type: 'tri' }); walker(40, { type: 'stego', baby: true }); walker(70, { type: 'ankylo' });
-    walker(116, { type: 'raptor' }); walker(128, { baby: true }); walker(146, { type: 'brachio' });
-    walker(165, {}); walker(178, { baby: true, type: 'tri' }); walker(205, {});
-    walker(236, { type: 'ankylo' }); walker(318, { type: 'raptor', baby: true }); walker(410, {});
-    walker(480, { type: 'ptero' }); walker(572, {});
+    walker(8, { type: 'tri' }); walker(40, { type: 'stego', baby: true });
+    walker(128, { baby: true }); walker(146, { type: 'brachio' }); walker(165, {}); walker(178, { baby: true, type: 'tri' });
+    walker(236, { type: 'ankylo' }); walker(318, { type: 'raptor', baby: true });
+    walker(480, { type: 'ptero' });
     // Workers with vehicles.
     this.worker('tractor', 20, 'rex', farmerScript);
     this.worker('digger', 246, 'tri', diggerScript, -1);
@@ -56,6 +55,24 @@ const NPCs = {
     this.list.splice(this.list.indexOf(n), 1);
   },
 
+  // The player bit, headbutted or tail-whacked this dino: stars, a hop, and off it runs.
+  hit(n, fromX) {
+    const b = n.body, away = Math.sign(b.x - fromX) || 1;
+    Fx.burst(b.x, b.y - b.h, 10, { speed: 160, up: 60, g: 300, life: 0.8, r: 9, color: ['#ffd43b', '#fff3bf'], shape: 'star' });
+    b.vy = -360; b.vx = away * 260;
+    if (n.need) { n.angryT = 1.5; return; }   // dinos waiting for help stay put
+    n.scaredT = 3; n.fleeDir = away; n.facing = away; n.greeted = true;
+    if (n.type === 'ptero') n.flyMax = n.flyT = 3;
+    if (n.baby) Sound.squeak(); else Sound.yelp();
+  },
+  // On-foot dinos the player can reach: in front, or either side for a tail whack.
+  inReach(x, y, facing, kind) {
+    return this.list.filter(n => {
+      if (n.vehicle || n.ride) return false;
+      const dx = (n.body.x - x) * facing, dy = Math.abs(n.body.y - y);
+      return dy < 70 && (kind === 'tail' ? Math.abs(dx) < 95 : dx > -15 && dx < 95);
+    });
+  },
   heardRoar(x, y) {
     for (const n of this.list) {
       if (n.ride || dist(n.body.x, n.body.y, x, y) > 500) continue;
@@ -74,6 +91,7 @@ const NPCs = {
       n.t += dt;
       n.roarT = Math.max(0, n.roarT - dt);
       n.heartT = Math.max(0, n.heartT - dt);
+      n.angryT = Math.max(0, (n.angryT || 0) - dt);
       if (n.vehicle) { if (n.script) n.script(n, n.vehicle, dt); continue; }
       if (n.ride) { this.updateRider(n, dt); continue; }
       const far = Math.abs(n.body.x - (cam.x + Game.viewW / 2)) > Game.viewW * 1.6;
@@ -84,7 +102,13 @@ const NPCs = {
   },
   wander(n, dt) {
     const b = n.body;
-    if (n.need || n.stuck) { b.vx = 0; }
+    if (n.scaredT > 0) {
+      // Running away from the player.
+      n.scaredT -= dt;
+      b.vx = lerp(b.vx, n.fleeDir * (n.baby ? 200 : 230), Math.min(1, dt * 8));
+      n.facing = n.fleeDir; n.dir = n.fleeDir; n.state = 'walk';
+      if (n.scaredT <= 0) { n.home = b.x; n.range = 6 * TS; n.state = 'idle'; n.dir = 0; n.timer = rand(1, 3); }
+    } else if (n.need || n.stuck) { b.vx = n.angryT > 0 ? b.vx * 0.9 : 0; }
     else {
       n.timer -= dt;
       if (n.timer <= 0) {
@@ -111,7 +135,7 @@ const NPCs = {
       else if (n.state === 'walk' && Math.random() < dt * 0.3) n.flyMax = n.flyT = rand(4, 7);
     }
     moveBody(b, dt, { step: 1, gravity });
-    if (b.hitWall && b.onGround) { if (Math.random() < 0.5) b.vy = -560; else { n.dir = -n.dir; } }
+    if (b.hitWall && b.onGround) { if (n.scaredT > 0 || Math.random() < 0.5) b.vy = -560; else { n.dir = -n.dir; } }
     n.walk = b.onGround && Math.abs(b.vx) > 15 ? n.walk + dt * Math.abs(b.vx) * 0.06 : 0;
   },
   // A dino who needs a lift hops in when the right vehicle stops nearby.
@@ -156,7 +180,9 @@ const NPCs = {
       const s = n.baby ? 0.36 : 0.52;
       drawDino(c, b.x, b.y + 1, s, n.type, { t: n.t, walk: n.walk, flip: n.facing < 0, roar: n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0 });
       const top = b.y - (n.type === 'brachio' ? (n.baby ? 50 : 72) : n.baby ? 38 : 56);
-      if (n.need && n.bubble) bubble(c, b.x, top, n.bubble, n.t);
+      if (n.scaredT > 0) bubble(c, b.x, top, '😱', n.t);
+      else if (n.angryT > 0) bubble(c, b.x, top, '😠', n.t);
+      else if (n.need && n.bubble) bubble(c, b.x, top, n.bubble, n.t);
       else if (n.heartT > 0) bubble(c, b.x, top, '❤️', n.t);
       if (n.need && n.need.sore) { rbox(c, b.x - 10 * n.facing - 7, b.y - 9, 14, 8, 3, '#fff', 2); c.fillStyle = '#ff6b6b'; c.fillRect(b.x - 10 * n.facing - 2, b.y - 8, 4, 6); }
     }

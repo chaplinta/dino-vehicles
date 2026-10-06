@@ -28,7 +28,7 @@ function digEffects(tx, ty, id) {
 const Player = {
   type: 'rex', body: null, facing: 1, walk: 0, t: 0,
   roarT: 0, flap: 0, digT: 0, digKey: -1, digAnim: 0,
-  vehicle: null, block: 0, placeCool: 0, slideTo: null,
+  vehicle: null, block: 0, placeCool: 0, slideTo: null, attackT: 0, attackCool: 0, attackHeld: false, actIcon: '',
 
   init(type, x, y) {
     this.type = type;
@@ -49,6 +49,8 @@ const Player = {
     this.roarT = Math.max(0, this.roarT - dt);
     this.digAnim = Math.max(0, this.digAnim - dt * 4);
     this.placeCool = Math.max(0, this.placeCool - dt);
+    this.attackT = Math.max(0, this.attackT - dt);
+    this.attackCool = Math.max(0, this.attackCool - dt);
     if (Input.pressed.roar && !this.vehicle) this.roar();
     if (this.vehicle) return;
 
@@ -101,8 +103,15 @@ const Player = {
     }
     this.walk = b.onGround && Math.abs(b.vx) > 20 ? this.walk + dt * Math.abs(b.vx) * 0.05 : 0;
 
+    // The action button attacks a dino in reach, otherwise digs.
+    const kind = dinoDef.attack;
+    const targets = NPCs.inReach(b.x, b.y, this.facing, kind);
+    const icon = targets.length ? ATTACK_ICON[kind] : '⛏️';
+    if (icon !== this.actIcon && !Game.overlay) { this.actIcon = icon; UI.setAction(icon); }
+    if (Input.pressed.action && targets.length) { this.attack(); this.attackHeld = true; }
+    if (!Input.held.action) this.attackHeld = false;
     // Digging with the action button.
-    if (Input.held.action) {
+    if (Input.held.action && !this.attackHeld) {
       const tgt = this.digTarget();
       if (tgt) {
         const k = tgt[1] * WORLD_W + tgt[0];
@@ -118,6 +127,14 @@ const Player = {
         }
       }
     } else { this.digT = 0; this.digKey = -1; }
+  },
+
+  attack() {
+    if (this.attackCool > 0) return;
+    const kind = DINO_TYPES[this.type].attack;
+    this.attackT = 0.35; this.attackCool = 0.4;
+    if (kind === 'bite') Sound.chomp(); else if (kind === 'tail') Sound.whoosh(); else Sound.bonk();
+    for (const n of NPCs.inReach(this.body.x, this.body.y, this.facing, kind)) NPCs.hit(n, this.body.x);
   },
 
   // Which tile the dino would dig: in front at feet, then head height, then down.
@@ -158,9 +175,17 @@ const Player = {
     const b = this.body;
     let walk = this.walk;
     if (this.digAnim > 0) walk = Math.sin(this.t * 30) * 0.6;
-    drawDino(c, b.x, b.y + 1, 0.56, this.type, {
-      t: this.t, walk, flip: this.facing < 0, roar: this.roarT, flap: this.flap,
-    });
+    let flip = this.facing < 0, roar = this.roarT, x = b.x, rot = 0;
+    if (this.attackT > 0) {
+      const k = 1 - this.attackT / 0.35, swing = Math.sin(k * Math.PI);   // 0 -> 1 -> 0
+      const kind = DINO_TYPES[this.type].attack;
+      if (kind === 'bite') { x += this.facing * swing * 14; roar = Math.floor(k * 6) % 2 ? 1 : 0; }
+      else if (kind === 'headbutt') { x += this.facing * swing * 22; rot = this.facing * swing * 0.3; }
+      else { if (k > 0.2 && k < 0.8) flip = !flip; x -= this.facing * swing * 6; }
+    }
+    c.save(); c.translate(x, b.y + 1); c.rotate(rot);
+    drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk, flip, roar, flap: this.flap });
+    c.restore();
   },
 };
 

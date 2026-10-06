@@ -22,6 +22,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 | Jump (automatic at walls) / climb walls | Up | ▲ |
 | Fly (Pterodactyl): hold to climb, let go to glide, down to dive | Up / Down | ▲ ▼ |
 | Dig / vehicle action | Space | big yellow button |
+| Bite, headbutt or tail-whack a dino in front (they run away) | Space | big yellow button turns 🦷 / 💥 / 🌀 |
 | Get in / out | E or Enter | 🚪 |
 | Roar / horn | R | 🦖 / 📢 |
 | Call a vehicle | Q | 📣 |
