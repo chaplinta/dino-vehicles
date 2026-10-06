@@ -13,25 +13,48 @@ function lightBar(c, x, y, t, on) {
   if (on) { c.fillStyle = a ? 'rgba(255,80,80,0.25)' : 'rgba(80,160,255,0.25)'; c.beginPath(); c.arc(x, y - 4, 30, 0, TAU); c.fill(); }
 }
 
+// Best hose angle to land water on (tx,ty) from a truck at (x,y) facing `face`.
+// Tries angles and checks where each water arc passes the target column.
+function fireAim(x, y, face, tx, ty) {
+  let best = { aim: 0.5, err: Infinity };
+  for (let a = -0.1; a <= 1.5; a += 0.03) {
+    const nx = x + face * (-10 + Math.cos(a) * 76), ny = y - 78 - Math.sin(a) * 76;
+    const vx = Math.cos(a) * 660, vy = -Math.sin(a) * 660;
+    const dx = (tx - nx) * face;
+    if (dx < 0) continue;
+    const t = dx / vx;
+    const err = Math.abs(ny + vy * t + 450 * t * t - ty);
+    if (err < best.err) best = { aim: a, err };
+  }
+  return best;
+}
+
 // ---------- Fire truck ----------
 defVehicle('firetruck', {
   name: 'Fire truck', say: 'Fire truck! Nee naw nee naw!', icon: '💦', dirs: 'all', w: 130, h: 72, speed: 260, horn: 'siren', unlock: 0,
   init(v) { v.s.aim = 0.5; v.s.spray = 0; },
   act(v, dt, inp) {
     const s = v.s;
-    if (inp.up) s.aim = Math.min(1.35, s.aim + dt * 1.4);
+    if (inp.up) s.aim = Math.min(1.5, s.aim + dt * 1.4);
     if (inp.down) s.aim = Math.max(-0.1, s.aim - dt * 1.4);
     if (!inp.up && !inp.down) {
       // Auto-aim at the nearest fire in front, so little hands only need the spray button.
+      // Turns to face a fire behind it while spraying (if not being steered).
       let best = null, bd = 700;
       for (const f of Fire.cells.values()) {
-        const dx = (f.x * TS + 16 - v.body.x) * v.facing;
-        if (dx > 20 && dx < bd) { bd = dx; best = f; }
+        const ad = Math.abs(f.x * TS + 16 - v.body.x);
+        if (ad < bd) { bd = ad; best = f; }
       }
       if (best) {
-        const dx = bd + 10, dy = v.body.y - 78 - (best.y * TS + 16);
-        const want = clamp(Math.atan2(dy + dx * dx * 900 / (2 * 650 * 650), dx), 0, 1.3);
-        s.aim = lerp(s.aim, want, Math.min(1, dt * 4));
+        const tx = best.x * TS + 16, ty = best.y * TS + 16;
+        let pick = null;
+        for (const face of [v.facing, -v.facing]) {
+          if (face !== v.facing && (!inp.action || inp.left || inp.right)) continue;
+          const sol = fireAim(v.body.x, v.body.y, face, tx, ty);
+          if (!pick || sol.err < pick.err - 8) pick = Object.assign(sol, { face });
+        }
+        if (pick.face !== v.facing) v.facing = pick.face;
+        s.aim = lerp(s.aim, pick.aim, Math.min(1, dt * 5));
       }
     }
     if (inp.action) {
@@ -39,6 +62,7 @@ defVehicle('firetruck', {
       const L = 76, px = -10, py = -78;
       const nx = px + Math.cos(s.aim) * L, ny = py - Math.sin(s.aim) * L;
       const wx = v.body.x + v.facing * nx, wy = v.body.y + ny;
+      Fire.douse(wx, wy + 16, dt * 0.5);   // point-blank: the hose end puts out fire it touches
       for (let k = 0; k < 3; k++) {
         const a = s.aim + rand(-0.05, 0.05), sp = rand(620, 700);
         Water.spray(wx, wy, v.facing * Math.cos(a) * sp + v.body.vx, -Math.sin(a) * sp);

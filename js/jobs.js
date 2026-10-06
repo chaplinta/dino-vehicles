@@ -230,7 +230,10 @@ const Jobs = {
       const g = this.goal(job);
       const sx = (g.x - cam.x) * Game.zoom, sy = (g.y - cam.y) * Game.zoom;
       if (sx > 30 && sx < W - 30 && sy > 30 && sy < H - 30) continue;
-      const ax = clamp(sx, 70, W - 70), ay = clamp(sy, 110, H - 160);
+      const ax = clamp(sx, 70, W - 70);
+      let ay = clamp(sy, 110, H - 160);
+      // Don't stack two arrows on the same spot.
+      for (const o of this.arrows) if (Math.abs(o.x - ax) < 70 && Math.abs(o.y - ay) < 76) ay = o.y + (o.y > H - 240 ? -80 : 80);
       const ang = Math.atan2(sy - ay, sx - ax);
       const bob = Math.sin(Game.t * 6) * 6;
       c.save(); c.translate(ax + Math.cos(ang) * bob, ay + Math.sin(ang) * bob);

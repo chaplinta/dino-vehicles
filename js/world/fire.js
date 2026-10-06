@@ -19,7 +19,7 @@ const Fire = {
   douse(px, py, amount) {
     let f = null, i = -1;
     for (const [k, c] of this.cells) {
-      if (Math.abs(c.x * TS + TS / 2 - px) < 28 && Math.abs(c.y * TS + TS / 2 - py) < 30) { f = c; i = k; break; }
+      if (Math.abs(c.x * TS + TS / 2 - px) < 40 && Math.abs(c.y * TS + TS / 2 - py) < 40) { f = c; i = k; break; }
     }
     if (!f) return false;
     f.hp -= amount;
@@ -81,7 +81,7 @@ const Water = {
       const p = d[i];
       p.life -= dt; p.vy += 900 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
       let dead = p.life <= 0;
-      if (!dead && Fire.douse(p.x, p.y, 0.06)) dead = true;
+      if (!dead && Fire.douse(p.x, p.y, 0.008)) dead = true;
       const tx = Math.floor(p.x / TS), ty = Math.floor(p.y / TS);
       const id = World.get(tx, ty);
       if (!dead && id === T.CROP) {
