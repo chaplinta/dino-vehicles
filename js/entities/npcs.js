@@ -76,7 +76,7 @@ const NPCs = {
       n.heartT = Math.max(0, n.heartT - dt);
       if (n.vehicle) { if (n.script) n.script(n, n.vehicle, dt); continue; }
       if (n.ride) { this.updateRider(n, dt); continue; }
-      const far = Math.abs(n.body.x - (cam.x + W / 2)) > W * 1.6;
+      const far = Math.abs(n.body.x - (cam.x + Game.viewW / 2)) > Game.viewW * 1.6;
       if (far) continue;
       if (n.need) this.checkBoard(n);
       this.wander(n, dt);
@@ -99,7 +99,18 @@ const NPCs = {
       b.vx = lerp(b.vx, n.dir * sp, Math.min(1, dt * 8));
       if (n.dir) n.facing = n.dir;
     }
-    moveBody(b, dt, { step: 1 });
+    // Pterodactyls take off now and then and flutter about.
+    let gravity = 1;
+    if (n.type === 'ptero' && !n.need) {
+      if (n.flyT > 0) {
+        n.flyT -= dt; gravity = 0;
+        const climbing = n.flyT > n.flyMax - 1.2;
+        b.vy = lerp(b.vy, climbing ? -220 : Math.sin(n.t * 2) * 60, Math.min(1, dt * 3));
+        if (!n.dir) n.dir = pick([-1, 1]);
+      } else if (!b.onGround) { gravity = 0; b.vy = lerp(b.vy, 90, Math.min(1, dt * 3)); }
+      else if (n.state === 'walk' && Math.random() < dt * 0.3) n.flyMax = n.flyT = rand(4, 7);
+    }
+    moveBody(b, dt, { step: 1, gravity });
     if (b.hitWall && b.onGround) { if (Math.random() < 0.5) b.vy = -560; else { n.dir = -n.dir; } }
     n.walk = b.onGround && Math.abs(b.vx) > 15 ? n.walk + dt * Math.abs(b.vx) * 0.06 : 0;
   },
@@ -141,7 +152,7 @@ const NPCs = {
     for (const n of this.list) {
       if (n.vehicle || n.ride) continue;
       const b = n.body;
-      if (b.x < cam.x - 120 || b.x > cam.x + W + 120 || b.y < cam.y - 100 || b.y > cam.y + H + 200) continue;
+      if (b.x < cam.x - 120 || b.x > cam.x + Game.viewW + 120 || b.y < cam.y - 100 || b.y > cam.y + Game.viewH + 200) continue;
       const s = n.baby ? 0.36 : 0.52;
       drawDino(c, b.x, b.y + 1, s, n.type, { t: n.t, walk: n.walk, flip: n.facing < 0, roar: n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0 });
       const top = b.y - (n.type === 'brachio' ? (n.baby ? 50 : 72) : n.baby ? 38 : 56);

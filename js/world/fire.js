@@ -53,7 +53,7 @@ const Fire = {
     const cam = Game.cam;
     for (const f of this.cells.values()) {
       const x = f.x * TS + TS / 2, y = f.y * TS + TS;
-      if (x < cam.x - 60 || x > cam.x + W + 60 || y < cam.y - 60 || y > cam.y + H + 60) continue;
+      if (x < cam.x - 60 || x > cam.x + Game.viewW + 60 || y < cam.y - 60 || y > cam.y + Game.viewH + 60) continue;
       const s = 0.6 + f.hp * 0.6;
       const fl = Math.sin(f.t * 12) * 3;
       c.save(); c.translate(x, y); c.scale(s, s);

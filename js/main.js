@@ -23,11 +23,11 @@ if (window.visualViewport) visualViewport.addEventListener('resize', resize);
 const portraitPhone = matchMedia('(orientation: portrait) and (pointer: coarse)');
 
 // Sky, sun, clouds and parallax hills. Darkens as the camera goes underground.
-function drawBackdrop(c, camX, camY, t) {
+function drawBackdrop(c, camX, camY, t, zoom = 1) {
   const g = c.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#6cc6ff'); g.addColorStop(1, '#d4f1ff');
   c.fillStyle = g; c.fillRect(0, 0, W, H);
-  const surfY = SURF * TS - camY;   // screen y of normal ground level
+  const surfY = (SURF * TS - camY) * zoom;   // screen y of normal ground level
   const off = surfY - 440;          // shift scenery with vertical camera
   drawSun(c, 170, 130 + off * 0.1, t);
   for (let i = 0; i < 6; i++) {
@@ -43,18 +43,18 @@ function drawBackdrop(c, camX, camY, t) {
 const TRACK_Y = SURF * TS;
 function drawTrack(c, camX, camY) {
   const y = TRACK_Y - camY;
-  if (y < -40 || y > H + 300) return;
+  if (y < -40 || y > Game.viewH + 300) return;
   const x0 = Math.floor(camX / 24) * 24;
   // Bridge pylons over the sea.
   for (let tx = SEA_X0 - 2; tx <= SEA_X1 + 2; tx += 6) {
     const px = tx * TS - camX;
-    if (px < -60 || px > W + 60) continue;
+    if (px < -60 || px > Game.viewW + 60) continue;
     c.fillStyle = '#9aa0aa'; c.fillRect(px - 10, y, 20, 12 * TS);
     c.fillStyle = 'rgba(43,34,51,0.6)'; c.fillRect(px - 10, y, 3, 12 * TS); c.fillRect(px + 7, y, 3, 12 * TS);
   }
   c.fillStyle = '#7a4a24';
-  for (let x = x0; x < camX + W + 24; x += 24) c.fillRect(x - camX, y - 6, 14, 6);
-  c.fillStyle = '#5b6170'; c.fillRect(0, y - 11, W, 5);
+  for (let x = x0; x < camX + Game.viewW + 24; x += 24) c.fillRect(x - camX, y - 6, 14, 6);
+  c.fillStyle = '#5b6170'; c.fillRect(0, y - 11, Game.viewW, 5);
 }
 
 function drawProps(c, camX, camY) {
@@ -62,7 +62,7 @@ function drawProps(c, camX, camY) {
     const sx = p.x * TS - camX;
     if (p.type === 'sign') {
       const sy = p.y * TS - camY;
-      if (sx < -100 || sx > W + 100) continue;
+      if (sx < -100 || sx > Game.viewW + 100) continue;
       const icon = { fire: '🚒', hospital: '🏥', police: '🚓', barn: '🐄', site: '🚧' }[p.kind] || '⭐';
       const col = { fire: '#e8262b', hospital: '#ffffff', police: '#3b5bdb', barn: '#c0392b', site: '#ffd43b' }[p.kind];
       if (p.kind === 'site') { limb(c, [sx, sy, sx, sy - 70], 6, '#777'); }
@@ -71,7 +71,7 @@ function drawProps(c, camX, camY) {
       c.fillText(icon, sx, sy - (p.kind === 'site' ? 83 : 37));
     } else if (p.type === 'station') {
       const sy = TRACK_Y - camY;
-      if (sx < -150 || sx > W + 150) continue;
+      if (sx < -150 || sx > Game.viewW + 150) continue;
       limb(c, [sx - 60, sy - 12, sx - 60, sy - 110], 6, '#777');
       limb(c, [sx + 60, sy - 12, sx + 60, sy - 110], 6, '#777');
       poly(c, [sx - 80, sy - 110, sx + 80, sy - 110, sx + 64, sy - 132, sx - 64, sy - 132], '#ff922b', 4);
@@ -97,7 +97,7 @@ function drawProps(c, camX, camY) {
         if (Math.floor(Game.t * 2) % 3 === 0) drawStar(c, sx + 18, sy - 40, 6, Game.t, '#fff', 0); }
     } else if (p.type === 'tower') {
       const sy = p.y * TS - camY;
-      if (sx < -200 || sx > W + 300) continue;
+      if (sx < -200 || sx > Game.viewW + 300) continue;
       c.strokeStyle = '#e8262b'; c.lineWidth = 6;
       rbox(c, sx - 20, sy - 380, 40, 380, 4, null, 4);
       c.strokeStyle = '#e8262b'; c.lineWidth = 5;
@@ -113,6 +113,9 @@ function drawProps(c, camX, camY) {
 const Game = {
   mode: 'title', t: 0, stars: 0, worldReady: false,
   cam: { x: 0, y: 0 },
+  zoom: 1,
+  get viewW() { return W / this.zoom; },
+  get viewH() { return H / this.zoom; },
   modes: {},
 
   init() {
@@ -137,6 +140,17 @@ const Game = {
     this.worldReady = true;
     this.snapCamera();
   },
+  // New world but keep stars and unlocks (title screen hold button).
+  resetWorld() {
+    const stars = this.stars;
+    if (Player.vehicle) { Player.vehicle.driver = null; Player.vehicle = null; }
+    this.newWorld();
+    this.stars = stars;
+    Save.write();
+    Hud.celebrate('New world!');
+    Sound.say('A brand new world!');
+  },
+  release() { if (this.mode === 'title') Title.release(); },
   loadWorld(s) {
     World.generate(s.seed);
     World.applyDiff(s.diff || []);
@@ -199,8 +213,8 @@ const Game = {
       }
     }
   },
-  popupStar(wx, wy) { Hud.popups.push({ id: 'star', sx: wx - this.cam.x, sy: wy - this.cam.y, t: 0 }); Hud.starBump = 1; },
-  popup(id, wx, wy) { Hud.popups.push({ id, sx: wx - this.cam.x, sy: wy - this.cam.y, t: 0 }); },
+  popupStar(wx, wy) { Hud.popups.push({ id: 'star', sx: (wx - this.cam.x) * this.zoom, sy: (wy - this.cam.y) * this.zoom, t: 0 }); Hud.starBump = 1; },
+  popup(id, wx, wy) { Hud.popups.push({ id, sx: (wx - this.cam.x) * this.zoom, sy: (wy - this.cam.y) * this.zoom, t: 0 }); },
   celebrate(text, say) { Hud.celebrate(text); Sound.say(say || text); },
   bodies() {
     const list = Player.vehicle ? [] : [Player.body];
@@ -213,7 +227,7 @@ const Game = {
     if (this.mode !== 'play') { this.modes[this.mode].tap(x, y); return; }
     if (this.overlay && this.overlay.tap(x, y)) return;
     if (Jobs.tap(x, y)) return;
-    const wx = x + this.cam.x, wy = y + this.cam.y;
+    const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
     if (!Player.vehicle) {
       const v = Vehicles.at(wx, wy);
       if (v && !v.driver && dist(v.body.x, v.body.y, Player.body.x, Player.body.y) < 220) { Vehicles.enter(Player, v); return; }
@@ -226,11 +240,23 @@ const Game = {
     const v = Player.vehicle;
     const look = v ? v.look || 140 : 90;
     const facing = v ? v.facing : Player.facing;
-    const tx = Player.cx + facing * look - W / 2;
-    const ty = Player.cy - H * 0.6 + (v && v.camY ? v.camY : 0);
+    // Zoom out when flying high, so the ground stays in view.
+    let target = 1, ground = null;
+    const flying = v ? (v.kind === 'plane' && v.s.flying) || v.kind === 'helicopter'
+      : DINO_TYPES[Player.type].flies && !Player.body.onGround;
+    if (flying) {
+      const y = v ? v.body.y : Player.body.y;
+      ground = World.groundBelow(Math.floor(Player.cx / TS), Math.max(0, Math.floor(y / TS))) * TS;
+      target = clamp(H * 0.45 / (ground - y + 60), 0.4, 1);
+    }
+    this.zoom = snap ? target : lerp(this.zoom, target, Math.min(1, dt * 1.5));
+    const tx = Player.cx + facing * look - this.viewW / 2;
+    let ty = Player.cy - this.viewH * 0.6 + (v && v.camY ? v.camY : 0);
+    // Flying: keep the ground near the bottom of the screen, flyer still in view.
+    if (ground !== null) ty = Math.min(ground - this.viewH * 0.8, Player.cy - this.viewH * 0.3);
     const k = snap ? 1 : Math.min(1, dt * 4);
-    this.cam.x = clamp(lerp(this.cam.x, tx, k), 0, WORLD_W * TS - W);
-    this.cam.y = clamp(lerp(this.cam.y, ty, k), -400, WORLD_H * TS - H);
+    this.cam.x = clamp(lerp(this.cam.x, tx, k), 0, Math.max(0, WORLD_W * TS - this.viewW));
+    this.cam.y = clamp(lerp(this.cam.y, ty, k), -400, WORLD_H * TS - this.viewH);
   },
 
   loop(ts) {
@@ -267,12 +293,14 @@ const Game = {
   draw(c) {
     if (this.mode !== 'play') { this.modes[this.mode].draw(c); Hud.draw(c); return; }
     const cx = Math.round(this.cam.x), cy = Math.round(this.cam.y);
-    drawBackdrop(c, cx, cy, this.t);
+    drawBackdrop(c, cx, cy, this.t, this.zoom);
+    c.save();
+    c.scale(this.zoom, this.zoom);   // world layer; zooms out when flying high
     drawTrack(c, cx, cy);
     c.save(); c.translate(-cx, -cy); Vehicles.drawBack(c); c.restore();
-    Render.draw(c, cx, cy);
+    Render.draw(c, cx, cy, this.viewW, this.viewH);
     drawProps(c, cx, cy);
-    c.save(); c.translate(-cx, -cy);
+    c.translate(-cx, -cy);
     Fish.draw(c);
     Fire.draw(c);
     Falling.draw(c);
@@ -284,7 +312,7 @@ const Game = {
     this.drawDigHint(c);
     c.restore();
     // Underground gloom.
-    const depth = (cy + H / 2) / TS - SURF - 6;
+    const depth = (cy + this.viewH / 2) / TS - SURF - 6;
     if (depth > 0) { c.fillStyle = `rgba(10,5,20,${Math.min(0.35, depth * 0.03)})`; c.fillRect(0, 0, W, H); }
     Jobs.drawHud(c);
     if (this.overlay) this.overlay.draw(c);

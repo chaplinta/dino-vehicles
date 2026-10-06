@@ -82,15 +82,16 @@ const Render = {
     }
   },
 
-  draw(c, camX, camY) {
+  draw(c, camX, camY, viewW = W, viewH = H) {
     this.frame++;
-    const cx0 = Math.floor(camX / CHUNK_PX), cx1 = Math.floor((camX + W) / CHUNK_PX);
-    const cy0 = Math.floor(camY / CHUNK_PX), cy1 = Math.floor((camY + H) / CHUNK_PX);
+    const cx0 = Math.floor(camX / CHUNK_PX), cx1 = Math.floor((camX + viewW) / CHUNK_PX);
+    const cy0 = Math.floor(camY / CHUNK_PX), cy1 = Math.floor((camY + viewH) / CHUNK_PX);
     const maxCx = Math.ceil(WORLD_W / CHUNK) - 1, maxCy = Math.ceil(WORLD_H / CHUNK) - 1;
     for (let cy = Math.max(0, cy0); cy <= Math.min(maxCy, cy1); cy++) {
       for (let cx = Math.max(0, cx0); cx <= Math.min(maxCx, cx1); cx++) {
         const ch = this.getChunk(cx, cy);
-        c.drawImage(ch.canvas, Math.round(cx * CHUNK_PX - camX), Math.round(cy * CHUNK_PX - camY));
+        // 1px overlap hides seams between chunks when zoomed out.
+        c.drawImage(ch.canvas, Math.round(cx * CHUNK_PX - camX), Math.round(cy * CHUNK_PX - camY), CHUNK_PX + 1, CHUNK_PX + 1);
       }
     }
   },

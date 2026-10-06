@@ -163,6 +163,52 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 10. Flying, auto-jump, new-world button, zoom.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('ptero'); Jobs.t = 1e9; });
+  const y0 = await page.evaluate(() => Player.body.y);
+  await hold(page, 'ArrowUp', 1000);
+  const y1 = await page.evaluate(() => Player.body.y);
+  check(y0 - y1 > 3 * 32, `pterodactyl flies up while holding up (${Math.round((y0 - y1) / 32)} tiles)`);
+  check(await page.evaluate(() => Game.zoom < 0.999), 'view zooms out when flying');
+  await page.waitForTimeout(900);
+  const y2 = await page.evaluate(() => Player.body.y);
+  check(y2 > y1, 'pterodactyl glides down when up is released');
+  await hold(page, 'ArrowDown', 2500);
+  check(await page.evaluate(() => Player.body.onGround), 'pterodactyl lands');
+
+  // Auto-jump over a 2-tile wall with only the right arrow held.
+  const wall = await page.evaluate(() => {
+    Game.startPlay('rex');
+    const tx = Math.floor(Player.body.x / TS) + 3, g = World.groundBelow(tx, Math.floor(Player.body.y / TS) - 2);
+    World.set(tx, g - 1, T.BRICK); World.set(tx, g - 2, T.BRICK);
+    return tx;
+  });
+  await hold(page, 'ArrowRight', 1500);
+  check(await page.evaluate(tx => Player.body.x > tx * TS + TS, wall), 'dino jumps a 2-tile wall by itself');
+
+  // Plane: climb and the view zooms out; on the ground it is normal size.
+  await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'plane' && !v.npcOwned); Player.body.x = v.body.x; Vehicles.enter(Player, v); v.s.flying = true; v.body.y = 20 * TS; });
+  await page.waitForTimeout(2500);
+  check(await page.evaluate(() => Game.zoom < 0.8), 'plane high up: zoomed out (' + await page.evaluate(() => Game.zoom.toFixed(2)) + ')');
+  await page.evaluate(() => Vehicles.exit(Player));
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+
+  // Title: a quick tap on the seedling does nothing; holding it makes a new world and keeps stars.
+  await page.evaluate(() => { Game.stars = 17; World.set(20, 30, T.BRICK); Game.setMode('title'); });
+  const seed0 = await page.evaluate(() => World.seed);
+  const r = await page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(); return { x: c.left + 60 / H * c.height, y: c.top + c.height - 60 / H * c.height }; });
+  await page.mouse.move(r.x, r.y);
+  await page.mouse.down(); await page.waitForTimeout(500); await page.mouse.up();
+  await page.waitForTimeout(100);
+  check(await page.evaluate(s => World.seed === s && Game.mode === 'title', seed0), 'short tap on the new-world button does nothing');
+  await page.mouse.down(); await page.waitForTimeout(2300); await page.mouse.up();
+  check(await page.evaluate(s => World.seed !== s && Game.stars === 17 && World.diff.size === 0, seed0), 'holding the button makes a new world and keeps stars');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

@@ -228,7 +228,7 @@ const Jobs = {
     this.arrows = [];
     for (const job of this.list) {
       const g = this.goal(job);
-      const sx = g.x - cam.x, sy = g.y - cam.y;
+      const sx = (g.x - cam.x) * Game.zoom, sy = (g.y - cam.y) * Game.zoom;
       if (sx > 30 && sx < W - 30 && sy > 30 && sy < H - 30) continue;
       const ax = clamp(sx, 70, W - 70), ay = clamp(sy, 110, H - 160);
       const ang = Math.atan2(sy - ay, sx - ax);

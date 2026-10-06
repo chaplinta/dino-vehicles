@@ -12,14 +12,15 @@ Open `index.html` in a modern browser (Chrome, Safari, Edge, Firefox). No instal
 
 Once loaded from the web link, it works offline: a service worker (`sw.js`) caches every file. Add a new file? List it in `sw.js` and bump `VERSION` (the smoke test checks the list).
 
-Progress saves automatically in the browser. To start a new world, use the 🌱 button on the title screen and tap it twice.
+Progress saves automatically in the browser. To start a new world (stars and unlocked vehicles are kept), hold the 🌱 button on the title screen for 2 seconds.
 
 ### Controls
 
 | | Keyboard | Touch |
 |---|---|---|
 | Walk / drive | Arrows or WASD | ◀ ▶ ▲ ▼ |
-| Jump / fly / climb walls | Up | ▲ |
+| Jump (automatic at walls) / climb walls | Up | ▲ |
+| Fly (Pterodactyl): hold to climb, let go to glide, down to dive | Up / Down | ▲ ▼ |
 | Dig / vehicle action | Space | big yellow button |
 | Get in / out | E or Enter | 🚪 |
 | Roar / horn | R | 🦖 / 📢 |
@@ -37,7 +38,7 @@ Everything except the bedrock at the bottom can be dug. Bones, eggs, gems and fo
 
 ## Dinosaurs
 
-T-Rex, Triceratops, Stegosaurus, Brachiosaurus, Raptor, Ankylosaurus and Pterodactyl. The Pterodactyl can fly.
+T-Rex, Triceratops, Stegosaurus, Brachiosaurus, Raptor, Ankylosaurus and Pterodactyl. The Pterodactyl really flies, and so do the other pterodactyls in the world. Flying high (Pterodactyl, plane, helicopter) zooms the view out so the ground stays in sight.
 
 ## Vehicles
 

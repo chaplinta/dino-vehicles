@@ -9,9 +9,9 @@ const Sim = {
     this.acc = 0;
     this.tick++;
     const x0 = clamp(Math.floor(camX / TS) - 30, 1, WORLD_W - 2);
-    const x1 = clamp(Math.floor((camX + W) / TS) + 30, 1, WORLD_W - 2);
+    const x1 = clamp(Math.floor((camX + Game.viewW) / TS) + 30, 1, WORLD_W - 2);
     const y0 = clamp(Math.floor(camY / TS) - 20, 0, WORLD_H - 2);
-    const y1 = clamp(Math.floor((camY + H) / TS) + 20, 0, WORLD_H - 2);
+    const y1 = clamp(Math.floor((camY + Game.viewH) / TS) + 20, 0, WORLD_H - 2);
     const ltr = this.tick % 2 === 0;
     for (let y = y1; y >= y0; y--) {
       for (let k = x0; k <= x1; k++) {

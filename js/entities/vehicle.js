@@ -146,9 +146,9 @@ const Vehicles = {
   },
   update(dt) {
     const p = Player;
-    const camMid = Game.cam.x + W / 2;
+    const camMid = Game.cam.x + Game.viewW / 2;
     for (const v of this.list) {
-      if (v.driver !== p && Math.abs(v.body.x - camMid) > W * 1.6) continue;   // frozen off screen
+      if (v.driver !== p && Math.abs(v.body.x - camMid) > Game.viewW * 1.6) continue;   // frozen off screen
       let inp = IDLE_INPUT;
       if (v.driver === p) inp = this.playerInput();
       else if (v.driver && v.driver.input) inp = v.driver.input;

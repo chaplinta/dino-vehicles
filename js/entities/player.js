@@ -56,28 +56,45 @@ const Player = {
     const dinoDef = DINO_TYPES[this.type];
     const dir = (Input.held.right ? 1 : 0) - (Input.held.left ? 1 : 0);
     const speed = 230;
-    b.vx = lerp(b.vx, dir * speed, Math.min(1, dt * (b.onGround ? 12 : 5)));
+    b.vx = lerp(b.vx, dir * speed, Math.min(1, dt * (b.onGround || dinoDef.flies ? 12 : 5)));
     if (dir) this.facing = dir;
 
-    if (Input.pressed.up) {
-      if (b.onGround) { b.vy = -640; Sound.jump(); }
-      else if (b.inWater) { b.vy = -420; }
-      else if (dinoDef.flies) { b.vy = -520; this.flap = 0; Sound.flap(); }
+    const flier = dinoDef.flies;
+    let gravity = 1;
+    if (flier && !b.inWater && (Input.held.up || !b.onGround)) {
+      // Real flight: hold up to climb, let go to glide down, hold down to dive.
+      gravity = 0;
+      const target = Input.held.up ? -300 : Input.held.down ? 350 : 80;
+      b.vy = lerp(b.vy, target, Math.min(1, dt * (Input.held.up ? 4 : 6)));
+      if (Input.held.up && b.onGround) b.vy = -300;
+      if (b.y < -300) { b.y = -300; b.vy = Math.max(0, b.vy); }
+      this.flapSnd = (this.flapSnd || 0) - dt;
+      if (Input.held.up && this.flapSnd <= 0) { Sound.flap(); this.flapSnd = 0.25; }
+      this.flap += dt * (Input.held.up ? 16 : 5);
+    } else {
+      if (Input.pressed.up) {
+        if (b.onGround) { b.vy = -640; Sound.jump(); }
+        else if (b.inWater) { b.vy = -420; }
+      }
+      this.flap = lerp(this.flap, 0, dt * 6);
     }
     if (b.inWater && Input.held.up) b.vy -= 1200 * dt;
     // Climb walls while holding up, so no one gets stuck at the bottom of a hole.
     const wall = bodySolidAt(b, b.x - 3, b.y - 2) || bodySolidAt(b, b.x + 3, b.y - 2);
-    if (Input.held.up && wall && !b.onGround && b.vy > -260) { b.vy = -260; this.climbing = true; } else this.climbing = false;
-    if (dinoDef.flies && !b.onGround && Input.held.up && b.vy > 90) b.vy = 90;   // glide
-    if (dinoDef.flies && !b.onGround) this.flap += dt * (Input.held.up ? 14 : 6);
-    else this.flap = lerp(this.flap, 0, dt * 6);
+    if (!flier && Input.held.up && wall && !b.onGround && b.vy > -260) { b.vy = -260; this.climbing = true; } else this.climbing = false;
 
     if (this.slideTo !== null && !dir) {
       b.vx = (this.slideTo - b.x) * 10;
       if (Math.abs(this.slideTo - b.x) < 2) this.slideTo = null;
     } else this.slideTo = null;
     const wasGround = b.onGround, vyBefore = b.vy;
-    moveBody(b, dt, { step: 1 });
+    moveBody(b, dt, { step: 1, gravity });
+    // Auto-jump: walking into a wall up to 3 tiles high hops over it.
+    if (!flier && dir && b.hitWall === dir && b.onGround) {
+      for (let k = 1; k <= 3; k++) {
+        if (!bodySolidAt(b, b.x + dir * 6, b.y - k * TS)) { b.vy = k === 1 ? -480 : -640; Sound.jump(); break; }
+      }
+    }
     if (!wasGround && b.onGround && vyBefore > 500) {
       Sound.land();
       Fx.burst(b.x, b.y, 6, { speed: 90, up: 40, g: 200, life: 0.4, r: 5, color: '#e8dcc8' });

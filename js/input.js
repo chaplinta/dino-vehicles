@@ -13,7 +13,7 @@ const KEYMAP = {
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
   Space: 'action', KeyE: 'enter', Enter: 'enter', KeyR: 'roar', KeyQ: 'whistle',
-  Escape: 'home', KeyM: 'mute',
+  Escape: 'home', KeyM: 'mute', KeyN: 'reset',
   Digit1: 'b1', Digit2: 'b2', Digit3: 'b3', Digit4: 'b4', Digit5: 'b5', Digit6: 'b6',
 };
 
@@ -74,6 +74,10 @@ const UI = {
       const r = canvas.getBoundingClientRect();
       Game.tap((e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H);
     });
+    const up = () => Game.release();
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', up);
+    canvas.addEventListener('pointerleave', up);
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     this.palette = document.getElementById('palette');
   },

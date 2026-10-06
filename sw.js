@@ -1,7 +1,7 @@
 // Offline support: cache every game file on first visit, then play with no connection.
 // Serves from the cache first; when online it refreshes the cache in the background,
 // so a new version shows up on the next launch. Bump VERSION when files are added or removed.
-const VERSION = 'dino-vehicles-v1';
+const VERSION = 'dino-vehicles-v2';
 const FILES = [
   './', 'index.html', 'style.css', 'manifest.webmanifest',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',

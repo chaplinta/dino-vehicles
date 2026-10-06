@@ -1,25 +1,35 @@
 // Title screen and dinosaur picker. Pictures and voice only; no reading needed.
 const Title = {
-  t: 0, newArm: 0,
+  t: 0, hold: null,
+  HOLD: 2,   // seconds to hold the new-world button
   enter() {
-    this.t = 0; this.newArm = 0;
+    this.t = 0; this.hold = null;
     UI.configure({ dirs: 'none', action: '▶', roar: true, home: false });
   },
   update(dt) {
     this.t += dt;
-    this.newArm = Math.max(0, this.newArm - dt);
+    if (Input.pressed.reset) this.startHold();
+    if (this.hold !== null && !Input.held.reset && this.keyHold) this.release();
+    if (this.hold !== null) {
+      this.hold += dt;
+      if (Math.floor(this.hold * 4) !== Math.floor((this.hold - dt) * 4)) Sound.tone(300 + this.hold * 200, 0.08, 'triangle', 0.08);
+      if (this.hold >= this.HOLD) {
+        this.hold = null;
+        Game.resetWorld();
+      }
+    }
     if (Input.pressed.action || Input.pressed.enter) this.go();
     if (Input.pressed.roar) Sound.roar();
   },
   go() { Sound.click(); Game.setMode('pick'); },
+  startHold(fromKey = true) { this.hold = 0; this.keyHold = fromKey; },
+  inButton(x, y) { return dist(x, y, 60, H - 60) < 52; },
+  // Pointer down: holding the seedling button resets the world; anywhere else starts.
   tap(x, y) {
-    if (Save.exists() && x < 110 && y > H - 110) {
-      if (this.newArm > 0) { Save.wipe(); Game.newWorld(); Sound.collect(); Sound.say('New world!'); this.newArm = 0; }
-      else { this.newArm = 3; Sound.click(); }
-      return;
-    }
+    if (this.inButton(x, y)) { this.startHold(false); return; }
     this.go();
   },
+  release() { this.hold = null; },
   draw(c) {
     drawBackdrop(c, this.t * 60, 0, this.t);
     c.fillStyle = '#5cc84a'; c.fillRect(0, 430, W, H - 430);
@@ -41,12 +51,16 @@ const Title = {
     ell(c, 0, 0, 62, 62, '#ff6b6b', 6);
     poly(c, [-16, -28, 32, 0, -16, 28], '#fff', 5);
     c.restore();
-    if (Save.exists()) {
-      ell(c, 55, H - 55, 34, 34, this.newArm > 0 ? '#ffd43b' : 'rgba(255,255,255,0.7)', 4);
-      c.font = `32px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText('🌱', 55, H - 53);
-      if (this.newArm > 0) bigText(c, 'tap again for a new world', 110, H - 55, 20, '#fff', 'left');
+    // New world button: hold it and the ring fills; let go early to cancel.
+    const k = this.hold === null ? 0 : this.hold / this.HOLD;
+    ell(c, 60, H - 60, 40, 40, k > 0 ? '#fff3bf' : 'rgba(255,255,255,0.75)', 4);
+    if (k > 0) {
+      c.beginPath(); c.arc(60, H - 60, 40, -Math.PI / 2, -Math.PI / 2 + k * TAU);
+      c.lineWidth = 10; c.strokeStyle = '#5ccf4a'; c.lineCap = 'round'; c.stroke();
     }
+    c.font = `40px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT;
+    c.fillText('🌱', 60, H - 58);
+    if (k > 0) bigText(c, 'hold for a new world', 112, H - 60, 22, '#fff', 'left');
   },
 };
 
