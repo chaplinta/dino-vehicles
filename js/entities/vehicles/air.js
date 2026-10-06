@@ -117,6 +117,7 @@ defVehicle('plane', {
       b.vx = lerp(b.vx, dir * this.speed, Math.min(1, dt * 1.2));
       if (dir) v.facing = dir;
       moveBody(b, dt, { step: 1 });
+      vehicleHop(v, dir, dt);
       if (Math.abs(b.vx) > 220 && inp.up) { s.flying = true; b.vy = -160; Sound.tone(300, 0.5, 'sawtooth', 0.05, 500); }
       v.tilt = lerp(v.tilt || 0, 0, dt * 4);
     } else {

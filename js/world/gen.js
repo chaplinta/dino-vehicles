@@ -155,6 +155,13 @@ function generateWorld(world, seed) {
 
   function building(world, x0, base, w, h, o) {
     const top = base - h;
+    // Level the ground for a few tiles either side, so vehicles can drive in and out of the doors.
+    for (const x of [-6, -5, -4, -3, -2, -1].map(d => x0 + d).concat([0, 1, 2, 3, 4, 5].map(d => x0 + w + d))) {
+      if (x < 1 || x >= Wt - 1) continue;
+      for (let y = base - 8; y < base; y++) if (get(x, y) !== T.ROAD) put(x, y, T.AIR);
+      for (let y = base; y < base + 3; y++) if (get(x, y) === T.AIR || get(x, y) === T.WATER) put(x, y, y === base ? T.GRASS : T.DIRT);
+      surf[x] = base;
+    }
     for (let x = x0; x < x0 + w; x++) {
       surf[x] = base;
       for (let y = top - 3; y < base; y++) put(x, y, T.AIR);

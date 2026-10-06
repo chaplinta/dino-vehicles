@@ -316,6 +316,31 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 13. Nothing blocks the way: walk and drive across the busy parts of the world holding one arrow.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; });
+  const runs = [['foot', 10, 110], ['foot', 200, 320], ['foot', 320, 200], ['foot', 410, 580],
+    ['firetruck', 10, 300], ['firetruck', 300, 10], ['digger', 215, 360], ['bulldozer', 300, 150], ['tractor', 420, 250], ['ambulance', 215, 420]];
+  for (const [kind, from, to] of runs) {
+    const r = await page.evaluate(([kind, from, to]) => {
+      Math.random = mulberry32(3); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 99;
+      for (const pt of BLUEPRINT) World.set(pt.col, pt.row, pt.id);   // builder's house finished: worst case
+      let b = Player.body;
+      const y = World.groundBelow(from, World.genSurf[from] - 3) * TS - 0.01;
+      if (kind === 'foot') { b.x = from * TS + 16; b.y = y; }
+      else { const v = Vehicles.list.find(v => v.kind === kind && !v.npcOwned); v.body.x = from * TS; v.body.y = y; Player.body.x = v.body.x; Vehicles.enter(Player, v); b = v.body; }
+      const dir = Math.sign(to - from); let t = 0;
+      while (t < 80 && (b.x / TS - to) * dir < 0) { Input.held[dir > 0 ? 'right' : 'left'] = true; Game.update(1 / 60); Input.endFrame(); t += 1 / 60; }
+      Input.held.right = Input.held.left = false;
+      return Math.round(b.x / TS);
+    }, [kind, from, to]);
+    check((r - to) * Math.sign(to - from) >= 0, `${kind} gets from ${from} to ${to} holding one arrow (reached ${r})`);
+  }
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

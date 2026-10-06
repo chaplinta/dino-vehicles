@@ -162,8 +162,10 @@ defVehicle('bulldozer', {
     if (dir === v.facing && s.pile < 10) {
       const tx = Math.floor(v.frontX(14) / TS);
       const fr = v.feetRow();
-      for (const ty of [fr, fr - 1]) {
+      // Shave from the top down, only blocks with open sky above, so it never tunnels.
+      for (const ty of [fr - 1, fr]) {
         const id = World.get(tx, ty);
+        if (World.solid(tx, ty - 1)) continue;
         if (id !== T.AIR && TILES[id].solid && TILES[id].dig) {
           vehicleDig(tx, ty, false);
           if (LOOSE(id) >= 0) s.pile++;
@@ -175,6 +177,7 @@ defVehicle('bulldozer', {
     if (dir && dir !== v.facing && s.pile > 0) this.drop(v);
     if (dir) v.facing = dir;
     moveBody(b, dt, { step: 1 });
+    vehicleHop(v, dir, dt);
     v.wheel += b.vx * dt / 14;
   },
   drop(v) {

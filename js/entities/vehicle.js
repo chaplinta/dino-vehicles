@@ -41,6 +41,7 @@ class Vehicle {
       b.vx = lerp(b.vx, dir * sp, Math.min(1, dt * (dir ? d.accel : 5)));
       if (dir && !this.s.lockFacing) this.facing = dir;
       moveBody(b, dt, { step: d.step });
+      vehicleHop(this, dir, dt);
       this.wheel += b.vx * dt / 16;
     }
     if (d.act) d.act(this, dt, inp);
@@ -71,6 +72,23 @@ class Vehicle {
   frontX(extra = 0) { return this.body.x + this.facing * (this.body.w / 2 + extra); }
   groundRow() { return Math.floor((this.body.y + 4) / TS); }
   feetRow() { return Math.floor((this.body.y - 4) / TS); }
+}
+
+// A vehicle pushed against a wall it can't drive up bounces over it (up to 6 blocks),
+// so nothing gets stuck in pits or behind buildings.
+function vehicleHop(v, dir, dt = 1 / 60) {
+  const b = v.body;
+  if (v.hopT > 0) { v.hopT -= dt; b.vx = v.hopDir * 140; }   // keep going forward through the hop
+  if (!dir || b.hitWall !== dir || !b.onGround) return;
+  for (let k = 2; k <= 6; k++) {
+    const y = b.y - k * TS;
+    if (!bodySolidAt(b, b.x, y) && !bodySolidAt(b, b.x + dir * 12, y)) {
+      b.vy = -Math.sqrt(2 * GRAVITY * (k * TS + 40));
+      v.hopT = 0.7; v.hopDir = dir;
+      Sound.jump();
+      return;
+    }
+  }
 }
 
 // Wheels, used by lots of vehicles.

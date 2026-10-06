@@ -83,7 +83,10 @@ const Player = {
     if (b.inWater && Input.held.up) b.vy -= 1200 * dt;
     // Climb walls while holding up, so no one gets stuck at the bottom of a hole.
     const wall = bodySolidAt(b, b.x - 3, b.y - 2) || bodySolidAt(b, b.x + 3, b.y - 2);
-    if (!flier && Input.held.up && wall && !b.onGround && b.vy > -260) { b.vy = -260; this.climbing = true; } else this.climbing = false;
+    // Climb walls: hold up, or just keep walking into a wall too tall to jump.
+    const pushing = dir && bodySolidAt(b, b.x + dir * 3, b.y - 2);
+    if (!flier && (Input.held.up || (pushing && this.pushT > 0.35)) && wall && (!b.onGround || pushing) && b.vy > -260) { b.vy = -260; this.climbing = true; } else this.climbing = false;
+    this.pushT = pushing && b.hitWall === dir ? (this.pushT || 0) + dt : 0;
 
     if (this.slideTo !== null && !dir) {
       b.vx = (this.slideTo - b.x) * 10;
