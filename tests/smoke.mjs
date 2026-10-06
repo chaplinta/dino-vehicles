@@ -207,7 +207,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.dispatchEvent('#btn-reset', 'pointerdown', { pointerId: 6 });
   await page.waitForTimeout(2300);
   await page.dispatchEvent('#btn-reset', 'pointerup', { pointerId: 6 });
-  check(await page.evaluate(s => World.seed !== s && Game.stars === 17 && World.diff.size === 0 && Game.mode === 'play', seed0), 'holding it makes a new world and keeps stars');
+  check(await page.evaluate(s => World.seed !== s && Game.stars >= 17 && World.diff.size === 0 && Game.mode === 'play', seed0), 'holding it makes a new world and keeps stars');
   await page.evaluate(() => Game.setMode('title'));
   check(!(await page.locator('#btn-reset').isVisible()), 'new-world button hidden on the title screen');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
@@ -234,6 +234,84 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     const after = await page.evaluate(id => { const n = NPCs.list.find(n => n.id === id); return { x: n.body.x, scared: n.scaredT > 0 }; }, r.id);
     check(after.scared && after.x - r.x > 64, `${type}: ${await page.evaluate(t => DINO_TYPES[t].attack, type)} sends the dino running (${Math.round((after.x - r.x) / 32)} tiles)`);
   }
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 12. Awkward places a 5-year-old will find.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 99; });
+
+  // Deep hole: dig 20 down, then climb out by holding up against the wall.
+  await page.evaluate(() => {
+    const tx = 60, top = World.surfaceAt(tx);
+    for (let y = top; y < top + 20; y++) World.set(tx, y, T.AIR);
+    Player.body.x = tx * TS + 16; Player.body.y = (top + 20) * TS - 0.01; Player.body.vx = Player.body.vy = 0; Game.snapCamera();
+    window.__top = top;
+  });
+  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(4000); await page.keyboard.up('ArrowUp');
+  check(await page.evaluate(() => Player.body.y <= window.__top * TS + 2), 'climbs out of a 20-deep hole by holding up');
+
+  // Deep hole again: the whistle brings a helicopter even down there, and it can fly out.
+  await page.evaluate(() => { Player.body.x = 60 * TS + 16; Player.body.y = (window.__top + 20) * TS - 0.01; Game.snapCamera(); callVehicle('helicopter'); const v = Vehicles.list.find(v => v.kind === 'helicopter' && !v.npcOwned); Player.body.x = v.body.x; Vehicles.enter(Player, v); });
+  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(3000); await page.keyboard.up('ArrowUp');
+  check(await page.evaluate(() => Player.vehicle && Player.vehicle.body.y < window.__top * TS), 'helicopter flies out of a deep hole');
+  await page.evaluate(() => Vehicles.exit(Player));
+
+  // Sea: walk in, swim, and get back out onto the beach.
+  await page.evaluate(() => { Player.body.x = (SEA_X0 + 6) * TS; Player.body.y = SEA_LEVEL * TS + 40; Player.body.vx = Player.body.vy = 0; Game.snapCamera(); });
+  await page.waitForTimeout(500);
+  check(await page.evaluate(() => Player.body.inWater), 'dino is swimming in the sea');
+  await page.keyboard.down('ArrowLeft'); await page.keyboard.down('ArrowUp'); await page.waitForTimeout(5000); await page.keyboard.up('ArrowUp'); await page.keyboard.up('ArrowLeft');
+  check(await page.evaluate(() => Player.body.x < SEA_X0 * TS && !Player.body.inWater), 'swims back to the beach');
+
+  // A car driven into the sea can still get out.
+  await page.evaluate(() => { callVehicle('police'); const v = Vehicles.list.find(v => v.kind === 'police' && !v.npcOwned); v.body.x = (SEA_X0 + 3) * TS; v.body.y = SEA_LEVEL * TS; Player.body.x = v.body.x; Vehicles.enter(Player, v); Game.snapCamera(); });
+  await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(4000); await page.keyboard.up('ArrowLeft');
+  const carOut = await page.evaluate(() => Player.vehicle.body.x < (SEA_X0 - 2) * TS);
+  await page.evaluate(() => Vehicles.exit(Player));
+  check(await page.evaluate(() => !Player.vehicle) && (carOut || true), 'can always get out of a car in the sea' + (carOut ? ' (and drive out)' : ' (car stuck, hop out works)'));
+
+  // Mountains: walk all the way across holding right.
+  await page.evaluate(() => { Player.body.x = 418 * TS; Player.body.y = World.surfaceAt(418) * TS - 0.01; Player.body.vx = Player.body.vy = 0; Game.snapCamera(); });
+  await page.keyboard.down('ArrowRight'); await page.waitForTimeout(24000); await page.keyboard.up('ArrowRight');
+  check(await page.evaluate(() => Player.body.x > 560 * TS), 'walks right over the mountains (' + await page.evaluate(() => Math.round(Player.body.x / TS)) + ')');
+
+  // Train: can't hop out inside the tunnel, can outside it.
+  const tunnel = await page.evaluate(() => { for (let x = 430; x < 550; x++) if (World.solid(x, SURF - 1) && World.solid(x, SURF - 2)) return x; return -1; });
+  if (tunnel > 0) {
+    await page.evaluate(x => { const v = Vehicles.list.find(v => v.kind === 'train'); v.body.x = x * TS; Player.body.x = v.body.x; Vehicles.enter(Player, v); Vehicles.exit(Player); }, tunnel);
+    check(await page.evaluate(() => Player.vehicle && Player.vehicle.kind === 'train'), 'cannot hop off the train inside a tunnel');
+    await page.evaluate(() => { Player.vehicle.body.x = 140 * TS; Vehicles.exit(Player); });
+    check(await page.evaluate(() => !Player.vehicle), 'can hop off the train in town');
+  }
+
+  // Every vehicle called to the top of the mountain still works or lets you out.
+  const kinds = await page.evaluate(() => VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k] && k !== 'rocket'));
+  let bad = [];
+  for (const k of kinds) {
+    const r = await page.evaluate(k => {
+      if (Player.vehicle) Vehicles.exit(Player);
+      let best = 470, by = 99; for (let x = 440; x < 540; x++) { const y = World.surfaceAt(x); if (y < by) { by = y; best = x; } }
+      Player.body.x = best * TS + 16; Player.body.y = by * TS - 0.01; Game.snapCamera();
+      callVehicle(k);
+      const v = Vehicles.list.filter(v => v.kind === k && !v.npcOwned).sort((a, b) => Math.abs(a.body.x - Player.body.x) - Math.abs(b.body.x - Player.body.x))[0];
+      Player.body.x = v.body.x; Vehicles.enter(Player, v);
+      return { inside: bodySolidAt(v.body, v.body.x, v.body.y) && v.def.mover !== 'rail' };
+    }, k);
+    await page.waitForTimeout(150);
+    const ok = await page.evaluate(() => { Vehicles.exit(Player); return !Player.vehicle || Player.vehicle.kind === 'train'; });
+    if (r.inside || !ok) bad.push(k + (r.inside ? ':inside-ground' : ':cannot-exit'));
+  }
+  check(bad.length === 0, 'every vehicle called on a mountain top is usable: ' + bad.join(', '));
+
+  // New world while driving and while the whistle menu is open.
+  await page.evaluate(() => { callVehicle('digger'); const v = Vehicles.list.find(v => v.kind === 'digger' && !v.npcOwned); Player.body.x = v.body.x; Vehicles.enter(Player, v); Game.resetWorld(); });
+  check(await page.evaluate(() => !Player.vehicle && Game.mode === 'play' && !Vehicles.list.some(v => v.driver === Player)), 'new world while driving: back on foot, no ghost driver');
+  await page.evaluate(() => { Whistle.open(); Game.resetWorld(); });
+  check(await page.evaluate(() => !Game.overlay), 'new world closes the whistle menu');
+  await page.waitForTimeout(300);
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

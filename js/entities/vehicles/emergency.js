@@ -21,6 +21,19 @@ defVehicle('firetruck', {
     const s = v.s;
     if (inp.up) s.aim = Math.min(1.35, s.aim + dt * 1.4);
     if (inp.down) s.aim = Math.max(-0.1, s.aim - dt * 1.4);
+    if (!inp.up && !inp.down) {
+      // Auto-aim at the nearest fire in front, so little hands only need the spray button.
+      let best = null, bd = 700;
+      for (const f of Fire.cells.values()) {
+        const dx = (f.x * TS + 16 - v.body.x) * v.facing;
+        if (dx > 20 && dx < bd) { bd = dx; best = f; }
+      }
+      if (best) {
+        const dx = bd + 10, dy = v.body.y - 78 - (best.y * TS + 16);
+        const want = clamp(Math.atan2(dy + dx * dx * 900 / (2 * 650 * 650), dx), 0, 1.3);
+        s.aim = lerp(s.aim, want, Math.min(1, dt * 4));
+      }
+    }
     if (inp.action) {
       s.spray += dt;
       const L = 76, px = -10, py = -78;

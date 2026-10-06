@@ -113,6 +113,9 @@ function drawProps(c, camX, camY) {
 const Game = {
   mode: 'title', t: 0, stars: 0, worldReady: false,
   cam: { x: 0, y: 0 },
+  drove: {},   // vehicles driven at least once (first drive earns a star)
+  saveExtra() { return { drove: this.drove }; },
+  loadExtra(e) { this.drove = (e && e.drove) || {}; },
   zoom: 1,
   get viewW() { return W / this.zoom; },
   get viewH() { return H / this.zoom; },
@@ -134,7 +137,7 @@ const Game = {
     this.stars = 0;
     Player.init(Player.type || 'rex', 12 * TS, World.surfaceAt(12) * TS);
     Vehicles.spawnDefaults();
-    Fish.reset(); Fire.cells.clear();
+    Fish.reset(); Fire.cells.clear(); Pickups.generate(World.seed);
     NPCs.spawnDefaults();
     Jobs.reset();
     this.worldReady = true;
@@ -172,7 +175,7 @@ const Game = {
     const p = s.player || {};
     Player.init(DINO_TYPES[p.type] ? p.type : 'rex', p.x || 12 * TS, p.y || SURF * TS);
     if (s.vehicles) Vehicles.load(s.vehicles); else Vehicles.spawnDefaults();
-    Fish.reset(); Fire.cells.clear();
+    Fish.reset(); Fire.cells.clear(); Pickups.generate(World.seed);
     NPCs.spawnDefaults();
     Jobs.reset();
     if (this.loadExtra) this.loadExtra(s.extra);
@@ -242,6 +245,7 @@ const Game = {
     if (this.overlay && this.overlay.tap(x, y)) return;
     if (Jobs.tap(x, y)) return;
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
+    if (Jobs.tapWorld(wx, wy)) return;
     if (!Player.vehicle) {
       const pb = Player.body;
       const dino = NPCs.list.find(n => !n.vehicle && !n.ride && Math.abs(n.body.x - wx) < 30 && wy > n.body.y - n.body.h - 20 && wy < n.body.y + 6);
@@ -304,6 +308,7 @@ const Game = {
     Fire.update(dt);
     Fish.update(dt);
     Falling.update(dt);
+    Pickups.update(dt);
     for (const p of World.props) if (p.type === 'bin' && !p.full && (p.refill -= dt) <= 0) p.full = true;
     Sim.update(dt, this.cam.x, this.cam.y);
     Fx.update(dt);
@@ -322,6 +327,7 @@ const Game = {
     drawProps(c, cx, cy);
     c.translate(-cx, -cy);
     Fish.draw(c);
+    Pickups.draw(c);
     Fire.draw(c);
     Falling.draw(c);
     NPCs.draw(c);

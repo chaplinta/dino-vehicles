@@ -64,8 +64,8 @@ function generateWorld(world, seed) {
       else if (y > h && y <= h + dirtDepth) id = sandy ? T.SAND : rocky ? T.STONE : T.DIRT;
       else if (y > h) id = T.STONE;
       else if (b === 'beach' && x >= SEA_X0 - 2 && x < SEA_X1 + 2 && y >= SEA_LEVEL) id = T.WATER;
-      if (id === T.DIRT && rng() < 0.012) id = rng() < 0.55 ? T.BONE : T.EGG;
-      else if (id === T.STONE && y > h + 6 && rng() < 0.014) id = rng() < 0.5 ? T.GEM : T.FOSSIL;
+      if (id === T.DIRT && rng() < 0.025) id = rng() < 0.55 ? T.BONE : T.EGG;
+      else if (id === T.STONE && y > h + 5 && rng() < 0.02) id = rng() < 0.5 ? T.GEM : T.FOSSIL;
       world.t[y * Wt + x] = id;
     }
   }

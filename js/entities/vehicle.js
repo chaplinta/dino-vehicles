@@ -189,6 +189,11 @@ const Vehicles = {
     delete v.autoTarget;
     Sound.click(); v.hornSound();
     Sound.say(v.def.say || v.def.name);
+    if (p === Player && !Game.drove[v.kind]) {
+      Game.drove[v.kind] = true;
+      Game.addStars(1);
+      Game.popupStar(v.body.x, v.body.y - v.body.h);
+    }
     Fx.burst(v.body.x, v.body.y - v.body.h / 2, 10, { speed: 160, life: 0.5, r: 7, color: '#fff' });
     if (v.def.onEnter) v.def.onEnter(v);
     Game.configurePlay();

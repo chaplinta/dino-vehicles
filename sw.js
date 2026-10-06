@@ -1,12 +1,12 @@
 // Offline support: cache every game file on first visit, then play with no connection.
 // Serves from the cache first; when online it refreshes the cache in the background,
 // so a new version shows up on the next launch. Bump VERSION when files are added or removed.
-const VERSION = 'dino-vehicles-v4';
+const VERSION = 'dino-vehicles-v5';
 const FILES = [
   './', 'index.html', 'style.css', 'manifest.webmanifest',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'js/core.js', 'js/audio.js', 'js/input.js', 'js/draw.js',
-  'js/world/tiles.js', 'js/world/gen.js', 'js/world/world.js', 'js/world/render.js', 'js/world/sim.js', 'js/world/fire.js',
+  'js/world/tiles.js', 'js/world/gen.js', 'js/world/world.js', 'js/world/render.js', 'js/world/sim.js', 'js/world/fire.js', 'js/world/pickups.js',
   'js/entities/physics.js', 'js/entities/dino.js', 'js/entities/player.js', 'js/entities/vehicle.js',
   'js/entities/vehicles/construction.js', 'js/entities/vehicles/emergency.js', 'js/entities/vehicles/farm.js',
   'js/entities/vehicles/water.js', 'js/entities/vehicles/air.js', 'js/entities/vehicles/rail.js',

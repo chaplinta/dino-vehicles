@@ -167,7 +167,7 @@ const Jobs = {
       const avail = this.available();
       const bag = avail.flatMap(k => Array(JOB_TYPES[k].weight).fill(k));
       if (bag.length) this.spawn(pick(bag));
-      this.t = this.list.length >= 2 ? 10 : rand(25, 45);
+      this.t = this.list.length >= 2 ? 10 : rand(15, 30);
     }
     for (const job of [...this.list]) {
       job.t += dt;
@@ -242,10 +242,24 @@ const Jobs = {
       this.arrows.push({ x: ax, y: ay, job });
     }
   },
+  // Tapping a job's arrow or bubble brings the vehicle that job needs.
   tap(x, y) {
     const a = (this.arrows || []).find(a => dist(a.x, a.y, x, y) < 44);
     if (!a) return false;
-    Sound.say(a.job.say);
+    this.callFor(a.job);
     return true;
+  },
+  tapWorld(wx, wy) {
+    const job = this.list.find(j => { const w = this.where(j); return dist(w.x, w.y - 30, wx, wy) < 50; });
+    if (!job) return false;
+    this.callFor(job);
+    return true;
+  },
+  callFor(job) {
+    const kind = job.def.vehicle, def = VEHICLE_DEFS[kind];
+    if (Player.vehicle && Player.vehicle.kind === kind) { Sound.say(job.say); return; }
+    if (!def || Game.stars < def.unlock) { Sound.say(job.say); return; }
+    if (Player.vehicle) Vehicles.exit(Player);
+    callVehicle(kind);
   },
 };

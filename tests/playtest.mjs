@@ -39,12 +39,15 @@ await page.evaluate(() => {
         nextWhistle: 20 + rng() * 30, exitAt: 0,
         events: [], issues: [], frame: [], firstStar: null, lastReward: 0, longestGap: 0,
         lastStars: 0, jobsSeen: {}, jobsDone: {}, unlocks: {}, vehiclesUsed: {},
-        stuck: { x: 0, t: 0, dir: 0 }, maxDepth: 0,
+        stuck: { x: 0, t: 0, dir: 0 }, maxDepth: 0, pickups: 0,
       });
-      const origFinish = Jobs.finish.bind(Jobs);
-      Jobs.finish = job => { this.jobsDone[job.kind] = (this.jobsDone[job.kind] || 0) + 1; this.reward('job ' + job.kind); origFinish(job); };
-      const origSpawn = Jobs.spawn.bind(Jobs);
-      Jobs.spawn = kind => { const j = origSpawn(kind); if (j) this.jobsSeen[kind] = (this.jobsSeen[kind] || 0) + 1; return j; };
+      if (!this.wrapped) {
+        this.wrapped = true;
+        const origFinish = Jobs.finish.bind(Jobs);
+        Jobs.finish = job => { this.jobsDone[job.kind] = (this.jobsDone[job.kind] || 0) + 1; this.reward('job ' + job.kind); origFinish(job); };
+        const origSpawn = Jobs.spawn.bind(Jobs);
+        Jobs.spawn = kind => { const j = origSpawn(kind); if (j) this.jobsSeen[kind] = (this.jobsSeen[kind] || 0) + 1; return j; };
+      }
     },
     reward(what) {
       const gap = this.t - this.lastReward;
@@ -90,6 +93,20 @@ await page.evaluate(() => {
         if (near && r() < 0.05) { Vehicles.enter(Player, near); this.exitAt = t + 15 + r() * 40; this.vehiclesUsed[near.kind] = (this.vehiclesUsed[near.kind] || 0) + 1; }
       }
       if (Player.vehicle && t > this.exitAt && !Game.overlay && r() < 0.05) Vehicles.exit(Player);
+      // A kid who follows the jobs: taps the job arrow (which brings the right vehicle), hops in,
+      // drives toward the goal and presses the action button when close.
+      const job = Jobs.list[0];
+      if (job && r() < this.goalBias * 0.02 && !Game.overlay && !(Player.vehicle && Player.vehicle.kind === job.def.vehicle)) {
+        Jobs.callFor(job);
+        const v = Vehicles.nearest(Player.body.x, Player.body.y - 28, 400, v => v.kind === job.def.vehicle && !v.driver);
+        if (v) { Player.body.x = v.body.x; Vehicles.enter(Player, v); this.exitAt = t + 60; this.vehiclesUsed[v.kind] = (this.vehiclesUsed[v.kind] || 0) + 1; }
+      }
+      if (job && Player.vehicle && Player.vehicle.kind === job.def.vehicle && r() < this.goalBias) {
+        const g = Jobs.goal(job), dx = g.x - Player.cx;
+        this.plan = { dir: Math.abs(dx) < 60 ? 0 : Math.sign(dx), until: t + 0.3 };
+        if (Math.abs(dx) < 400) this.mashUntil = t + 0.5;
+        if (Player.vehicle.def.mover === 'air') { this.upUntil = g.y < Player.cy - 40 ? t + 0.2 : 0; this.downUntil = g.y > Player.cy + 40 ? t + 0.2 : 0; }
+      }
       // Rocket: always blast off once inside.
       if (Player.vehicle && Player.vehicle.kind === 'rocket' && Player.vehicle.s.state === 'idle' && r() < 0.05) { Input.set('action', true); Input.set('action', false); }
     },
@@ -115,6 +132,7 @@ await page.evaluate(() => {
           this.stuck.t = this.t;
         }
       } else this.stuck = { x: Player.cx, t: this.t, dir: 0 };
+      this.pickups = Pickups.list.filter(p => p.gone > 0).length > this.pickups ? Pickups.list.filter(p => p.gone > 0).length : this.pickups;
       if (Game.stars > this.lastStars) {
         if (this.firstStar === null) this.firstStar = Math.round(this.t);
         for (const k of VEHICLE_ORDER) { const u = VEHICLE_DEFS[k].unlock; if (u > this.lastStars && u <= Game.stars) this.unlocks[k] = Math.round(this.t); }
@@ -149,7 +167,7 @@ await page.evaluate(() => {
       return {
         stars: Game.stars, firstStar: this.firstStar, longestGap: Math.round(this.longestGap), longestGapAt: this.longestGapAt,
         unlocks: this.unlocks, jobsSeen: this.jobsSeen, jobsDone: this.jobsDone, vehiclesUsed: this.vehiclesUsed,
-        issues: this.issues, maxDepth: this.maxDepth, saveKB: Math.round(saveBytes / 1024),
+        floatingStarsCaughtAtOnce: this.pickups, issues: this.issues, maxDepth: this.maxDepth, saveKB: Math.round(saveBytes / 1024),
         frameAvg: +(f.reduce((a, b) => a + b, 0) / f.length).toFixed(2), frameP99: +f[Math.floor(f.length * 0.99)].toFixed(1),
       };
     },
