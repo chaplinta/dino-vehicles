@@ -33,6 +33,12 @@ const Title = {
     ell(c, 0, 0, 62, 62, '#ff6b6b', 6);
     poly(c, [-16, -28, 32, 0, -16, 28], '#fff', 5);
     c.restore();
+    // Lets grown-ups see the game is saved on this device and will work with no internet.
+    if (Game.offlineReady) {
+      rbox(c, 16, H - 52, 250, 38, 19, 'rgba(255,255,255,0.85)', 3);
+      c.font = `800 19px ${FONT}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillStyle = '#2b8a3e';
+      c.fillText('✈️ ✔ Ready to play offline', 30, H - 33);
+    }
   },
 };
 

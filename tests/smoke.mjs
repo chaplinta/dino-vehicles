@@ -513,6 +513,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.reload();
   await page.waitForTimeout(500);
   check(await page.evaluate(() => typeof Game !== 'undefined' && Game.mode === 'title'), 'game loads with no connection');
+  check(await page.evaluate(() => new Promise(r => setTimeout(() => r(Game.offlineReady), 5000))), 'title shows Ready to play offline');
   await page.evaluate(() => Game.startPlay('rex'));
   await page.waitForTimeout(300);
   check(await page.evaluate(() => Game.mode === 'play'), 'game plays offline');

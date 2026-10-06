@@ -433,4 +433,14 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     location.reload();
   });
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  // Ask how many game files are saved; the title screen shows "Ready offline" once all are.
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'offline-status') Game.offlineReady = e.data.have >= e.data.total;
+  });
+  const askOffline = () => {
+    if (Game.offlineReady) return;
+    navigator.serviceWorker.ready.then(reg => reg.active && reg.active.postMessage('offline-status')).catch(() => {});
+    setTimeout(askOffline, 3000);
+  };
+  setTimeout(askOffline, 1500);
 }
