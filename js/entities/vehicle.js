@@ -208,7 +208,9 @@ const Vehicles = {
       else if (Input.pressed.roar) { p.vehicle.hornSound(); }
     } else {
       const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver);
-      UI.setEnter(!!near, '🚪');
+      const table = !near && !Game.onMoon && World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - p.body.x) < 110 && Math.abs(t.y * TS - p.body.y) < 80);
+      UI.setEnter(!!near || !!table, table ? '♟️' : '🚪');
+      if (table && Input.pressed.enter) { Chess.open(); return; }
       if (near && !this.doorHint) { this.doorHint = true; Sound.say('Press the door button to get in!'); }
       if (near && Input.pressed.enter) this.enter(p, near);
       else if (Input.pressed.whistle && !Game.onMoon) Whistle.open();

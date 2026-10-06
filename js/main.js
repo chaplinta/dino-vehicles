@@ -151,6 +151,17 @@ function drawProps(c, camX, camY) {
       ell(c, ux, sy - 22, 70, 18, '#69db7c', 4);
       for (let i = 0; i < 5; i++) ell(c, ux - 48 + i * 24, sy - 20, 5, 5, Math.floor(Game.t * 5 + i) % 2 ? '#ffd43b' : '#fff', 2);
       if (!(p.flyT > 0)) { limb(c, [ux - 34, sy - 10, ux - 44, sy], 4, '#868e96'); limb(c, [ux + 34, sy - 10, ux + 44, sy], 4, '#868e96'); }
+    } else if (p.type === 'chess') {
+      // Table with a chess board and a dino deep in thought.
+      const sy = p.y * TS - camY;
+      if (sx < -150 || sx > Game.viewW + 150) continue;
+      limb(c, [sx - 30, sy - 40, sx - 30, sy], 5, '#8a5a2b'); limb(c, [sx + 30, sy - 40, sx + 30, sy], 5, '#8a5a2b');
+      rbox(c, sx - 44, sy - 46, 88, 8, 3, '#a0662e', 3);
+      for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#f1d9b5' : '#b58863'; c.fillRect(sx - 24 + i * 6, sy - 50, 6, 4); }
+      for (let i = 0; i < 5; i++) { c.fillStyle = i % 2 ? '#fff8e7' : '#4a3426'; c.fillRect(sx - 22 + i * 10, sy - 58, 4, 8); }
+      rbox(c, sx + 50, sy - 22, 26, 6, 2, '#8a5a2b', 2); limb(c, [sx + 63, sy - 16, sx + 63, sy], 4, '#8a5a2b');
+      drawDinoSeated(c, sx + 62, sy - 28, 0.55, Chess.opp, { t: Game.t, flip: true });
+      if (Math.floor(Game.t / 3) % 2 === 0) bubble(c, sx + 50, sy - 90, '♟️', Game.t);
     } else if (p.type === 'tower') {
       const sy = p.y * TS - camY;
       if (sx < -200 || sx > Game.viewW + 300) continue;
@@ -309,6 +320,10 @@ const Game = {
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
     if (this.onMoon && Eggs.tapSaucer(wx, wy)) return;
     if (Jobs.tapWorld(wx, wy)) return;
+    if (!Player.vehicle && !this.onMoon) {
+      const table = World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - wx) < 90 && wy > t.y * TS - 120 && wy < t.y * TS + 10);
+      if (table && Math.abs(table.x * TS - Player.body.x) < 260) { Chess.open(); return; }
+    }
     if (!Player.vehicle) {
       const pb = Player.body;
       const dino = NPCs.list.find(n => !n.vehicle && !n.ride && Math.abs(n.body.x - wx) < 30 && wy > n.body.y - n.body.h - 20 && wy < n.body.y + 6);

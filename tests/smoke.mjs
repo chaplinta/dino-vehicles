@@ -503,6 +503,45 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 18. Chess with the dino at the table by the town.
+{
+  const page = await open({ width: 960, height: 540 });
+  const run = n => page.evaluate(n => { for (let i = 0; i < n; i++) { Game.update(1 / 60); Input.endFrame(); } ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); }, n);
+  const tapSq = sq => page.evaluate(sq => { const p = Chess.centre(sq); Game.tap(p.x, p.y - 4); }, sq);
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; });
+  await page.evaluate(() => { const t = World.props.find(p => p.type === 'chess'); Player.body.x = t.x * TS - 60; Player.body.y = World.surfaceAt(Math.floor(Player.body.x / TS)) * TS - 0.01; });
+  await run(2);
+  await page.evaluate(() => { const t = World.props.find(p => p.type === 'chess'); Game.tap((t.x * TS - Game.cam.x) * Game.zoom, (t.y * TS - 50 - Game.cam.y) * Game.zoom); });
+  check(await page.evaluate(() => Game.overlay === Chess && Chess.st.turn === 'w'), 'chess opens at the table');
+  await tapSq(52); await tapSq(43);   // e7 is not ours, then d6 nothing selected
+  check(await page.evaluate(() => Chess.sel === -1 && !Chess.anim), 'tapping the dino\'s pieces does nothing');
+  await tapSq(12);
+  check(await page.evaluate(() => Chess.sel === 12 && Chess.targets.length === 2), 'pick up the e-pawn: two squares to go');
+  await tapSq(28);
+  await run(30);
+  check(await page.evaluate(() => !!Chess.anim), 'a dino hand carries the piece');
+  await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/chess.png' : '/dev/null' }).catch(() => {});
+  const left = await page.evaluate(() => Asteroid.left);
+  await run(60 * 5);
+  check(await page.evaluate(() => Chess.st.b[28] && Chess.st.b[28].t === 'p' && Chess.st.turn === 'w' && Chess.lastMove && Chess.lastMove.from >= 48), 'pawn to e4, then the dino moves');
+  check(await page.evaluate(l => Math.abs(Asteroid.left - l) < 0.01, left), 'asteroid clock waits while playing chess');
+  // A back-rank mate wins 10 stars.
+  await page.evaluate(() => {
+    const st = ChessRules.start(); st.b.fill(null);
+    st.b[4] = { c: 'w', t: 'k' }; st.b[0] = { c: 'w', t: 'r' };
+    st.b[63] = { c: 'b', t: 'k' }; st.b[54] = { c: 'b', t: 'p' }; st.b[55] = { c: 'b', t: 'p' };
+    st.castle = { wK: false, wQ: false, bK: false, bQ: false };
+    Chess.st = st; Chess.lastMove = null; window.__stars = Game.stars;
+  });
+  await tapSq(0); await tapSq(56);
+  await run(60 * 2);
+  check(await page.evaluate(() => Chess.over === 'win' && Game.stars === window.__stars + 10), 'checkmate wins 10 stars');
+  await page.evaluate(() => Game.tap(W - 50, 130));
+  check(await page.evaluate(() => Game.overlay === null && Game.mode === 'play'), '✖ goes back to the park');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');
