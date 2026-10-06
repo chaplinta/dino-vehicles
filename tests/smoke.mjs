@@ -419,6 +419,62 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 16. Easter eggs and the moon buggy.
+{
+  const page = await open({ width: 960, height: 540 });
+  const run = (n, keys = {}) => page.evaluate(([n, keys]) => {
+    for (let i = 0; i < n; i++) { for (const k of ['left', 'right', 'up', 'down', 'action']) Input.held[k] = !!keys[k]; Game.update(1 / 60); Input.endFrame(); }
+    for (const k of ['left', 'right', 'up', 'down', 'action']) Input.held[k] = false;
+  }, [n, keys]);
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; });
+  // Roar 5 times fast: shooting stars.
+  await page.evaluate(() => { for (let i = 0; i < 5; i++) { Game.t += 0.3; Player.roar(); } });
+  check(await page.evaluate(() => Pickups.list.filter(p => p.temp).length >= 10), 'roaring 5 times brings shooting stars');
+  await run(60 * 6);
+  check(await page.evaluate(() => Pickups.list.filter(p => p.temp).every(p => p.y < (WORLD_H - 2) * TS)), 'shooting stars land on the ground');
+  // Tap the sun 3 times.
+  await page.evaluate(() => { ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); for (let i = 0; i < 3; i++) Game.tap(Game.sunAt.x, Game.sunAt.y); });
+  check(await page.evaluate(() => Eggs.sunCool && Eggs.found.sun), 'tapping the sun 3 times gives it sunglasses');
+  // Golden egg at the bottom under the farm hatches a pet that follows.
+  check(await page.evaluate(() => World.get(52, WORLD_H - 3) === T.GOLDEGG), 'golden egg is buried under the farm');
+  await page.evaluate(() => { Player.body.x = 52 * TS + 16; Player.body.y = (WORLD_H - 4) * TS - 0.01; World.set(52, WORLD_H - 4, T.AIR); World.set(52, WORLD_H - 5, T.AIR); Player.tapTile(52, WORLD_H - 3); });
+  check(await page.evaluate(() => !!Eggs.pet), 'digging the golden egg hatches a baby dino');
+  await page.evaluate(() => { Player.body.x = 140 * TS; Player.body.y = World.groundBelow(140, SURF - 3) * TS - 0.01; Game.snapCamera(); });
+  await run(60 * 3, { right: true });
+  check(await page.evaluate(() => Math.abs(Eggs.pet.body.x - Player.body.x) < 200), 'pet follows the player');
+  await page.evaluate(() => Save.write());
+  await page.reload(); await page.waitForTimeout(300);
+  check(await page.evaluate(() => !!Eggs.pet && Eggs.found.sun), 'pet and found surprises are saved');
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; Game.startPlay('rex'); Jobs.t = 1e9; });
+  // Nessie wakes when you swim close.
+  await page.evaluate(() => { const n = World.props.find(p => p.type === 'nessie'); Player.body.x = n.x * TS - 60; Player.body.y = (n.y - 2) * TS; Game.snapCamera(); });
+  await run(60 * 2);
+  check(await page.evaluate(() => Eggs.found.nessie && World.props.find(p => p.type === 'nessie').rise > 0.3), 'Nessie pops up when you swim close');
+  // The Moon: buggy, cheese core, saucer.
+  await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v); Moon.enter(v); });
+  await run(60 * 8);
+  check(await page.evaluate(() => Vehicles.list.some(v => v.kind === 'moonbuggy')), 'moon buggy waits on the Moon');
+  const drove = await page.evaluate(() => { Vehicles.exit(Player); const b = Vehicles.list.find(v => v.kind === 'moonbuggy'); Player.body.x = b.body.x; Player.body.y = b.body.y; Vehicles.enter(Player, b); return b.body.x; });
+  await run(60 * 2, { right: true });
+  await run(90);
+  const hop = await page.evaluate(() => { const v = Player.vehicle; for (let i = 0; i < 300 && !v.body.onGround; i++) { Game.update(1 / 60); Input.endFrame(); } Input.set('action', true); Game.update(1 / 60); Input.endFrame(); Input.set('action', false); let top = v.body.y, y0 = v.body.y; for (let i = 0; i < 120; i++) { Game.update(1 / 60); Input.endFrame(); top = Math.min(top, v.body.y); } return (y0 - top) / TS; });
+  check(await page.evaluate(x => Player.vehicle.kind === 'moonbuggy' && Player.vehicle.body.x > x + 100, drove) && hop > 4, `moon buggy drives and bounces (${hop.toFixed(1)} tiles)`);
+  await page.evaluate(() => Vehicles.exit(Player));
+  check(await page.evaluate(() => World.get(76, 64) === T.CHEESE), 'the Moon has a cheese core');
+  await page.evaluate(() => { for (let y = World.surfaceAt(76) - 1; y < 63; y++) World.set(76, y, T.AIR); Player.body.x = 76 * TS + 16; Player.body.y = 63 * TS - 0.01; Player.tapTile(76, 63); });
+  check(await page.evaluate(() => Eggs.found.cheese), 'digging into the core: the Moon is made of cheese');
+  await page.evaluate(() => { const s = World.props.find(p => p.type === 'saucer'); Player.body.x = s.x * TS - 100; Player.body.y = World.surfaceAt(s.x - 3) * TS - 0.01; Game.snapCamera(); Eggs.tapSaucer(s.x * TS, s.y * TS - 30); });
+  check(await page.evaluate(() => World.props.find(p => p.type === 'saucer').flyT > 0), 'tapping the saucer makes it fly');
+  await run(60 * 5);
+  check(await page.evaluate(() => Eggs.found.saucer && Pickups.list.some(p => p.temp)), 'the saucer drops stars');
+  await run(60 * 5);
+  check(await page.evaluate(() => !(World.props.find(p => p.type === 'saucer').flyT > 0)), 'the saucer lands again');
+  // Draw everything once in each place to catch drawing errors.
+  await page.evaluate(() => { ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); Moon.leave(null, true); Game.draw(ctx); });
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

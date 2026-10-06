@@ -3,7 +3,7 @@ const T = {
   AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, WATER: 5, BEDROCK: 6, WOOD: 7, BRICK: 8,
   GLASS: 9, ROAD: 10, RAIL: 11, BONE: 12, EGG: 13, GEM: 14, FOSSIL: 15, LEAVES: 16, TRUNK: 17,
   CROP: 18, ROOF: 19, CONCRETE: 20, FLOWER: 21,
-  MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25,
+  MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25, GOLDEGG: 26,
 };
 
 // Per-tile hash so textures look varied but stable.
@@ -166,9 +166,20 @@ defTile(T.CRYSTAL, { name: 'moon crystal', treasure: true, hard: 2, draw: treasu
   poly(c, [cx - 9, cy + 9, cx - 5, cy - 6, cx, cy - 12, cx + 5, cy - 6, cx + 9, cy + 9], '#cc5de8', 2);
   poly(c, [cx - 3, cy - 5, cx, cy - 10, cx + 2, cy - 4], '#f3d9fa', 0);
 }) });
-defTile(T.CHEESE, { name: 'moon cheese', treasure: true, draw: treasureTile(T.MOONDUST, (c, cx, cy) => {
-  poly(c, [cx - 11, cy + 7, cx + 11, cy + 7, cx + 11, cy - 3, cx - 11, cy + 2], '#ffd43b', 2);
-  ell(c, cx + 3, cy + 3, 2.5, 2, '#f59f00', 0); ell(c, cx - 4, cy + 4, 1.8, 1.5, '#f59f00', 0);
+defTile(T.CHEESE, { name: 'moon cheese', treasure: true, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#ffd43b'; c.fillRect(x, y, TS, TS);
+  c.fillStyle = '#fab005';
+  for (let i = 0; i < 3; i++) {
+    const a = tileHash(tx * 5 + i, ty * 3 - i), b = tileHash(tx - i * 7, ty + i * 11);
+    c.beginPath(); c.arc(x + 5 + a * 22, y + 5 + b * 22, 2.5 + a * 3, 0, TAU); c.fill();
+  }
+  c.fillStyle = 'rgba(255,255,255,0.35)'; c.fillRect(x, y, TS, 3);
+} });
+
+defTile(T.GOLDEGG, { name: 'golden egg', treasure: true, hard: 2, draw: treasureTile(T.STONE, (c, cx, cy) => {
+  ell(c, cx, cy + 1, 10, 13, '#ffd43b', 2);
+  ell(c, cx - 3, cy - 4, 3, 4, '#fff3bf', 0);
+  drawStar(c, cx + 4, cy + 4, 4, 0, '#fab005', 0);
 }) });
 
 // Blocks the player can build with.

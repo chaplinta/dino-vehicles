@@ -55,7 +55,7 @@ function drawCloud(c, x, y, s) {
   c.arc(x + 64 * s, y, 28 * s, 0, TAU); c.arc(x + 32 * s, y + 8 * s, 30 * s, 0, TAU);
   c.fill();
 }
-function drawSun(c, x, y, t) {
+function drawSun(c, x, y, t, cool) {
   c.save(); c.translate(x, y); c.rotate(t * 0.2);
   c.fillStyle = '#ffe066';
   for (let i = 0; i < 12; i++) {
@@ -67,6 +67,11 @@ function drawSun(c, x, y, t) {
   ell(c, x - 13, y - 6, 4, 5, OUT, 0); ell(c, x + 13, y - 6, 4, 5, OUT, 0);
   c.beginPath(); c.arc(x, y + 4, 16, 0.3, Math.PI - 0.3); c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
   ell(c, x - 24, y + 8, 7, 4, 'rgba(255,120,120,0.6)', 0); ell(c, x + 24, y + 8, 7, 4, 'rgba(255,120,120,0.6)', 0);
+  if (cool) {
+    rbox(c, x - 27, y - 14, 22, 14, 6, OUT, 0); rbox(c, x + 5, y - 14, 22, 14, 6, OUT, 0);
+    c.fillStyle = OUT; c.fillRect(x - 6, y - 11, 12, 3);
+    c.fillStyle = 'rgba(255,255,255,0.5)'; c.fillRect(x - 23, y - 11, 6, 3); c.fillRect(x + 9, y - 11, 6, 3);
+  }
 }
 function drawHills(c, camX, factor, baseY, amp, color, seed) {
   c.beginPath(); c.moveTo(0, H);

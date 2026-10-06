@@ -67,6 +67,17 @@ Stars unlock more vehicles. The whistle menu brings any unlocked vehicle to you.
 | Plane | water the crops while flying (up to take off) |
 | Rocket | countdown, blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
 
+On the Moon there's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
+
+## Secrets (spoilers for grown-ups)
+
+- **Shooting stars:** roar 5 times quickly and a shower of stars falls from the sky.
+- **Cool sun:** tap the sun 3 times and it puts on sunglasses.
+- **Golden egg:** dig all the way to the bottom of the world under the farm. It hatches a baby dino that follows you everywhere, even to the Moon.
+- **Nessie:** swim, or take the submarine, along the sea floor near the far side of the sea. A friendly sea monster wakes up and waves.
+- **Moon cheese core:** dig deep down in the middle of the Moon. It really is made of cheese.
+- **Flying saucer:** tap the parked saucer on the Moon. It takes off, does a loop and drops stars.
+
 ## Jobs
 
 Jobs pop up now and then, with a voice prompt, a bubble in the world and an arrow at the screen edge. Tap the arrow or the bubble and the right vehicle for the job comes to you:

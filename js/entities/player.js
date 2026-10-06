@@ -6,6 +6,7 @@ const TREASURE_INFO = {
   [T.FOSSIL]: { say: 'A fossil!', stars: 2 },
   [T.CRYSTAL]: { say: 'A moon crystal!', stars: 2 },
   [T.CHEESE]: { say: 'Moon cheese!', stars: 1 },
+  [T.GOLDEGG]: { say: 'A golden egg!', stars: 5 },
 };
 const DUST = {
   [T.GRASS]: ['#5cc84a', '#a0662e'], [T.DIRT]: ['#a0662e', '#8a5524'], [T.SAND]: ['#f2d48a', '#e0bd6c'],
@@ -25,6 +26,7 @@ function digEffects(tx, ty, id) {
     Game.popup(id, cx, cy);
     Sound.collect();
     Sound.say(info.say);
+    Eggs.onDig(tx, ty, id);
   }
 }
 
@@ -44,6 +46,7 @@ const Player = {
   roar() {
     this.roarT = 0.9;
     Sound.roar();
+    Eggs.onRoar();
     if (typeof NPCs !== 'undefined') NPCs.heardRoar(this.cx, this.cy);
   },
 

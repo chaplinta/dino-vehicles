@@ -18,13 +18,22 @@ const Pickups = {
       this.list.push({ x: tx * TS + TS / 2, y: ty * TS + TS / 2, t: rng() * 10, gone: 0 });
     }
   },
+  // A shower of stars that drift down from (x, y) and settle on the ground until caught.
+  shower(x, y, n) {
+    for (let i = 0; i < n; i++) this.list.push({ x: x + rand(-420, 420), y: y - rand(0, 300), t: rand(0, 9), gone: 0, temp: true, life: 25, vy: rand(70, 130) });
+  },
   update(dt) {
     const v = Player.vehicle;
     const cx = v ? v.body.x : Player.body.x;
     const cy = v ? v.body.y - v.body.h / 2 : Player.body.y - Player.body.h / 2;
     const reach = v ? Math.max(v.body.w, v.body.h) / 2 + 24 : 40;
+    this.list = this.list.filter(p => !(p.temp && (p.life <= 0 || p.gone > 0)));
     for (const p of this.list) {
       p.t += dt;
+      if (p.temp) {
+        p.life -= dt;
+        if (!World.solid(Math.floor(p.x / TS), Math.floor((p.y + 18) / TS))) p.y += p.vy * dt;
+      }
       if (p.gone > 0) { p.gone -= dt; continue; }
       if (Math.abs(p.x - cx) < reach && Math.abs(p.y - cy) < reach + 10) {
         p.gone = this.RESPAWN;

@@ -47,7 +47,8 @@ function drawBackdrop(c, camX, camY, t, zoom = 1) {
   c.fillStyle = g; c.fillRect(0, 0, W, H);
   const surfY = (SURF * TS - camY) * zoom;   // screen y of normal ground level
   const off = surfY - 440;          // shift scenery with vertical camera
-  drawSun(c, 170, 130 + off * 0.1, t);
+  Game.sunAt = { x: 170, y: 130 + off * 0.1 };
+  drawSun(c, 170, 130 + off * 0.1, t, Eggs.sunCool);
   for (let i = 0; i < 6; i++) {
     const x = ((i * 260 + 40 - camX * 0.08 - t * 6) % (W + 300) + W + 300) % (W + 300) - 150;
     drawCloud(c, x, 70 + (i * 37 % 90) + off * 0.15, 0.8 + (i % 3) * 0.2);
@@ -121,13 +122,33 @@ function drawProps(c, camX, camY) {
       const wave = Math.sin(Game.t * 3) * 4;
       poly(c, [sx + 2, sy - 118, sx + 70, sy - 112 + wave, sx + 70, sy - 72 + wave, sx + 2, sy - 78], '#ff6b6b', 3);
       drawDinoSeated(c, sx + 34, sy - 76 + wave, 0.32, Player.type, { t: Game.t });
-    } else if (p.type === 'saucer') {
+    } else if (p.type === 'nessie') {
       const sy = p.y * TS - camY;
-      if (sx < -120 || sx > Game.viewW + 120) continue;
-      ell(c, sx, sy - 40, 30, 26, 'rgba(190,240,255,0.8)', 3);
-      ell(c, sx, sy - 22, 70, 18, '#69db7c', 4);
-      for (let i = 0; i < 5; i++) ell(c, sx - 48 + i * 24, sy - 20, 5, 5, Math.floor(Game.t * 5 + i) % 2 ? '#ffd43b' : '#fff', 2);
-      limb(c, [sx - 34, sy - 10, sx - 44, sy], 4, '#868e96'); limb(c, [sx + 34, sy - 10, sx + 44, sy], 4, '#868e96');
+      if (sx < -200 || sx > Game.viewW + 200) continue;
+      const rise = p.rise || 0, surfY = SEA_LEVEL * TS - camY;
+      const hy = lerp(sy - 70, surfY - 70, rise), hx = sx + 70;
+      ell(c, sx - 10, sy - 26, 70, 30, '#38d9a9', 4);
+      for (const fx of [-50, 30]) ell(c, sx + fx, sy - 6, 18, 9, '#20c997', 3);
+      c.beginPath(); c.moveTo(sx - 75, sy - 20); c.quadraticCurveTo(sx - 120, sy - 10, sx - 130, sy - 34); c.lineWidth = 16; c.strokeStyle = '#38d9a9'; c.lineCap = 'round'; c.stroke();
+      limb(c, [sx + 40, sy - 40, hx - 10, (sy - 40 + hy) / 2, hx, hy + 20], 18, '#38d9a9');
+      ell(c, hx + 10, hy, 26, 18, '#38d9a9', 4);
+      for (let i = 0; i < 3; i++) ell(c, sx - 40 + i * 25, sy - 52 + Math.abs(i - 1) * 4, 7, 6, '#ffd43b', 2);
+      drawEye(c, hx + 16, hy - 6, 6, rise < 0.2 || (Game.t % 4) < 0.15);
+      if (rise > 0.5) {
+        c.beginPath(); c.arc(hx + 22, hy + 4, 7, 0.2, Math.PI - 0.5); c.lineWidth = 3; c.strokeStyle = OUT; c.stroke();
+        limb(c, [sx + 30, sy - 30, sx + 50 + Math.sin(Game.t * 6) * 14, sy - 80], 8, '#20c997');   // waving flipper
+      } else if (Math.floor(Game.t * 0.7) % 2 === 0) {
+        c.font = `22px ${FONT}`; c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,0.8)'; c.fillText('z', hx + 30, hy - 30 - (Game.t * 20) % 20);
+      }
+    } else if (p.type === 'saucer') {
+      const sy = p.y * TS - camY + (p.fy || 0), ux = sx + (p.fx || 0);
+      if (ux < -120 || ux > Game.viewW + 120) continue;
+      if (p.flyT > 0) { c.fillStyle = 'rgba(255,240,150,0.25)'; poly(c, [ux - 20, sy - 10, ux + 20, sy - 10, ux + 50, sy + 120, ux - 50, sy + 120], 'rgba(255,240,150,0.25)', 0); }
+      ell(c, ux, sy - 40, 30, 26, 'rgba(190,240,255,0.8)', 3);
+      drawDinoSeated(c, ux - 4, sy - 22, 0.28, 'alien', { t: Game.t });
+      ell(c, ux, sy - 22, 70, 18, '#69db7c', 4);
+      for (let i = 0; i < 5; i++) ell(c, ux - 48 + i * 24, sy - 20, 5, 5, Math.floor(Game.t * 5 + i) % 2 ? '#ffd43b' : '#fff', 2);
+      if (!(p.flyT > 0)) { limb(c, [ux - 34, sy - 10, ux - 44, sy], 4, '#868e96'); limb(c, [ux + 34, sy - 10, ux + 44, sy], 4, '#868e96'); }
     } else if (p.type === 'tower') {
       const sy = p.y * TS - camY;
       if (sx < -200 || sx > Game.viewW + 300) continue;
@@ -148,8 +169,8 @@ const Game = {
   cam: { x: 0, y: 0 },
   drove: {},   // vehicles driven at least once (first drive earns a star)
   onMoon: false, moonVisits: 0,
-  saveExtra() { return { drove: this.drove, moonVisits: this.moonVisits }; },
-  loadExtra(e) { this.drove = (e && e.drove) || {}; this.moonVisits = (e && e.moonVisits) || 0; },
+  saveExtra() { return { drove: this.drove, moonVisits: this.moonVisits, eggs: Eggs.save() }; },
+  loadExtra(e) { this.drove = (e && e.drove) || {}; this.moonVisits = (e && e.moonVisits) || 0; Eggs.load(e && e.eggs); },
   zoom: 1,
   get viewW() { return W / this.zoom; },
   get viewH() { return H / this.zoom; },
@@ -281,7 +302,9 @@ const Game = {
     if (this.mode !== 'play') { this.modes[this.mode].tap(x, y); return; }
     if (this.overlay && this.overlay.tap(x, y)) return;
     if (Jobs.tap(x, y)) return;
+    if (!this.onMoon && this.sunAt && dist(x, y, this.sunAt.x, this.sunAt.y) < 55) { Eggs.tapSun(); return; }
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
+    if (this.onMoon && Eggs.tapSaucer(wx, wy)) return;
     if (Jobs.tapWorld(wx, wy)) return;
     if (!Player.vehicle) {
       const pb = Player.body;
@@ -346,6 +369,7 @@ const Game = {
     Fish.update(dt);
     Falling.update(dt);
     Pickups.update(dt);
+    Eggs.update(dt);
     for (const p of World.props) if (p.type === 'bin' && !p.full && (p.refill -= dt) <= 0) p.full = true;
     Sim.update(dt, this.cam.x, this.cam.y);
     Fx.update(dt);
@@ -369,6 +393,7 @@ const Game = {
     Falling.draw(c);
     NPCs.draw(c);
     Vehicles.draw(c);
+    Eggs.drawPet(c);
     Player.draw(c);
     if (!this.onMoon) Jobs.drawWorld(c);
     Fx.draw(c);

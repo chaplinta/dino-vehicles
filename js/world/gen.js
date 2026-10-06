@@ -128,6 +128,10 @@ function generateWorld(world, seed) {
   for (let x = 278; x < 296; x++) for (let y = SURF; y < SURF + 4; y++) if (x > 280 && x < 294) put(x, y, y === SURF + 3 ? T.DIRT : T.AIR);
   props.push({ type: 'sign', x: 216, y: SURF, kind: 'site' });
 
+  // Secrets: a golden egg at the very bottom under the farm, Nessie asleep on the sea floor.
+  put(52, Ht - 3, T.GOLDEGG);
+  props.push({ type: 'nessie', x: SEA_X1 - 12, y: surf[SEA_X1 - 12] });
+
   // Sunken treasure on the sea floor.
   for (const cx of [345, 362, 384]) props.push({ type: 'chest', x: cx + 0.5, y: surf[cx], open: false });
 

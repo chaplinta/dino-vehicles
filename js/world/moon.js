@@ -36,6 +36,10 @@ function generateMoon(world, seed) {
       world.t[y * Wt + x] = id;
     }
   }
+  // Deep down, the Moon's secret cheese core.
+  for (let y = 58; y < 70; y++) for (let x = 66; x < 86; x++) {
+    if (((x - 76) / 10) ** 2 + ((y - 64) / 6) ** 2 <= 1) world.t[y * Wt + x] = T.CHEESE;
+  }
   world.genSurf = Int16Array.from(surf);
   world.props.push({ type: 'saucer', x: 110, y: surf[110] });
 }
@@ -69,6 +73,7 @@ const Moon = {
     rocket.body.vx = 0; rocket.body.vy = 100;
     rocket.s.state = 'chute';
     Vehicles.list = [rocket];
+    Vehicles.spawn('moonbuggy', 38 * TS, World.surfaceAt(38) * TS - 0.01, 1);
     // Friendly Moon dinos.
     NPCs.list = [];
     for (const tx of [52, 80, 116]) {
