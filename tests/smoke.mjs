@@ -195,16 +195,21 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.evaluate(() => Vehicles.exit(Player));
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
 
-  // Title: a quick tap on the seedling does nothing; holding it makes a new world and keeps stars.
-  await page.evaluate(() => { Game.stars = 17; World.set(20, 30, T.BRICK); Game.setMode('title'); });
+  // In game: a quick press on the seedling does nothing; holding it makes a new world and keeps stars.
+  await page.evaluate(() => { Game.startPlay('rex'); Game.stars = 17; World.set(20, 30, T.BRICK); });
   const seed0 = await page.evaluate(() => World.seed);
-  const r = await page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(); return { x: c.left + 60 / H * c.height, y: c.top + c.height - 60 / H * c.height }; });
-  await page.mouse.move(r.x, r.y);
-  await page.mouse.down(); await page.waitForTimeout(500); await page.mouse.up();
+  check(await page.locator('#btn-reset').isVisible(), 'new-world button shows in game');
+  await page.dispatchEvent('#btn-reset', 'pointerdown', { pointerId: 5 });
+  await page.waitForTimeout(500);
+  await page.dispatchEvent('#btn-reset', 'pointerup', { pointerId: 5 });
   await page.waitForTimeout(100);
-  check(await page.evaluate(s => World.seed === s && Game.mode === 'title', seed0), 'short tap on the new-world button does nothing');
-  await page.mouse.down(); await page.waitForTimeout(2300); await page.mouse.up();
-  check(await page.evaluate(s => World.seed !== s && Game.stars === 17 && World.diff.size === 0, seed0), 'holding the button makes a new world and keeps stars');
+  check(await page.evaluate(s => World.seed === s, seed0), 'short press on the new-world button does nothing');
+  await page.dispatchEvent('#btn-reset', 'pointerdown', { pointerId: 6 });
+  await page.waitForTimeout(2300);
+  await page.dispatchEvent('#btn-reset', 'pointerup', { pointerId: 6 });
+  check(await page.evaluate(s => World.seed !== s && Game.stars === 17 && World.diff.size === 0 && Game.mode === 'play', seed0), 'holding it makes a new world and keeps stars');
+  await page.evaluate(() => Game.setMode('title'));
+  check(!(await page.locator('#btn-reset').isVisible()), 'new-world button hidden on the title screen');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

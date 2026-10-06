@@ -37,6 +37,12 @@ body { display: flex; align-items: center; justify-content: center; }
   font-size: calc(var(--s) * 32px);
 }
 #btn-home { left: calc(var(--s) * 12px + var(--sl)); }
+#btn-reset {
+  left: calc(var(--s) * 86px + var(--sl));
+  /* Ring fills while held (--p goes 0 to 1). */
+  background: radial-gradient(circle, rgba(255,255,255,0.85) 58%, transparent 60%),
+    conic-gradient(#5ccf4a calc(var(--p, 0) * 1turn), rgba(255,255,255,0.75) 0);
+}
 #btn-mute { right: calc(var(--s) * 12px + var(--sr)); }
 .pad { position: absolute; bottom: calc(var(--s) * 14px + var(--sb)); }
 .pad .btn { position: static; width: 100%; height: 100%; }

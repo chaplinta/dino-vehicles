@@ -12,7 +12,7 @@ Open `index.html` in a modern browser (Chrome, Safari, Edge, Firefox). No instal
 
 Once loaded from the web link, it works offline: a service worker (`sw.js`) caches every file. Add a new file? List it in `sw.js` and bump `VERSION` (the smoke test checks the list).
 
-Progress saves automatically in the browser. To start a new world (stars and unlocked vehicles are kept), hold the 🌱 button on the title screen for 2 seconds.
+Progress saves automatically in the browser. To start a new world (stars and unlocked vehicles are kept), hold the 🌱 button (top left, next to 🏠) for 2 seconds while playing.
 
 ### Controls
 
@@ -28,6 +28,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 | Pick a block | 1–6 | block strip at top |
 | Dig or build a block | click | tap the world |
 | Back | Esc | 🏠 |
+| New world (keeps stars) | hold N | hold 🌱 |
 | Sound on/off | M | 🔊 |
 
 ## The world

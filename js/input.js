@@ -52,6 +52,18 @@ const UI = {
     document.getElementById('btn-home').addEventListener('pointerdown', e => {
       e.preventDefault(); Sound.unlock(); Sound.click(); Game.home();
     });
+    // New world: hold the seedling for 2 seconds (ring fills); letting go early cancels.
+    const rb = document.getElementById('btn-reset');
+    rb.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); Sound.unlock();
+      try { rb.setPointerCapture(e.pointerId); } catch (_) {}
+      Game.resetHold = 0; Game.resetKey = false;
+    });
+    const stop = () => { Game.resetHold = null; rb.style.setProperty('--p', 0); };
+    rb.addEventListener('pointerup', stop);
+    rb.addEventListener('pointercancel', stop);
+    rb.addEventListener('lostpointercapture', stop);
+    rb.addEventListener('contextmenu', e => e.preventDefault());
     document.getElementById('btn-mute').addEventListener('pointerdown', e => {
       e.preventDefault(); Sound.unlock(); Game.toggleMute();
     });
@@ -74,10 +86,6 @@ const UI = {
       const r = canvas.getBoundingClientRect();
       Game.tap((e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H);
     });
-    const up = () => Game.release();
-    canvas.addEventListener('pointerup', up);
-    canvas.addEventListener('pointercancel', up);
-    canvas.addEventListener('pointerleave', up);
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     this.palette = document.getElementById('palette');
   },
@@ -98,6 +106,7 @@ const UI = {
     document.querySelector('[data-key=whistle]').classList.toggle('hidden', !cfg.whistle);
     show('palette', !!cfg.palette);
     show('btn-home', cfg.home !== false);
+    show('btn-reset', !!cfg.reset);
   },
   setEnter(visible, icon) {
     const b = document.querySelector('[data-key=enter]');

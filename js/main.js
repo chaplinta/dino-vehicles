@@ -144,13 +144,26 @@ const Game = {
   resetWorld() {
     const stars = this.stars;
     if (Player.vehicle) { Player.vehicle.driver = null; Player.vehicle = null; }
+    this.overlay = null;
     this.newWorld();
     this.stars = stars;
+    if (this.mode === 'play') this.configurePlay();
     Save.write();
     Hud.celebrate('New world!');
     Sound.say('A brand new world!');
   },
-  release() { if (this.mode === 'title') Title.release(); },
+  resetHold: null,
+  updateResetHold(dt) {
+    if (Input.pressed.reset) { this.resetHold = 0; this.resetKey = true; }
+    if (this.resetHold !== null && this.resetKey && !Input.held.reset) this.resetHold = null;
+    const btn = document.getElementById('btn-reset');
+    if (this.resetHold === null) { btn.style.setProperty('--p', 0); return; }
+    const before = this.resetHold;
+    this.resetHold += dt;
+    if (Math.floor(this.resetHold * 4) !== Math.floor(before * 4)) Sound.tone(300 + this.resetHold * 200, 0.08, 'triangle', 0.08);
+    btn.style.setProperty('--p', Math.min(1, this.resetHold / 2));
+    if (this.resetHold >= 2) { this.resetHold = null; btn.style.setProperty('--p', 0); this.resetWorld(); }
+  },
   loadWorld(s) {
     World.generate(s.seed);
     World.applyDiff(s.diff || []);
@@ -184,8 +197,8 @@ const Game = {
   },
   configurePlay() {
     const v = Player.vehicle;
-    if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', enter: true, whistle: false, palette: !!v.builds });
-    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: true, palette: true });
+    if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, enter: true, whistle: false, palette: !!v.builds });
+    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: true, palette: true, reset: true });
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (!v) UI.setEnter(false);
@@ -274,6 +287,7 @@ const Game = {
     if (Input.pressed.home) this.home();
     Hud.update(dt);
     if (this.mode !== 'play') { this.modes[this.mode].update(dt); return; }
+    this.updateResetHold(dt);
     if (this.overlay) { this.overlay.update(dt); }
     else {
       Player.update(dt);
