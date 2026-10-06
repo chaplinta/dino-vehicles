@@ -3,6 +3,7 @@ const T = {
   AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, WATER: 5, BEDROCK: 6, WOOD: 7, BRICK: 8,
   GLASS: 9, ROAD: 10, RAIL: 11, BONE: 12, EGG: 13, GEM: 14, FOSSIL: 15, LEAVES: 16, TRUNK: 17,
   CROP: 18, ROOF: 19, CONCRETE: 20, FLOWER: 21,
+  MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25,
 };
 
 // Per-tile hash so textures look varied but stable.
@@ -150,6 +151,25 @@ defTile(T.FLOWER, { name: 'flower', solid: false, draw(c, x, y, tx, ty) {
   }
   c.fillStyle = '#ffa94d'; c.beginPath(); c.arc(x + 16, y + 14, 3, 0, TAU); c.fill();
 } });
+
+defTile(T.MOONDUST, { name: 'moon dust', draw(c, x, y, tx, ty) {
+  c.fillStyle = '#c8c9d2'; c.fillRect(x, y, TS, TS);
+  speckle(c, x, y, tx, ty, '#adafba', 4, 4);
+  speckle(c, x, y, tx + 31, ty, '#e2e3ea', 2, 3);
+} });
+defTile(T.MOONROCK, { name: 'moon rock', hard: 2, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#8b8d9b'; c.fillRect(x, y, TS, TS);
+  speckle(c, x, y, tx, ty, '#737584', 3, 6);
+  c.fillStyle = 'rgba(40,40,60,0.25)'; c.beginPath(); c.arc(x + 10 + tileHash(tx, ty) * 12, y + 12, 5, 0, TAU); c.fill();
+} });
+defTile(T.CRYSTAL, { name: 'moon crystal', treasure: true, hard: 2, draw: treasureTile(T.MOONROCK, (c, cx, cy) => {
+  poly(c, [cx - 9, cy + 9, cx - 5, cy - 6, cx, cy - 12, cx + 5, cy - 6, cx + 9, cy + 9], '#cc5de8', 2);
+  poly(c, [cx - 3, cy - 5, cx, cy - 10, cx + 2, cy - 4], '#f3d9fa', 0);
+}) });
+defTile(T.CHEESE, { name: 'moon cheese', treasure: true, draw: treasureTile(T.MOONDUST, (c, cx, cy) => {
+  poly(c, [cx - 11, cy + 7, cx + 11, cy + 7, cx + 11, cy - 3, cx - 11, cy + 2], '#ffd43b', 2);
+  ell(c, cx + 3, cy + 3, 2.5, 2, '#f59f00', 0); ell(c, cx - 4, cy + 4, 1.8, 1.5, '#f59f00', 0);
+}) });
 
 // Blocks the player can build with.
 const BUILD_BLOCKS = [T.DIRT, T.BRICK, T.WOOD, T.GLASS, T.STONE, T.ROAD];

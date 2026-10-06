@@ -189,7 +189,7 @@ const Vehicles = {
       UI.setEnter(!!near, '🚪');
       if (near && !this.doorHint) { this.doorHint = true; Sound.say('Press the door button to get in!'); }
       if (near && Input.pressed.enter) this.enter(p, near);
-      else if (Input.pressed.whistle) Whistle.open();
+      else if (Input.pressed.whistle && !Game.onMoon) Whistle.open();
     }
   },
   // Called vehicles drive themselves to the player.
@@ -253,6 +253,7 @@ const Vehicles = {
 // Whistle menu: a picture grid of vehicles. Picking one brings it to you.
 const Whistle = {
   open() {
+    if (Game.onMoon) return;   // only the rocket on the Moon
     Game.overlay = this;
     this.t = 0;
     this.sel = 0;

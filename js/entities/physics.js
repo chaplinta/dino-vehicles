@@ -13,7 +13,7 @@ function bodySolidAt(b, x, y) { return boxSolid(x - b.w / 2, y - b.h, x + b.w / 
 
 // opts: { step: max tiles to auto-climb, gravity: multiplier, float: true to bob in water }
 function moveBody(b, dt, opts = {}) {
-  const g = opts.gravity === undefined ? 1 : opts.gravity;
+  const g = (opts.gravity === undefined ? 1 : opts.gravity) * (World.gravity || 1);
   b.inWater = World.waterPx(b.x, b.y - b.h * 0.4);
   if (b.inWater) {
     b.vy += GRAVITY * g * 0.35 * dt;

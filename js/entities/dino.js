@@ -8,7 +8,8 @@ const DINO_TYPES = {
   ankylo:  { name: 'Ankylosaurus', say: 'Ankylosaurus!', body: '#c49a62', dark: '#93703f', belly: '#f3dfc2', legs: 4, accent: '#e9c46a', attack: 'tail' },
   ptero:   { name: 'Pterodactyl', say: 'Pterodactyl! I can fly!', body: '#ff6b6b', dark: '#d64545', belly: '#ffe3e3', legs: 2, accent: '#ffd43b', flies: true, attack: 'bite' },
 };
-const DINO_KEYS = Object.keys(DINO_TYPES);
+DINO_TYPES.alien = { name: 'Moon dino', say: 'Hello Moon dino!', body: '#94e044', dark: '#5fae2e', belly: '#e6ffd0', legs: 2, accent: '#ff6bd6', antenna: true, hidden: true, attack: 'bite' };
+const DINO_KEYS = Object.keys(DINO_TYPES).filter(k => !DINO_TYPES[k].hidden);
 const ATTACK_ICON = { bite: '🦷', headbutt: '💥', tail: '🌀' };
 
 function drawEye(c, x, y, r, blink, look = 1.5) {
@@ -28,6 +29,12 @@ function drawMouth(c, x, y, roar, w = 8) {
 
 function drawDinoHead(c, type, hx, hy, d, o) {
   const roar = o.roar > 0, blink = o.blink;
+  if (d.antenna) {
+    // Bobbing antenna for Moon dinos.
+    const wob = Math.sin((o.t || 0) * 5) * 4;
+    limb(c, [hx - 4, hy - 16, hx - 8 + wob, hy - 34, hx - 4 + wob, hy - 44], 3, d.dark, 2);
+    ell(c, hx - 4 + wob, hy - 46, 6, 6, d.accent, 3);
+  }
   switch (type) {
     case 'rex': {
       if (roar) ell(c, hx + 10, hy + 12, 18, 10, '#8b1e2d', 0);
@@ -94,7 +101,7 @@ function drawDino(c, x, y, s, type, o = {}) {
   const blink = ((t + (o.blinkSeed || 0)) % 3.7) < 0.13;
   const sw = Math.sin(o.walk || 0) * 9;
   const bob = Math.abs(Math.cos(o.walk || 0)) * (o.walk ? 3 : 0);
-  const oo = { roar: o.roar, blink };
+  const oo = { roar: o.roar, blink, t };
   c.save(); c.translate(x, y); c.scale(o.flip ? -s : s, s);
   c.translate(0, -bob);
   const tailWag = Math.sin(t * 3) * 4;
@@ -168,7 +175,7 @@ function drawDinoSeated(c, x, y, s, type, o = {}) {
   const d = DINO_TYPES[type] || DINO_TYPES.rex;
   const t = o.t || 0;
   const blink = ((t + (o.blinkSeed || 0)) % 3.7) < 0.13;
-  const oo = { roar: o.roar, blink };
+  const oo = { roar: o.roar, blink, t };
   const neck = type === 'brachio' ? 40 : 0;
   const hx = 20, hy = -52 - neck;
   c.save(); c.translate(x, y); c.scale(o.flip ? -s : s, s);

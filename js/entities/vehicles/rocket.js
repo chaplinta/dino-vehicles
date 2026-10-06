@@ -19,14 +19,21 @@ defVehicle('rocket', {
       b.x += (dir * 120) * dt;
       b.y += b.vy * dt;
       this.smoke(v, 1);
-      if (b.y < -900) { s.state = 'space'; Space.start(v); }
+      if (b.y < -900) {
+        if (Game.onMoon) Moon.leave(v);   // from the Moon: straight home
+        else { s.state = 'space'; Space.start(v); }
+      }
     } else if (s.state === 'space') {
       // Space trip runs as an overlay; rocket waits up high.
     } else if (s.state === 'chute') {
       b.vx = lerp(b.vx, dir * 100, dt * 2);
       b.vy = lerp(b.vy, 140, dt * 2);
       moveBody(b, dt, { gravity: 0 });
-      if (b.onGround) { s.state = 'idle'; Sound.land(); Game.celebrate('Welcome home!'); }
+      if (b.onGround) {
+        s.state = 'idle';
+        if (Game.onMoon) Moon.landed(v);
+        else { Sound.land(); Game.celebrate('Welcome home!'); }
+      }
     }
   },
   smoke(v, k) {
@@ -111,14 +118,11 @@ const Space = {
   },
   finish() {
     Game.overlay = null;
-    const v = this.rocket;
-    v.body.x = 578 * TS + rand(-200, 200);
-    v.body.y = (SURF - 30) * TS;
-    v.body.vx = 0; v.body.vy = 100;
-    v.s.state = 'chute';
-    Game.snapCamera();
-    Game.configurePlay();
-    Game.celebrate(`${this.got} stars!`, `You got ${this.got} space stars!`);
+    if (!this.rocket) return;
+    // Next stop: the Moon.
+    Moon.enter(this.rocket);
+    if (this.got > 0) Hud.celebrate(`${this.got} stars!`);
+    Sound.say('Look! The Moon! Landing now.');
   },
   tap() { return true; },
   close() { this.finish(); },

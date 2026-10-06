@@ -4,12 +4,15 @@ const TREASURE_INFO = {
   [T.EGG]: { say: 'An egg!', stars: 1 },
   [T.GEM]: { say: 'A shiny gem!', stars: 2 },
   [T.FOSSIL]: { say: 'A fossil!', stars: 2 },
+  [T.CRYSTAL]: { say: 'A moon crystal!', stars: 2 },
+  [T.CHEESE]: { say: 'Moon cheese!', stars: 1 },
 };
 const DUST = {
   [T.GRASS]: ['#5cc84a', '#a0662e'], [T.DIRT]: ['#a0662e', '#8a5524'], [T.SAND]: ['#f2d48a', '#e0bd6c'],
   [T.STONE]: ['#8f939c', '#a7abb3'], [T.BRICK]: ['#d9534f', '#e8e0d4'], [T.WOOD]: ['#c98a4b', '#a86d35'],
   [T.GLASS]: ['#bdf3ff', '#ffffff'], [T.LEAVES]: ['#3fae49', '#5cc84a'], [T.ROOF]: ['#4263eb', '#364fc7'],
   [T.CONCRETE]: ['#c9cdd4', '#b3b8c0'], [T.ROAD]: ['#4a4a55', '#ffd43b'],
+  [T.MOONDUST]: ['#c8c9d2', '#e2e3ea'], [T.MOONROCK]: ['#8b8d9b', '#737584'],
 };
 
 function digEffects(tx, ty, id) {

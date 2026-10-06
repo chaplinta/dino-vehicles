@@ -247,12 +247,14 @@ const Jobs = {
   },
   // Tapping a job's arrow or bubble brings the vehicle that job needs.
   tap(x, y) {
+    if (Game.onMoon) return false;
     const a = (this.arrows || []).find(a => dist(a.x, a.y, x, y) < 44);
     if (!a) return false;
     this.callFor(a.job);
     return true;
   },
   tapWorld(wx, wy) {
+    if (Game.onMoon) return false;
     const job = this.list.find(j => { const w = this.where(j); return dist(w.x, w.y - 30, wx, wy) < 50; });
     if (!job) return false;
     this.callFor(job);

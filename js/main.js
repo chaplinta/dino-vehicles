@@ -23,7 +23,25 @@ if (window.visualViewport) visualViewport.addEventListener('resize', resize);
 const portraitPhone = matchMedia('(orientation: portrait) and (pointer: coarse)');
 
 // Sky, sun, clouds and parallax hills. Darkens as the camera goes underground.
+function drawMoonSky(c, camX, camY, t) {
+  const g = c.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#05051a'); g.addColorStop(1, '#1b1f4a');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  for (let i = 0; i < 90; i++) {
+    const x = ((i * 137.5 - camX * 0.05) % W + W) % W, y = (i * 61.3) % (H * 0.8);
+    c.fillStyle = `rgba(255,255,255,${0.4 + 0.4 * Math.sin(t * 2 + i)})`;
+    c.fillRect(x, y, 2, 2);
+  }
+  // Earth hanging in the sky.
+  const ex = W * 0.78, ey = 110;
+  ell(c, ex, ey, 58, 58, '#4dabf7', 4);
+  c.fillStyle = '#69db7c';
+  c.beginPath(); c.ellipse(ex - 18, ey - 12, 20, 13, 0.5, 0, TAU); c.fill();
+  c.beginPath(); c.ellipse(ex + 20, ey + 16, 16, 22, -0.3, 0, TAU); c.fill();
+  c.fillStyle = 'rgba(255,255,255,0.8)'; c.beginPath(); c.ellipse(ex + 4, ey - 36, 22, 6, 0, 0, TAU); c.fill();
+}
 function drawBackdrop(c, camX, camY, t, zoom = 1) {
+  if (Game.onMoon) { drawMoonSky(c, camX, camY, t); return; }
   const g = c.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#6cc6ff'); g.addColorStop(1, '#d4f1ff');
   c.fillStyle = g; c.fillRect(0, 0, W, H);
@@ -42,6 +60,7 @@ function drawBackdrop(c, camX, camY, t, zoom = 1) {
 // Background train track. Drawn behind tiles, so mountains become tunnels.
 const TRACK_Y = SURF * TS;
 function drawTrack(c, camX, camY) {
+  if (Game.onMoon) return;
   const y = TRACK_Y - camY;
   if (y < -40 || y > Game.viewH + 300) return;
   const x0 = Math.floor(camX / 24) * 24;
@@ -95,6 +114,20 @@ function drawProps(c, camX, camY) {
       if (p.open) { poly(c, [sx - 22, sy - 26, sx + 22, sy - 26, sx + 26, sy - 46, sx - 18, sy - 44], '#a86d35', 3); }
       else { rbox(c, sx - 24, sy - 36, 48, 14, 7, '#a86d35', 3); ell(c, sx, sy - 24, 5, 5, '#ffd43b', 2);
         if (Math.floor(Game.t * 2) % 3 === 0) drawStar(c, sx + 18, sy - 40, 6, Game.t, '#fff', 0); }
+    } else if (p.type === 'flag') {
+      const sy = p.y * TS - camY;
+      if (sx < -80 || sx > Game.viewW + 80) continue;
+      limb(c, [sx, sy, sx, sy - 120], 4, '#dee2e6');
+      const wave = Math.sin(Game.t * 3) * 4;
+      poly(c, [sx + 2, sy - 118, sx + 70, sy - 112 + wave, sx + 70, sy - 72 + wave, sx + 2, sy - 78], '#ff6b6b', 3);
+      drawDinoSeated(c, sx + 34, sy - 76 + wave, 0.32, Player.type, { t: Game.t });
+    } else if (p.type === 'saucer') {
+      const sy = p.y * TS - camY;
+      if (sx < -120 || sx > Game.viewW + 120) continue;
+      ell(c, sx, sy - 40, 30, 26, 'rgba(190,240,255,0.8)', 3);
+      ell(c, sx, sy - 22, 70, 18, '#69db7c', 4);
+      for (let i = 0; i < 5; i++) ell(c, sx - 48 + i * 24, sy - 20, 5, 5, Math.floor(Game.t * 5 + i) % 2 ? '#ffd43b' : '#fff', 2);
+      limb(c, [sx - 34, sy - 10, sx - 44, sy], 4, '#868e96'); limb(c, [sx + 34, sy - 10, sx + 44, sy], 4, '#868e96');
     } else if (p.type === 'tower') {
       const sy = p.y * TS - camY;
       if (sx < -200 || sx > Game.viewW + 300) continue;
@@ -114,8 +147,9 @@ const Game = {
   mode: 'title', t: 0, stars: 0, worldReady: false,
   cam: { x: 0, y: 0 },
   drove: {},   // vehicles driven at least once (first drive earns a star)
-  saveExtra() { return { drove: this.drove }; },
-  loadExtra(e) { this.drove = (e && e.drove) || {}; },
+  onMoon: false, moonVisits: 0,
+  saveExtra() { return { drove: this.drove, moonVisits: this.moonVisits }; },
+  loadExtra(e) { this.drove = (e && e.drove) || {}; this.moonVisits = (e && e.moonVisits) || 0; },
   zoom: 1,
   get viewW() { return W / this.zoom; },
   get viewH() { return H / this.zoom; },
@@ -146,6 +180,7 @@ const Game = {
   },
   // New world but keep stars and unlocks (title screen hold button).
   resetWorld() {
+    if (this.onMoon) Moon.leave(null, true);
     const stars = this.stars;
     if (Player.vehicle) { Player.vehicle.driver = null; Player.vehicle = null; }
     this.overlay = null;
@@ -203,7 +238,7 @@ const Game = {
   configurePlay() {
     const v = Player.vehicle;
     if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, enter: true, whistle: false, palette: !!v.builds });
-    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: true, palette: true, reset: true });
+    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, enter: false, whistle: !this.onMoon, palette: true, reset: true });
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (!v) UI.setEnter(false);
@@ -280,7 +315,7 @@ const Game = {
     // Flying: keep the ground near the bottom of the screen, flyer still in view.
     if (ground !== null) ty = Math.min(ground - this.viewH * 0.8, Player.cy - this.viewH * 0.3);
     const k = snap ? 1 : Math.min(1, dt * 4);
-    this.cam.x = clamp(lerp(this.cam.x, tx, k), 0, Math.max(0, WORLD_W * TS - this.viewW));
+    this.cam.x = clamp(lerp(this.cam.x, tx, k), 0, Math.max(0, (World.limitW || WORLD_W) * TS - this.viewW));
     this.cam.y = clamp(lerp(this.cam.y, ty, k), -400, WORLD_H * TS - this.viewH);
   },
 
@@ -306,7 +341,7 @@ const Game = {
       Vehicles.update(dt);
     }
     NPCs.update(dt);
-    if (!this.overlay) Jobs.update(dt);
+    if (!this.overlay && !this.onMoon) Jobs.update(dt);
     Fire.update(dt);
     Fish.update(dt);
     Falling.update(dt);
@@ -335,14 +370,14 @@ const Game = {
     NPCs.draw(c);
     Vehicles.draw(c);
     Player.draw(c);
-    Jobs.drawWorld(c);
+    if (!this.onMoon) Jobs.drawWorld(c);
     Fx.draw(c);
     this.drawDigHint(c);
     c.restore();
     // Underground gloom.
     const depth = (cy + this.viewH / 2) / TS - SURF - 6;
     if (depth > 0) { c.fillStyle = `rgba(10,5,20,${Math.min(0.35, depth * 0.03)})`; c.fillRect(0, 0, W, H); }
-    Jobs.drawHud(c);
+    if (!this.onMoon) Jobs.drawHud(c);
     if (this.overlay) this.overlay.draw(c);
     Hud.draw(c);
   },

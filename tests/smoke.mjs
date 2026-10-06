@@ -374,6 +374,51 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(!r.btn, 'desktop: no install button');
 }
 
+// 15. Rocket to the Moon and back.
+{
+  const page = await open({ width: 960, height: 540 });
+  const step = (n, keys = {}) => page.evaluate(([n, keys]) => {
+    for (let i = 0; i < n; i++) { for (const k of ['left', 'right', 'up', 'down', 'action']) Input.held[k] = !!keys[k]; Game.update(1 / 60); Input.endFrame(); }
+    for (const k of ['left', 'right', 'up', 'down', 'action']) Input.held[k] = false;
+  }, [n, keys]);
+  await page.evaluate(() => {
+    Game.loop = () => {}; Sound.say = () => {};
+    localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40;
+    World.set(100, 30, T.BRICK); Save.write(); window.__save = localStorage.getItem(SAVE_KEY);
+    const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v);
+    Input.set('action', true); Input.set('action', false);
+  });
+  await step(60 * 9);
+  check(await page.evaluate(() => Game.overlay === Space), 'rocket reaches space');
+  await page.evaluate(() => Space.finish());
+  check(await page.evaluate(() => Game.onMoon && World.gravity < 1), 'space trip goes on to the Moon');
+  await step(60 * 8);
+  check(await page.evaluate(() => Player.vehicle.s.state === 'idle' && Game.moonVisits === 1 && World.props.some(p => p.type === 'flag')), 'rocket lands on the Moon, flag planted');
+  await page.evaluate(() => Vehicles.exit(Player));
+  await step(120);
+  const jump = await page.evaluate(() => {
+    const y0 = Player.body.y; let top = y0;
+    Input.set('up', true); Game.update(1 / 60); Input.endFrame(); Input.set('up', false);
+    for (let i = 0; i < 180; i++) { Game.update(1 / 60); Input.endFrame(); top = Math.min(top, Player.body.y); }
+    return (y0 - top) / TS;
+  });
+  check(jump > 6, `low gravity: a jump goes ${jump.toFixed(1)} tiles high`);
+  const dug = await page.evaluate(() => { const tx = Math.floor(Player.body.x / TS), ty = Math.floor(Player.body.y / TS) + 1; const id = World.get(tx, ty); Player.tapTile(tx, ty); return [T.MOONDUST, T.CHEESE, T.MOONROCK, T.CRYSTAL].includes(id) && World.get(tx, ty) === T.AIR; });
+  check(dug, 'digs moon ground');
+  check(await page.evaluate(() => { Save.write(); return localStorage.getItem(SAVE_KEY) === window.__save; }), 'nothing saved while on the Moon');
+  check(!(await page.locator('[data-key=whistle]').isVisible()), 'no whistle on the Moon');
+  await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Player.body.y = v.body.y; Vehicles.enter(Player, v); Input.set('action', true); Input.set('action', false); });
+  await step(60 * 9);
+  check(await page.evaluate(() => !Game.onMoon && World.gravity === 1 && World.get(100, 30) === T.BRICK), 'flies home to Earth, Earth unchanged');
+  await step(60 * 12);
+  check(await page.evaluate(() => Player.vehicle.s.state === 'idle'), 'parachutes down on Earth');
+  // New world while on the Moon lands you back on Earth.
+  await page.evaluate(() => { Moon.enter(Player.vehicle); Game.resetWorld(); });
+  check(await page.evaluate(() => !Game.onMoon && World.gravity === 1 && World.limitW === WORLD_W), 'new world from the Moon goes back to Earth');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

@@ -65,7 +65,7 @@ Stars unlock more vehicles. The whistle menu brings any unlocked vehicle to you.
 | Fishing boat | drop and lift the net |
 | Submarine | light. Find treasure chests on the sea floor |
 | Plane | water the crops while flying (up to take off) |
-| Rocket | countdown, blast off to space, catch stars, parachute home |
+| Rocket | countdown, blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
 
 ## Jobs
 
