@@ -15,11 +15,25 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="install" class="hidden">
+  <div class="card">
+    <button class="x" aria-label="Close">✖</button>
+    <div class="title">📲 Put Dino Vehicles on your Home Screen</div>
+    <ol class="steps">
+      <li>Tap the <b>Share</b> button <span class="ico">⬆️</span> in Safari's toolbar</li>
+      <li>Scroll down and tap <b>Add to Home Screen</b> <span class="ico">➕</span></li>
+      <li>Tap <b>Add</b>. Then open it from the new <b>Dino Vehicles</b> icon: full screen, and it works offline.</li>
+    </ol>
+    <div class="safari">This only works in <b>Safari</b>. Copy the link and open it in Safari to install.</div>
+  </div>
+  <div class="arrow">⬇️</div>
+</div>
 <div id="rotate"><div class="phone">📱</div><div class="dino">🦖</div>Turn me sideways!</div>
 <div id="wrap">
   <canvas id="game"></canvas>
   <div id="ui">
     <button id="btn-home" class="btn small" aria-label="Back">🏠</button>
+    <button id="btn-install" class="btn hidden" aria-label="Install on Home Screen">📲 Install</button>
     <button id="btn-reset" class="btn small" aria-label="Hold for a new world">🌱</button>
     <button id="btn-mute" class="btn small" aria-label="Sound on or off">🔊</button>
     <div id="palette"></div>
@@ -68,6 +82,7 @@
 <script src="js/jobs.js"></script>
 <script src="js/ui/menus.js"></script>
 <script src="js/ui/hud.js"></script>
+<script src="js/ui/install.js"></script>
 <script src="js/save.js"></script>
 <script src="js/main.js"></script>
 </body>

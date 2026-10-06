@@ -341,6 +341,39 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 14. iPhone: the title screen shows how to add the game to the Home Screen.
+{
+  const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+  const chromeIOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/129.0 Mobile/15E148 Safari/604.1';
+  const tryUA = async (ua, standalone) => {
+    const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, userAgent: ua, hasTouch: true, isMobile: true });
+    if (standalone) await ctx.addInitScript(() => Object.defineProperty(navigator, 'standalone', { get: () => true }));
+    const page = await ctx.newPage();
+    await page.goto(url); await page.waitForTimeout(300);
+    const btn = await page.locator('#btn-install').isVisible();
+    let card = false, safari = null;
+    if (btn) {
+      await page.dispatchEvent('#btn-install', 'pointerdown');
+      card = await page.locator('#install').isVisible();
+      safari = await page.locator('#install .safari').isVisible();
+      await page.dispatchEvent('#install .x', 'pointerdown');
+    }
+    const closed = !(await page.locator('#install').isVisible());
+    await page.evaluate(() => Game.setMode('pick'));
+    const goneInGame = !(await page.locator('#btn-install').isVisible());
+    await ctx.close();
+    return { btn, card, safari, closed, goneInGame };
+  };
+  let r = await tryUA(iphone, false);
+  check(r.btn && r.card && r.safari === false && r.closed && r.goneInGame, 'iPhone Safari: install button and steps on the title screen ' + JSON.stringify(r));
+  r = await tryUA(chromeIOS, false);
+  check(r.btn && r.card && r.safari === true, 'iPhone Chrome: says to open in Safari');
+  r = await tryUA(iphone, true);
+  check(!r.btn, 'installed iPhone app: no install button');
+  r = await tryUA('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36', false);
+  check(!r.btn, 'desktop: no install button');
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

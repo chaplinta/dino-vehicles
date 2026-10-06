@@ -124,6 +124,7 @@ const Game = {
   init() {
     resize();
     UI.init();
+    Install.init();
     this.modes = { title: Title, pick: Picker };
     const save = Save.read();
     if (save && save.v === 1) this.loadWorld(save);
@@ -184,6 +185,7 @@ const Game = {
   },
   setMode(m) {
     this.mode = m;
+    Install.showButton(m === 'title');
     if (m === 'play') this.configurePlay();
     else this.modes[m].enter();
   },
