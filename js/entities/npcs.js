@@ -19,6 +19,28 @@ function bubble(c, x, y, icon, t) {
   c.fillStyle = OUT; c.fillText(icon, x, y - 33 + b);
 }
 
+// Comic-book burst where a blow lands.
+const Pow = {
+  list: [],
+  add(x, y, text) { this.list.push({ x, y, text, t: 0, rot: rand(-0.3, 0.3) }); },
+  update(dt) { for (const p of this.list) p.t += dt; this.list = this.list.filter(p => p.t < 0.75); },
+  draw(c) {
+    for (const p of this.list) {
+      const k = p.t < 0.12 ? p.t / 0.12 * 1.25 : p.t < 0.22 ? 1.25 - (p.t - 0.12) * 2.5 : 1;
+      c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.scale(k, k);
+      c.globalAlpha = p.t > 0.55 ? 1 - (p.t - 0.55) / 0.2 : 1;
+      const pts = [];
+      for (let i = 0; i < 24; i++) { const r = i % 2 ? 34 : 62 + (i % 4 === 0 ? 10 : 0), a = i / 24 * TAU; pts.push(Math.cos(a) * r * 1.2, Math.sin(a) * r * 0.85); }
+      poly(c, pts, '#ff6b6b', 5);
+      const inner = pts.map((v, i) => v * 0.72);
+      poly(c, inner, '#ffd43b', 0);
+      c.font = `900 26px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.lineWidth = 6; c.strokeStyle = OUT; c.strokeText(p.text, 0, 2); c.fillStyle = '#fff'; c.fillText(p.text, 0, 2);
+      c.restore();
+    }
+  },
+};
+
 const NPCs = {
   list: [],
   spawnDefaults() {
@@ -56,14 +78,19 @@ const NPCs = {
   },
 
   // The player bit, headbutted or tail-whacked this dino: stars, a hop, and off it runs.
-  hit(n, fromX) {
+  hit(n, fromX, kind = 'bite') {
     const b = n.body, away = Math.sign(b.x - fromX) || 1;
-    Fx.burst(b.x, b.y - b.h, 10, { speed: 160, up: 60, g: 300, life: 0.8, r: 9, color: ['#ffd43b', '#fff3bf'], shape: 'star' });
-    b.vy = -360; b.vx = away * 260;
+    n.grabbedT = 0;
+    Pow.add(b.x - away * 18, b.y - b.h * 0.6, { bite: 'CHOMP!', headbutt: 'BONK!', tail: 'WHACK!' }[kind] || 'POW!');
+    Fx.burst(b.x, b.y - b.h, 14, { speed: 260, up: 120, g: 300, life: 0.9, r: 10, color: ['#ffd43b', '#fff3bf'], shape: 'star' });
+    Sound.noise(0.12, 0.25, 'lowpass', 700);
+    b.vy = -520; b.vx = away * 460;
+    n.tumble = away * 0.01;   // spins head over tail while flying
     if (n.need) { n.angryT = 1.5; return; }   // dinos waiting for help stay put
-    n.scaredT = 3; n.fleeDir = away; n.facing = away; n.greeted = true;
+    n.scaredT = 3.5; n.fleeDir = away; n.facing = away; n.greeted = true;
     if (n.type === 'ptero') n.flyMax = n.flyT = 3;
-    if (n.baby) Sound.squeak(); else Sound.yelp();
+    if (n.baby) { Sound.squeak(); Sound.tone(1300, 0.15, 'sine', 0.08, 1700, 0.3); }
+    else { Sound.yelp(); Sound.tone(650, 0.22, 'sine', 0.09, 1300, 0.35); Sound.tone(600, 0.22, 'sine', 0.08, 1250, 0.75); }
   },
   // On-foot dinos the player can reach: in front, or either side for a tail whack.
   inReach(x, y, facing, kind) {
@@ -87,6 +114,7 @@ const NPCs = {
 
   update(dt) {
     const cam = Game.cam;
+    Pow.update(dt);
     for (const n of [...this.list]) {
       n.t += dt;
       n.roarT = Math.max(0, n.roarT - dt);
@@ -97,6 +125,8 @@ const NPCs = {
       const far = Math.abs(n.body.x - (cam.x + Game.viewW / 2)) > Game.viewW * 1.6;
       if (far) continue;
       if (n.need) this.checkBoard(n);
+      if (n.grabbedT > 0) { n.grabbedT -= dt; n.body.vx = 0; n.scaredT = 0; n.heartT = 0; continue; }
+      if (n.tumble) { n.tumble += Math.sign(n.tumble) * dt * 14; if (n.body.onGround && Math.abs(n.tumble) > 1) n.tumble = 0; }
       this.wander(n, dt);
     }
   },
@@ -105,7 +135,8 @@ const NPCs = {
     if (n.scaredT > 0) {
       // Running away from the player.
       n.scaredT -= dt;
-      b.vx = lerp(b.vx, n.fleeDir * (n.baby ? 200 : 230), Math.min(1, dt * 8));
+      b.vx = lerp(b.vx, n.fleeDir * (n.baby ? 340 : 400), Math.min(1, dt * 6));
+      if (b.onGround && Math.random() < 0.4) Fx.add({ x: b.x - n.fleeDir * 16, y: b.y - 4, vx: -n.fleeDir * rand(30, 80), vy: rand(-40, -10), life: 0.5, r: 7, color: 'rgba(200,180,150,0.6)', shape: 'grow' });
       n.facing = n.fleeDir; n.dir = n.fleeDir; n.state = 'walk';
       if (n.scaredT <= 0) { n.home = b.x; n.range = 6 * TS; n.state = 'idle'; n.dir = 0; n.timer = rand(1, 3); }
     } else if (n.need || n.stuck) { b.vx = n.angryT > 0 ? b.vx * 0.9 : 0; }
@@ -178,9 +209,17 @@ const NPCs = {
       const b = n.body;
       if (b.x < cam.x - 120 || b.x > cam.x + Game.viewW + 120 || b.y < cam.y - 100 || b.y > cam.y + Game.viewH + 200) continue;
       const s = n.baby ? 0.36 : 0.52;
-      drawDino(c, b.x, b.y + 1, s, n.type, { t: n.t, walk: n.walk, flip: n.facing < 0, roar: n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0 });
+      const shake = n.grabbedT > 0 ? Math.sin(n.t * 70) * 5 : 0;
+      if (n.scaredT > 0 && Math.abs(b.vx) > 200) {
+        c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 4; c.lineCap = 'round';
+        for (let i = 0; i < 3; i++) { const ly = b.y - 14 - i * 14, lx = b.x - n.fleeDir * (34 + (i % 2) * 10); c.beginPath(); c.moveTo(lx, ly); c.lineTo(lx - n.fleeDir * 30, ly); c.stroke(); }
+      }
+      if (n.tumble) { c.save(); c.translate(b.x, b.y - b.h / 2); c.rotate(n.tumble); c.translate(-b.x, -(b.y - b.h / 2)); }
+      drawDino(c, b.x + shake, b.y + 1, s, n.type, { t: n.t, walk: n.walk, flip: n.facing < 0, roar: n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0 });
+      if (n.tumble) c.restore();
       const top = b.y - (n.type === 'brachio' ? (n.baby ? 50 : 72) : n.baby ? 38 : 56);
-      if (n.scaredT > 0) bubble(c, b.x, top, '😱', n.t);
+      if (n.grabbedT > 0) bubble(c, b.x, top, '😫', n.t);
+      else if (n.scaredT > 0) bubble(c, b.x, top, '😱', n.t);
       else if (n.angryT > 0) bubble(c, b.x, top, '😠', n.t);
       else if (n.need && n.bubble) bubble(c, b.x, top, n.bubble, n.t);
       else if (n.heartT > 0) bubble(c, b.x, top, '❤️', n.t);

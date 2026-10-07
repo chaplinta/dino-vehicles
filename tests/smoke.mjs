@@ -525,6 +525,21 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await run(60 * 5);
   check(await page.evaluate(() => Chess.st.b[28] && Chess.st.b[28].t === 'p' && Chess.st.turn === 'w' && Chess.lastMove && Chess.lastMove.from >= 48), 'pawn to e4, then the dino moves');
   check(await page.evaluate(l => Math.abs(Asteroid.left - l) < 0.01, left), 'asteroid clock waits while playing chess');
+  // Captured pieces go in the trays beside the board.
+  await page.evaluate(() => {
+    const st = ChessRules.start(); st.b.fill(null);
+    st.b[4] = { c: 'w', t: 'k' }; st.b[27] = { c: 'w', t: 'q' }; st.b[60] = { c: 'b', t: 'k' }; st.b[35] = { c: 'b', t: 'n' }; st.b[42] = { c: 'b', t: 'p' };
+    st.castle = { wK: false, wQ: false, bK: false, bQ: false };
+    Chess.newGame(); Chess.st = st;
+  });
+  await tapSq(27); await tapSq(35);
+  await run(60 * 2);
+  check(await page.evaluate(() => Chess.taken.w.length === 1 && Chess.taken.w[0].p.t === 'n'), 'your captured piece goes in your tray');
+  await page.evaluate(() => { Chess.startMove({ from: 42, to: 35 }, 'b'); });
+  await run(60 * 2);
+  check(await page.evaluate(() => Chess.taken.b.length === 1 && Chess.taken.b[0].p.t === 'q'), "the dino's captures go in his tray");
+  await page.evaluate(() => Chess.newGame());
+  check(await page.evaluate(() => !Chess.taken.w.length && !Chess.taken.b.length), 'new game empties the trays');
   // A back-rank mate wins 10 stars.
   await page.evaluate(() => {
     const st = ChessRules.start(); st.b.fill(null);

@@ -436,6 +436,7 @@ const Game = {
     if (!this.away) Jobs.drawWorld(c);
     if (this.away === 'pilbara') Mine.drawWorld(c);
     Fx.draw(c);
+    Pow.draw(c);
     this.drawDigHint(c);
     c.restore();
     // Underground gloom.

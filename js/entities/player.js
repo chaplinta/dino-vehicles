@@ -8,6 +8,8 @@ const TREASURE_INFO = {
   [T.CHEESE]: { say: 'Moon cheese!', stars: 1 },
   [T.GOLDEGG]: { say: 'A golden egg!', stars: 5 },
 };
+// Attack timings: how long it lasts and when the blow lands.
+const ATTACKS = { bite: { len: 0.6, hitAt: 0.48 }, headbutt: { len: 0.45, hitAt: 0.22 }, tail: { len: 0.5, hitAt: 0.27 } };
 const DUST = {
   [T.GRASS]: ['#5cc84a', '#a0662e'], [T.DIRT]: ['#a0662e', '#8a5524'], [T.SAND]: ['#f2d48a', '#e0bd6c'],
   [T.STONE]: ['#8f939c', '#a7abb3'], [T.BRICK]: ['#d9534f', '#e8e0d4'], [T.WOOD]: ['#c98a4b', '#a86d35'],
@@ -59,7 +61,7 @@ const Player = {
     this.roarT = Math.max(0, this.roarT - dt);
     this.digAnim = Math.max(0, this.digAnim - dt * 4);
     this.placeCool = Math.max(0, this.placeCool - dt);
-    this.attackT = Math.max(0, this.attackT - dt);
+    this.updateAttack(dt);
     this.attackCool = Math.max(0, this.attackCool - dt);
     if (Input.pressed.roar && !this.vehicle) this.roar();
     if (this.vehicle) return;
@@ -142,12 +144,29 @@ const Player = {
     } else { this.digT = 0; this.digKey = -1; }
   },
 
+  // Meat-eaters maul (grab, shake, chomp chomp), Triceratops charges and headbutts,
+  // the others spin round and whack with their tail. The hit lands partway through.
   attack() {
     if (this.attackCool > 0) return;
     const kind = DINO_TYPES[this.type].attack;
-    this.attackT = 0.35; this.attackCool = 0.4;
-    if (kind === 'bite') Sound.chomp(); else if (kind === 'tail') Sound.whoosh(); else Sound.bonk();
-    for (const n of NPCs.inReach(this.body.x, this.body.y, this.facing, kind)) NPCs.hit(n, this.body.x);
+    const a = ATTACKS[kind];
+    this.attackKind = kind; this.attackLen = a.len; this.attackT = a.len; this.attackCool = a.len + 0.1;
+    this.attackHit = false;
+    this.attackTargets = NPCs.inReach(this.body.x, this.body.y, this.facing, kind);
+    if (kind === 'bite') {
+      for (const n of this.attackTargets) n.grabbedT = a.hitAt;   // held still while being mauled
+      [0, 0.14, 0.28, 0.42].forEach(d => setTimeout(() => Sound.chomp(), d * 1000));
+    } else if (kind === 'tail') Sound.whoosh();
+    else Sound.tone(140, 0.25, 'sawtooth', 0.08, 90);
+  },
+  updateAttack(dt) {
+    if (this.attackT <= 0) return;
+    this.attackT = Math.max(0, this.attackT - dt);
+    const a = ATTACKS[this.attackKind];
+    if (!this.attackHit && this.attackLen - this.attackT >= a.hitAt) {
+      this.attackHit = true;
+      for (const n of this.attackTargets || []) NPCs.hit(n, this.body.x, this.attackKind);
+    }
   },
 
   // Which tile the dino would dig: in front at feet, then head height, then down.
@@ -189,14 +208,35 @@ const Player = {
     let walk = this.walk;
     if (this.digAnim > 0) walk = Math.sin(this.t * 30) * 0.6;
     let flip = this.facing < 0, roar = this.roarT, x = b.x, rot = 0;
+    let y = b.y + 1, arc = 0;
     if (this.attackT > 0) {
-      const k = 1 - this.attackT / 0.35, swing = Math.sin(k * Math.PI);   // 0 -> 1 -> 0
-      const kind = DINO_TYPES[this.type].attack;
-      if (kind === 'bite') { x += this.facing * swing * 14; roar = Math.floor(k * 6) % 2 ? 1 : 0; }
-      else if (kind === 'headbutt') { x += this.facing * swing * 22; rot = this.facing * swing * 0.3; }
-      else { if (k > 0.2 && k < 0.8) flip = !flip; x -= this.facing * swing * 6; }
+      const k = 1 - this.attackT / this.attackLen, f = this.facing;
+      const kind = this.attackKind;
+      if (kind === 'bite') {
+        // Lunge, then shake the head side to side with jaws snapping.
+        x += f * 22 * Math.min(1, k * 5) * (k > 0.85 ? (1 - k) / 0.15 : 1);
+        y -= Math.sin(Math.min(1, k * 3) * Math.PI) * 10;
+        rot = Math.sin(k * Math.PI * 10) * 0.16 * (k < 0.8 ? 1 : 0);
+        roar = Math.floor(k * 12) % 2 ? 1 : 0;
+      } else if (kind === 'headbutt') {
+        // Rock back, then charge in head down.
+        if (k < 0.35) { x -= f * 14 * (k / 0.35); rot = -f * 0.18 * (k / 0.35); }
+        else if (k < 0.6) { const q = (k - 0.35) / 0.25; x += f * lerp(-14, 34, q); rot = f * lerp(-0.18, 0.4, q); }
+        else { const q = (k - 0.6) / 0.4; x += f * 34 * (1 - q); rot = f * 0.4 * (1 - q); }
+      } else {
+        // Spin round so the tail sweeps through, then back.
+        if (k > 0.15 && k < 0.75) flip = !flip;
+        x -= f * Math.sin(k * Math.PI) * 10;
+        y -= Math.sin(k * Math.PI) * 8;
+        arc = k > 0.2 && k < 0.8 ? 1 - Math.abs(k - 0.5) / 0.3 : 0;
+      }
     }
-    c.save(); c.translate(x, b.y + 1); c.rotate(rot);
+    if (arc > 0) {
+      // Whoosh lines where the tail swings.
+      c.strokeStyle = `rgba(255,255,255,${arc * 0.9})`; c.lineWidth = 5; c.lineCap = 'round';
+      for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(b.x, b.y - 30, 50 + i * 12, Math.PI * 0.75, Math.PI * 1.25); c.stroke(); c.beginPath(); c.arc(b.x, b.y - 30, 50 + i * 12, -Math.PI * 0.25, Math.PI * 0.25); c.stroke(); }
+    }
+    c.save(); c.translate(x, y); c.rotate(rot);
     drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk, flip, roar, flap: this.flap });
     c.restore();
   },

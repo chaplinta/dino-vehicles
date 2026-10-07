@@ -22,7 +22,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 | Jump (automatic at walls) / climb walls | Up | ▲ |
 | Fly (Pterodactyl): hold to climb, let go to glide, down to dive | Up / Down | ▲ ▼ |
 | Dig / vehicle action | Space | big yellow button |
-| Bite, headbutt or tail-whack a dino in front (they run away) | Space | big yellow button turns 🦷 / 💥 / 🌀 |
+| Play-fight a dino in front: meat-eaters (T-Rex, Raptor, Pterodactyl) maul, Triceratops headbutts, the others tail-whack. POW, and off they run yelping | Space | big yellow button turns 🦷 / 💥 / 🌀 |
 | Get in / out | E or Enter | 🚪 |
 | Roar / horn | R | 🦖 / 📢 |
 | Call a vehicle | Q | 📣 |
@@ -40,7 +40,7 @@ Everything except the bedrock at the bottom can be dug. Sparkly stars float arou
 
 **Asteroid:** a 10-minute clock (top right) counts down to an asteroid hitting Earth. When it hits it's game over; tap ▶ for a new world (stars are kept). Be on the Moon when it hits and you escape with bonus stars.
 
-**Chess:** a Triceratops plays chess at a table by the road into town. Walk up and press ♟️ (or tap the table) to play a real game from your own seat, with dino hands moving the pieces. He's very bad at it. Checkmate him for 10 stars.
+**Chess:** a Triceratops plays chess at a table by the road into town. Walk up and press ♟️ (or tap the table) to play a real game from your own seat, with dino hands moving the pieces. He's very bad at it. Captured pieces line up in trays beside the board. Checkmate him for 10 stars.
 
 ## Dinosaurs
 

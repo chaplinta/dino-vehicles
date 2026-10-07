@@ -130,6 +130,8 @@ function badChessMove(st) {
 // ---------- The table, seen from your seat ----------
 const Chess = {
   st: null, sel: -1, targets: [], anim: null, over: null, t: 0, thinkT: 0, opp: 'tri', lastMove: null,
+  taken: { w: [], b: [] },   // pieces each side has captured
+  clock: 0,                  // never reset, times the captured-piece pop
   P: 0.45,   // perspective strength
   open() {
     if (!this.st || this.over) this.newGame();
@@ -140,6 +142,7 @@ const Chess = {
   },
   newGame() {
     this.st = ChessRules.start(); this.sel = -1; this.targets = []; this.anim = null; this.over = null; this.lastMove = null;
+    this.taken = { w: [], b: [] };
   },
   close() { Game.overlay = null; Game.configurePlay(); },
 
@@ -186,7 +189,7 @@ const Chess = {
     this.sel = -1; this.targets = [];
   },
   update(dt) {
-    this.t += dt;
+    this.t += dt; this.clock += dt;
     if (Input.pressed.home) { this.close(); return; }
     const a = this.anim;
     if (a) {
@@ -197,7 +200,7 @@ const Chess = {
         this.st = ChessRules.make(this.st, a.m);
         this.lastMove = a.m;
         Sound.place();
-        if (this.st.captured) Sound.bonk();
+        if (this.st.captured) { Sound.bonk(); this.taken[a.who].push({ p: this.st.captured, t: this.clock }); }
         this.afterMove(before, a);
       }
       if (a.t >= 1.4) this.anim = null;
@@ -224,6 +227,25 @@ const Chess = {
   pieceName(t) { return { p: 'pawn', n: 'knight', b: 'bishop', r: 'castle', q: 'queen', k: 'king' }[t]; },
 
   // ---------- Drawing ----------
+  // Captured pieces in a tray each side: his haul on the left by him, yours on the right.
+  drawTaken(c) {
+    for (const who of ['b', 'w']) {
+      const list = [...this.taken[who]].sort((x, y) => PIECE_VALUE[y.p.t] - PIECE_VALUE[x.p.t]);
+      const left = who === 'b';
+      const x0 = left ? 14 : W - 128, y0 = left ? 196 : 186;
+      const rows = Math.max(1, Math.ceil(list.length / 3));
+      rbox(c, x0, y0, 114, 44 + rows * 50, 14, 'rgba(255,255,255,0.7)', 3);
+      if (left) drawDinoSeated(c, x0 + 24, y0 + 32, 0.2, this.opp, { t: Game.t });
+      else { c.font = `800 18px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT; c.fillText('You', x0 + 22, y0 + 18); }
+      c.font = `800 16px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT;
+      c.fillText(String(list.length), x0 + 92, y0 + 18);
+      list.forEach((e, i) => {
+        const pop = clamp((this.clock - e.t) * 4, 0, 1);
+        const k = 0.6 * (pop < 1 ? 0.4 + pop * 0.8 : 1);
+        this.drawPiece(c, x0 + 22 + (i % 3) * 35, y0 + 84 + Math.floor(i / 3) * 50, e.p, k);
+      });
+    }
+  },
   drawPiece(c, x, y, p, k) {
     const fill = p.c === 'w' ? '#fff8e7' : '#4a3426', lw = Math.max(1.5, 3 * k);
     c.save(); c.translate(x, y); c.scale(k * 1.15, k * 1.15);
@@ -300,6 +322,7 @@ const Chess = {
       const pc = this.centre(sq);
       this.drawPiece(c, pc.x, pc.y + 4 * pc.k, p, pc.k);
     }
+    this.drawTaken(c);
     // Hands.
     if (a) { const h = this.armPos(a); this.drawArm(c, a.who, h.x, h.y, h.hold ? a.piece : null); }
     else {
