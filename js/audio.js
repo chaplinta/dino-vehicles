@@ -65,6 +65,7 @@ const Sound = {
   },
   chomp() { this.tone(300, 0.06, 'square', 0.12, 120); this.noise(0.06, 0.15, 'lowpass', 900, 0.07); this.tone(260, 0.06, 'square', 0.1, 100, 0.08); },
   whoosh() { this.noise(0.25, 0.12, 'bandpass', 400, 0, 2000); this.noise(0.08, 0.2, 'lowpass', 500, 0.22); },
+  lick() { this.noise(0.22, 0.12, 'bandpass', 1400); this.tone(280, 0.2, 'sine', 0.08, 620); this.noise(0.18, 0.1, 'bandpass', 1800, 0.3); this.tone(320, 0.18, 'sine', 0.07, 700, 0.3); },
   yelp() { this.tone(500, 0.25, 'sine', 0.1, 1100); },
   squeak() { this.tone(900, 0.25, 'sine', 0.12, 1500); this.tone(1200, 0.2, 'sine', 0.08, 1800, 0.12); },
   fanfare() {

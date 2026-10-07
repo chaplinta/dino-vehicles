@@ -23,6 +23,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 | Fly (Pterodactyl): hold to climb, let go to glide, down to dive | Up / Down | ▲ ▼ |
 | Dig / vehicle action | Space | big yellow button |
 | Play-fight a dino in front: meat-eaters (T-Rex, Raptor, Pterodactyl) maul, Triceratops headbutts, the others tail-whack. POW, and off they run yelping | Space | big yellow button turns 🦷 / 💥 / 🌀 |
+| Lick (a big wiggly tongue, just for fun) | L | 👅 button |
 | Get in / out | E or Enter | 🚪 |
 | Roar / horn | R | 🦖 / 📢 |
 | Call a vehicle | Q | 📣 |

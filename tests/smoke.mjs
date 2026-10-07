@@ -234,6 +234,11 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     const after = await page.evaluate(id => { const n = NPCs.list.find(n => n.id === id); return { x: n.body.x, scared: n.scaredT > 0 }; }, r.id);
     check(after.scared && after.x - r.x > 64, `${type}: ${await page.evaluate(t => DINO_TYPES[t].attack, type)} sends the dino running (${Math.round((after.x - r.x) / 32)} tiles)`);
   }
+  // Lick button: just a big wiggly tongue.
+  await page.keyboard.press('KeyL');
+  await page.waitForTimeout(200);
+  check(await page.evaluate(() => Player.lickT > 0 && !document.querySelector('[data-key=lick]').classList.contains('hidden')), 'lick button sticks the tongue out');
+  check(await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'tractor'); Vehicles.enter(Player, v); const hidden = document.querySelector('[data-key=lick]').classList.contains('hidden'); Vehicles.exit(Player); return hidden; }), 'no lick button while driving');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

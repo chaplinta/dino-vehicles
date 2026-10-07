@@ -10,6 +10,7 @@ const TREASURE_INFO = {
 };
 // Attack timings: how long it lasts and when the blow lands.
 const ATTACKS = { bite: { len: 0.6, hitAt: 0.48 }, headbutt: { len: 0.45, hitAt: 0.22 }, tail: { len: 0.5, hitAt: 0.27 } };
+const LICK_TIME = 0.9;   // lick, lick, slurp
 const DUST = {
   [T.GRASS]: ['#5cc84a', '#a0662e'], [T.DIRT]: ['#a0662e', '#8a5524'], [T.SAND]: ['#f2d48a', '#e0bd6c'],
   [T.STONE]: ['#8f939c', '#a7abb3'], [T.BRICK]: ['#d9534f', '#e8e0d4'], [T.WOOD]: ['#c98a4b', '#a86d35'],
@@ -64,6 +65,8 @@ const Player = {
     this.updateAttack(dt);
     this.attackCool = Math.max(0, this.attackCool - dt);
     if (Input.pressed.roar && !this.vehicle) this.roar();
+    this.lickT = Math.max(0, (this.lickT || 0) - dt);
+    if (Input.pressed.lick && !this.vehicle && !this.lickT) { this.lickT = LICK_TIME; Sound.lick(); }
     if (this.vehicle) return;
 
     const b = this.body;
@@ -237,7 +240,8 @@ const Player = {
       for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(b.x, b.y - 30, 50 + i * 12, Math.PI * 0.75, Math.PI * 1.25); c.stroke(); c.beginPath(); c.arc(b.x, b.y - 30, 50 + i * 12, -Math.PI * 0.25, Math.PI * 0.25); c.stroke(); }
     }
     c.save(); c.translate(x, y); c.rotate(rot);
-    drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk, flip, roar, flap: this.flap });
+    const lick = this.lickT > 0 ? 1 - this.lickT / LICK_TIME : 0;
+    drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk, flip, roar, flap: this.flap, lick });
     c.restore();
   },
 };

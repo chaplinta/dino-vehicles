@@ -68,6 +68,7 @@ body { display: flex; align-items: center; justify-content: center; }
 #pad-right .col { display: flex; flex-direction: column; align-items: center; gap: calc(var(--s) * 10px); }
 #pad-right .whistle, #pad-right .enter { width: calc(var(--s) * 72px); height: calc(var(--s) * 72px); font-size: calc(var(--s) * 34px); }
 #pad-right .enter { background: rgba(140, 200, 255, 0.85); }
+#pad-right .lick { width: calc(var(--s) * 72px); height: calc(var(--s) * 72px); font-size: calc(var(--s) * 34px); background: rgba(255, 190, 210, 0.9); }
 #pad-right .info { width: calc(var(--s) * 72px); height: calc(var(--s) * 72px); font-size: calc(var(--s) * 34px); background: rgba(255, 236, 153, 0.9); }
 #palette {
   position: absolute; top: calc(var(--s) * 10px); left: 50%; transform: translateX(-50%);

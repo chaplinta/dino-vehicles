@@ -42,8 +42,20 @@ function drawHardHat(c, cx, top) {
   limb(c, [cx - 2, top - 10, cx + 8, top - 8], 3, '#dee2e6', 0);
 }
 
+// A big pink tongue poking out and wiggling (k: 0..1 through the lick).
+function drawTongue(c, x, y, k, t) {
+  const out = Math.sin(k * Math.PI) * (0.7 + 0.3 * Math.abs(Math.sin(k * Math.PI * 3)));
+  const L = 30 * out, wig = Math.sin(t * 28) * 0.35;
+  const mx = x + Math.cos(wig * 0.5) * L * 0.5, my = y + 4 + Math.sin(wig * 0.5) * L * 0.5;
+  const ex = x + Math.cos(wig) * L, ey = y + 8 + Math.sin(wig) * L - Math.sin(k * Math.PI * 4) * 6;
+  limb(c, [x, y, mx, my, ex, ey], 11, '#ff8fab', 3);
+  ell(c, ex, ey, 7, 6, '#ff8fab', 3);
+  c.strokeStyle = '#e64980'; c.lineWidth = 2; c.beginPath(); c.moveTo(x + 2, y + 1); c.lineTo(mx, my); c.stroke();
+}
+const TONGUE_AT = { rex: [26, 8], raptor: [26, 5], tri: [26, 6], ptero: [30, 4], stego: [18, 6], brachio: [18, 6], ankylo: [20, 6], alien: [26, 8] };
+
 function drawDinoHead(c, type, hx, hy, d, o) {
-  const roar = o.roar > 0, blink = o.blink;
+  const roar = o.roar > 0 || o.lick > 0, blink = o.blink;
   if (d.antenna) {
     // Bobbing antenna for Moon dinos.
     const wob = Math.sin((o.t || 0) * 5) * 4;
@@ -107,6 +119,7 @@ function drawDinoHead(c, type, hx, hy, d, o) {
       ell(c, hx + 21, hy - 4, 1.8, 1.8, OUT, 0);
     }
   }
+  if (o.lick > 0) { const m = TONGUE_AT[type] || [22, 6]; drawTongue(c, hx + m[0], hy + m[1], o.lick, o.t || 0); }
   if (o.hivis) {
     const at = { rex: [2, -20], raptor: [4, -13], tri: [4, -16], ptero: [0, -12] }[type] || [4, -13];
     drawHardHat(c, hx + at[0], hy + at[1] - 2);
@@ -121,7 +134,7 @@ function drawDino(c, x, y, s, type, o = {}) {
   const sw = Math.sin(o.walk || 0) * 9;
   const bob = Math.abs(Math.cos(o.walk || 0)) * (o.walk ? 3 : 0);
   const hv = o.hivis !== undefined ? o.hivis : onSite();
-  const oo = { roar: o.roar, blink, t, hivis: hv };
+  const oo = { roar: o.roar, blink, t, hivis: hv, lick: o.lick || 0 };
   c.save(); c.translate(x, y); c.scale(o.flip ? -s : s, s);
   c.translate(0, -bob);
   const tailWag = Math.sin(t * 3) * 4;
