@@ -170,7 +170,7 @@ function generateWorld(world, seed) {
   world.genSurf = Int16Array.from(surf);
 
   // Reading signs: three and four word labels to read along with.
-  for (const [x, text] of [[8, 'Welcome to the farm'], [26, 'Corn grows here'], [84, 'Planes fly from here'], [99, 'Play chess with me'],
+  for (const [x, text] of [[8, 'Welcome to the farm'], [26, 'Corn grows here'], [84, 'Planes fly from here'], [109, 'Play chess with me'],
     [117, 'Fire trucks live here'], [145, 'The town hospital'], [180, 'Police keep us safe'], [224, 'Diggers at work here'],
     [306, 'The sandy beach'], [325, 'Fish swim in here'], [399, 'Look for Nessie'], [430, 'Up the big mountain'],
     [562, 'Rockets blast off here'], [594, 'The world ends here']]) addLabel(world, x, text);
