@@ -18,6 +18,16 @@ const ATTACKS = {
   claw: { len: 0.5, hitAt: 0.28 },       // Baryonyx: raise the arm, slash down
   kick: { len: 0.5, hitAt: 0.25 },       // Velociraptor: hop and kick with the sickle claw
 };
+const POW_WORD = { bite: 'CHOMP!', headbutt: 'BONK!', tail: 'WHACK!', peck: 'PECK!', thumb: 'JAB!', claw: 'SLASH!', kick: 'KICK!' };
+// The noise each move makes, for you and for dinos who fight back.
+function attackSound(kind) {
+  if (kind === 'bite') [0, 0.14, 0.28, 0.42].forEach(d => { Sound.tone(300, 0.06, 'square', 0.12, 120, d); Sound.noise(0.06, 0.15, 'lowpass', 900, d + 0.07); });
+  else if (kind === 'tail') Sound.whoosh();
+  else if (kind === 'peck') [0, 0.12, 0.24].forEach(d => Sound.tone(1400, 0.04, 'square', 0.07, 900, d));
+  else if (kind === 'claw') { Sound.noise(0.1, 0.12, 'bandpass', 2500, 0.08); Sound.noise(0.14, 0.15, 'highpass', 3000, 0.12); }
+  else if (kind === 'thumb' || kind === 'kick') { Sound.noise(0.12, 0.1, 'bandpass', 900); Sound.tone(220, 0.1, 'square', 0.06, 120, 0.1); }
+  else Sound.tone(140, 0.25, 'sawtooth', 0.08, 90);
+}
 const LICK_TIME = 0.9;   // lick, lick, slurp
 const DUST = {
   [T.GRASS]: ['#5cc84a', '#a0662e'], [T.DIRT]: ['#a0662e', '#8a5524'], [T.SAND]: ['#f2d48a', '#e0bd6c'],
@@ -72,6 +82,8 @@ const Player = {
     this.placeCool = Math.max(0, this.placeCool - dt);
     this.updateAttack(dt);
     this.attackCool = Math.max(0, this.attackCool - dt);
+    this.hurtCool = Math.max(0, (this.hurtCool || 0) - dt);
+    if (this.hurtT > 0) { this.hurtT = Math.max(0, this.hurtT - dt); this.hurtSpin = -this.hurtDir * Math.sin((1 - this.hurtT / 0.6) * Math.PI) * 0.7; }
     if (Input.pressed.roar && !this.vehicle) this.roar();
     this.lickT = Math.max(0, (this.lickT || 0) - dt);
     if (Input.pressed.lick && !this.vehicle && !this.lickT) { this.lickT = LICK_TIME; Sound.lick(); }
@@ -81,7 +93,8 @@ const Player = {
     const dinoDef = DINO_TYPES[this.type];
     const dir = (Input.held.right ? 1 : 0) - (Input.held.left ? 1 : 0);
     const speed = 230;
-    b.vx = lerp(b.vx, dir * speed, Math.min(1, dt * (b.onGround || dinoDef.flies ? 12 : 5)));
+    if (this.hurtT > 0) b.vx = lerp(b.vx, 0, Math.min(1, dt * 2));   // knocked flying
+    else b.vx = lerp(b.vx, dir * speed, Math.min(1, dt * (b.onGround || dinoDef.flies ? 12 : 5)));
     if (dir) this.facing = dir;
 
     const flier = dinoDef.flies;
@@ -164,14 +177,22 @@ const Player = {
     this.attackKind = kind; this.attackLen = a.len; this.attackT = a.len; this.attackCool = a.len + 0.1;
     this.attackHit = false;
     this.attackTargets = NPCs.inReach(this.body.x, this.body.y, this.facing, kind);
-    if (kind === 'bite') {
-      for (const n of this.attackTargets) n.grabbedT = a.hitAt;   // held still while being mauled
-      [0, 0.14, 0.28, 0.42].forEach(d => setTimeout(() => Sound.chomp(), d * 1000));
-    } else if (kind === 'tail') Sound.whoosh();
-    else if (kind === 'peck') [0, 0.12, 0.24].forEach(d => Sound.tone(1400, 0.04, 'square', 0.07, 900, d));
-    else if (kind === 'claw') { Sound.noise(0.1, 0.12, 'bandpass', 2500, 0.08); Sound.noise(0.14, 0.15, 'highpass', 3000, 0.12); }
-    else if (kind === 'thumb' || kind === 'kick') { Sound.noise(0.12, 0.1, 'bandpass', 900); Sound.tone(220, 0.1, 'square', 0.06, 120, 0.1); }
-    else Sound.tone(140, 0.25, 'sawtooth', 0.08, 90);
+    if (kind === 'bite') for (const n of this.attackTargets) n.grabbedT = a.hitAt;   // held still while being mauled
+    attackSound(kind);
+  },
+  // Another dino got you: POW, knocked back with a wobble. No damage, it's play-fighting.
+  hurt(by, kind) {
+    if (this.vehicle || this.hurtCool > 0) return false;
+    const b = this.body, away = Math.sign(b.x - by.x) || 1;
+    this.hurtT = 0.6; this.hurtCool = 0.9; this.hurtDir = away; this.hurtSpin = 0;
+    this.attackT = 0;
+    b.vx = away * 420; b.vy = -460;
+    Pow.add(b.x - away * 14, b.y - 40, POW_WORD[kind] || 'POW!');
+    Fx.burst(b.x, b.y - 40, 10, { speed: 220, up: 100, g: 300, life: 0.8, r: 9, color: ['#ffd43b', '#fff3bf'], shape: 'star' });
+    Sound.tone(700, 0.25, 'square', 0.07, 280); Sound.noise(0.12, 0.2, 'lowpass', 600);
+    this.owT = (this.owT || 0) - 1;
+    if (this.owT <= 0) { this.owT = 3; Sound.say(pick(['Ow!', 'Hey!', 'Ouch!', 'Oof!'])); }
+    return true;
   },
   updateAttack(dt) {
     if (this.attackT <= 0) return;
@@ -222,69 +243,77 @@ const Player = {
     let walk = this.walk;
     if (this.digAnim > 0) walk = Math.sin(this.t * 30) * 0.6;
     let flip = this.facing < 0, roar = this.roarT, x = b.x, rot = 0;
-    let y = b.y + 1, arc = 0, pose = null, slash = 0;
-    if (this.attackT > 0) {
-      const k = 1 - this.attackT / this.attackLen, f = this.facing;
-      const kind = this.attackKind;
-      if (kind === 'bite') {
-        // Lunge, then shake the head side to side with jaws snapping.
-        x += f * 22 * Math.min(1, k * 5) * (k > 0.85 ? (1 - k) / 0.15 : 1);
-        y -= Math.sin(Math.min(1, k * 3) * Math.PI) * 10;
-        rot = Math.sin(k * Math.PI * 10) * 0.16 * (k < 0.8 ? 1 : 0);
-        roar = Math.floor(k * 12) % 2 ? 1 : 0;
-      } else if (kind === 'headbutt') {
-        // Rock back, then charge in head down.
-        if (k < 0.35) { x -= f * 14 * (k / 0.35); rot = -f * 0.18 * (k / 0.35); }
-        else if (k < 0.6) { const q = (k - 0.35) / 0.25; x += f * lerp(-14, 34, q); rot = f * lerp(-0.18, 0.4, q); }
-        else { const q = (k - 0.6) / 0.4; x += f * 34 * (1 - q); rot = f * 0.4 * (1 - q); }
-      } else if (kind === 'peck') {
-        // Three quick stabs of the beak, leaning right in.
-        const jab = Math.abs(Math.sin(k * Math.PI * 3));
-        x += f * 14 * jab; rot = f * 0.5 * jab;
-      } else if (kind === 'thumb') {
-        // Rear up with the arm cocked, then lunge and stab with the thumb spike.
-        if (k < 0.4) { const q = k / 0.4; rot = -f * 0.22 * q; x -= f * 8 * q; pose = { kind, e: -0.5 * q }; }
-        else if (k < 0.7) { const q = Math.min(1, (k - 0.4) / 0.12); rot = f * lerp(-0.22, 0.15, q); x += f * lerp(-8, 26, q); pose = { kind, e: q }; }
-        else { const q = (k - 0.7) / 0.3; rot = f * 0.15 * (1 - q); x += f * 26 * (1 - q); pose = { kind, e: 1 - q }; }
-      } else if (kind === 'claw') {
-        // Arm up high, then a big slash down across the front, three claw marks.
-        let a;
-        if (k < 0.35) a = lerp(0.5, -1.5, k / 0.35);
-        else if (k < 0.6) a = lerp(-1.5, 1.2, (k - 0.35) / 0.25);
-        else a = lerp(1.2, 0.5, (k - 0.6) / 0.4);
-        pose = { kind, a };
-        x += f * (k > 0.35 && k < 0.8 ? 16 : 0); rot = f * (k > 0.35 && k < 0.7 ? 0.12 : -0.06);
-        slash = k > 0.45 && k < 0.95 ? 1 - Math.abs(k - 0.62) / 0.33 : 0;
-      } else if (kind === 'kick') {
-        // Hop, lean back and shoot the leg out with the sickle claw up.
-        const e = k < 0.2 ? 0 : k < 0.45 ? (k - 0.2) / 0.25 : k < 0.65 ? 1 : Math.max(0, 1 - (k - 0.65) / 0.25);
-        y -= Math.sin(Math.min(1, k / 0.7) * Math.PI) * 22; rot = -f * 0.25 * e; x += f * 10 * e;
-        pose = { kind, e };
-      } else {
-        // Spin round so the tail sweeps through, then back.
-        if (k > 0.15 && k < 0.75) flip = !flip;
-        x -= f * Math.sin(k * Math.PI) * 10;
-        y -= Math.sin(k * Math.PI) * 8;
-        arc = k > 0.2 && k < 0.8 ? 1 - Math.abs(k - 0.5) / 0.3 : 0;
-      }
-    }
-    if (arc > 0) {
-      // Whoosh lines where the tail swings.
-      c.strokeStyle = `rgba(255,255,255,${arc * 0.9})`; c.lineWidth = 5; c.lineCap = 'round';
-      for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(b.x, b.y - 30, 50 + i * 12, Math.PI * 0.75, Math.PI * 1.25); c.stroke(); c.beginPath(); c.arc(b.x, b.y - 30, 50 + i * 12, -Math.PI * 0.25, Math.PI * 0.25); c.stroke(); }
-    }
-    if (slash > 0) {
-      // Three claw marks raked through the air in front.
-      const cx = b.x + this.facing * 62, cy = b.y - 44;
-      c.strokeStyle = `rgba(255,255,255,${slash})`; c.lineWidth = 5; c.lineCap = 'round';
-      for (let i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(cx - this.facing * 16 + i * 10, cy - 24); c.lineTo(cx + this.facing * 14 + i * 10, cy + 24); c.stroke(); }
-    }
+    let y = b.y + 1;
+    const ap = this.attackT > 0 ? attackPose(this.attackKind, 1 - this.attackT / this.attackLen, this.facing) : null;
+    let pose = null;
+    if (ap) { x += ap.dx; y += ap.dy; rot = ap.rot; if (ap.flip) flip = !flip; if (ap.roar !== null) roar = ap.roar; pose = ap.pose; drawAttackFx(c, ap, b.x, b.y, this.facing); }
+    if (this.hurtT > 0) { rot += this.hurtSpin; if (Math.floor(this.hurtT * 20) % 2) c.globalAlpha = 0.55; }
     c.save(); c.translate(x, y); c.rotate(rot);
     const lick = this.lickT > 0 ? 1 - this.lickT / LICK_TIME : 0;
     drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk: pose ? 0 : walk, flip, roar, flap: this.flap, lick, pose });
     c.restore();
+    c.globalAlpha = 1;
   },
 };
+
+// How a dino's body moves through each attack (k: 0..1), shared by you and by dinos who fight back.
+function attackPose(kind, k, f) {
+  let x = 0, y = 0, rot = 0, flip = false, roar = null, pose = null, arc = 0, slash = 0;
+  if (kind === 'bite') {
+    // Lunge, then shake the head side to side with jaws snapping.
+    x += f * 22 * Math.min(1, k * 5) * (k > 0.85 ? (1 - k) / 0.15 : 1);
+    y -= Math.sin(Math.min(1, k * 3) * Math.PI) * 10;
+    rot = Math.sin(k * Math.PI * 10) * 0.16 * (k < 0.8 ? 1 : 0);
+    roar = Math.floor(k * 12) % 2 ? 1 : 0;
+  } else if (kind === 'headbutt') {
+    // Rock back, then charge in head down.
+    if (k < 0.35) { x -= f * 14 * (k / 0.35); rot = -f * 0.18 * (k / 0.35); }
+    else if (k < 0.6) { const q = (k - 0.35) / 0.25; x += f * lerp(-14, 34, q); rot = f * lerp(-0.18, 0.4, q); }
+    else { const q = (k - 0.6) / 0.4; x += f * 34 * (1 - q); rot = f * 0.4 * (1 - q); }
+  } else if (kind === 'peck') {
+    // Three quick stabs of the beak, leaning right in.
+    const jab = Math.abs(Math.sin(k * Math.PI * 3));
+    x += f * 14 * jab; rot = f * 0.5 * jab;
+  } else if (kind === 'thumb') {
+    // Rear up with the arm cocked, then lunge and stab with the thumb spike.
+    if (k < 0.4) { const q = k / 0.4; rot = -f * 0.22 * q; x -= f * 8 * q; pose = { kind, e: -0.5 * q }; }
+    else if (k < 0.7) { const q = Math.min(1, (k - 0.4) / 0.12); rot = f * lerp(-0.22, 0.15, q); x += f * lerp(-8, 26, q); pose = { kind, e: q }; }
+    else { const q = (k - 0.7) / 0.3; rot = f * 0.15 * (1 - q); x += f * 26 * (1 - q); pose = { kind, e: 1 - q }; }
+  } else if (kind === 'claw') {
+    // Arm up high, then a big slash down across the front, three claw marks.
+    let a;
+    if (k < 0.35) a = lerp(0.5, -1.5, k / 0.35);
+    else if (k < 0.6) a = lerp(-1.5, 1.2, (k - 0.35) / 0.25);
+    else a = lerp(1.2, 0.5, (k - 0.6) / 0.4);
+    pose = { kind, a };
+    x += f * (k > 0.35 && k < 0.8 ? 16 : 0); rot = f * (k > 0.35 && k < 0.7 ? 0.12 : -0.06);
+    slash = k > 0.45 && k < 0.95 ? 1 - Math.abs(k - 0.62) / 0.33 : 0;
+  } else if (kind === 'kick') {
+    // Hop, lean back and shoot the leg out with the sickle claw up.
+    const e = k < 0.2 ? 0 : k < 0.45 ? (k - 0.2) / 0.25 : k < 0.65 ? 1 : Math.max(0, 1 - (k - 0.65) / 0.25);
+    y -= Math.sin(Math.min(1, k / 0.7) * Math.PI) * 22; rot = -f * 0.25 * e; x += f * 10 * e;
+    pose = { kind, e };
+  } else {
+    // Spin round so the tail sweeps through, then back.
+    flip = k > 0.15 && k < 0.75;
+    x -= f * Math.sin(k * Math.PI) * 10;
+    y -= Math.sin(k * Math.PI) * 8;
+    arc = k > 0.2 && k < 0.8 ? 1 - Math.abs(k - 0.5) / 0.3 : 0;
+  }
+  return { dx: x, dy: y, rot, flip, roar, pose, arc, slash };
+}
+// Whoosh lines for a tail swing, claw marks for a slash.
+function drawAttackFx(c, ap, bx, by, f) {
+  if (ap.arc > 0) {
+    c.strokeStyle = `rgba(255,255,255,${ap.arc * 0.9})`; c.lineWidth = 5; c.lineCap = 'round';
+    for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(bx, by - 30, 50 + i * 12, Math.PI * 0.75, Math.PI * 1.25); c.stroke(); c.beginPath(); c.arc(bx, by - 30, 50 + i * 12, -Math.PI * 0.25, Math.PI * 0.25); c.stroke(); }
+  }
+  if (ap.slash > 0) {
+    const cx = bx + f * 62, cy = by - 44;
+    c.strokeStyle = `rgba(255,255,255,${ap.slash})`; c.lineWidth = 5; c.lineCap = 'round';
+    for (let i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(cx - f * 16 + i * 10, cy - 24); c.lineTo(cx + f * 14 + i * 10, cy + 24); c.stroke(); }
+  }
+}
 
 // Put a block into an empty tile if no one is standing there.
 function placeBlock(tx, ty, id) {

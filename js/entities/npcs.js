@@ -5,6 +5,7 @@ function makeNPC(o) {
   const n = Object.assign({
     id: npcId++, type: pick(DINO_KEYS), baby, facing: pick([-1, 1]), walk: 0, t: rand(0, 9), blinkSeed: rand(0, 9),
     roarT: 0, state: 'idle', timer: rand(1, 3), dir: 0, home: o.x, range: 6 * TS, bubble: null, hop: 0,
+    fighter: !o.baby && Math.random() < 0.2, hits: 0, angry: 0, atk: null, atkCool: 0,   // about 1 in 5 fight back
     vehicle: null, ride: null, need: null, input: null, script: null, heartT: 0,
   }, o);
   n.body = makeBody(o.x, o.y, baby ? 20 : 28, baby ? 34 : 52);
@@ -41,6 +42,52 @@ const Pow = {
   },
 };
 
+// Pick on too many dinos and they all come for you: a swarm for 10 seconds.
+const Swarm = {
+  LIMIT: 20, TIME: 10, SIZE: 8,
+  active: false, t: 0, hits: 0,
+  reset() { this.active = false; this.t = 0; this.hits = 0; },
+  counted() {
+    this.hits++;
+    if (this.hits === this.LIMIT - 5 && !this.active) setTimeout(() => Sound.say('Careful! The dinos are getting cross.'), 900);
+    if (this.hits >= this.LIMIT && !this.active) this.start();
+  },
+  start() {
+    this.active = true; this.t = this.TIME; this.hits = 0;
+    const pb = Player.vehicle ? Player.vehicle.body : Player.body;
+    const lim = (World.limitW || WORLD_W) - 3;
+    for (let i = 0; i < this.SIZE; i++) {
+      const side = i % 2 ? 1 : -1;
+      const tx = clamp(Math.floor((pb.x + side * (Game.viewW / 2 + 60 + Math.floor(i / 2) * 90)) / TS), 2, lim);
+      const y = World.groundBelow(tx, Math.max(0, Math.floor(pb.y / TS) - 8)) * TS - 0.01;
+      const n = NPCs.add({ x: tx * TS + 16, y, type: pick(DINO_KEYS), baby: false });
+      Object.assign(n, { fighter: true, swarm: true, angry: this.TIME + 1, atkCool: rand(0.2, 1.2), facing: -side, greeted: true });
+    }
+    Sound.noise(1.6, 0.35, 'lowpass', 180); Sound.roar();
+    Game.celebrate('DINO SWARM!', 'Uh oh! You made the dinos cross. Here they come! Hide in a vehicle!');
+  },
+  update(dt) {
+    if (!this.active) return;
+    this.t -= dt;
+    if (this.t > 0) return;
+    this.active = false;
+    for (const n of NPCs.list) if (n.swarm && !n.leaving) {
+      n.angry = 0; n.atk = null; n.leaving = true; n.scaredT = 6; n.fleeDir = Math.sign(n.body.x - Player.cx) || 1;
+    }
+    Game.addStars(3); Game.popupStar(Player.cx, Player.cy - 100);
+    Game.celebrate('Phew!', 'Phew! The dinos calmed down and went home.');
+  },
+  // Red pulsing edges and a countdown while it lasts.
+  drawHud(c) {
+    if (!this.active) return;
+    const a = 0.25 + 0.2 * Math.sin(Game.t * 10);
+    const g = c.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.7);
+    g.addColorStop(0, 'rgba(255,0,0,0)'); g.addColorStop(1, `rgba(230,30,30,${a})`);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    bigText(c, `😡 ${Math.ceil(this.t)}`, W / 2, 150, 40, '#ff6b6b');
+  },
+};
+
 const NPCs = {
   list: [],
   spawnDefaults() {
@@ -53,6 +100,10 @@ const NPCs = {
     walker(128, { baby: true }); walker(146, { type: 'brachio' }); walker(165, {}); walker(178, { baby: true, type: 'tri' });
     walker(236, { type: 'ankylo' }); walker(318, { type: 'raptor', baby: true });
     walker(480, { type: 'ptero' });
+    // About 1 in 5 fight back: two of the grown-up wanderers, chosen at random.
+    const adults = this.list.filter(n => !n.baby);
+    for (const n of adults) n.fighter = false;
+    for (let k = 0; k < 2 && adults.length; k++) adults.splice(Math.floor(Math.random() * adults.length), 1)[0].fighter = true;
     // Workers with vehicles.
     this.worker('tractor', 20, 'rex', farmerScript);
     this.worker('digger', 246, 'tri', diggerScript, -1);
@@ -81,12 +132,24 @@ const NPCs = {
   hit(n, fromX, kind = 'bite') {
     const b = n.body, away = Math.sign(b.x - fromX) || 1;
     n.grabbedT = 0;
-    Pow.add(b.x - away * 18, b.y - b.h * 0.6, { bite: 'CHOMP!', headbutt: 'BONK!', tail: 'WHACK!', peck: 'PECK!', thumb: 'JAB!', claw: 'SLASH!', kick: 'KICK!' }[kind] || 'POW!');
+    Pow.add(b.x - away * 18, b.y - b.h * 0.6, POW_WORD[kind] || 'POW!');
+    n.atk = null;
+    Swarm.counted();
     Fx.burst(b.x, b.y - b.h, 14, { speed: 260, up: 120, g: 300, life: 0.9, r: 10, color: ['#ffd43b', '#fff3bf'], shape: 'star' });
     Sound.noise(0.12, 0.25, 'lowpass', 700);
     b.vy = kind === 'kick' ? -620 : kind === 'peck' ? -420 : -520; b.vx = away * (kind === 'kick' ? 520 : kind === 'peck' ? 380 : 460);
     n.tumble = away * 0.01;   // spins head over tail while flying
     if (n.need) { n.angryT = 1.5; return; }   // dinos waiting for help stay put
+    n.hits++;
+    if (n.fighter && n.hits < 3) {
+      // A tough one: knocked back, but it comes straight back at you.
+      b.vy = -380; b.vx = away * 300;
+      n.angry = 10; n.atkCool = 0.8; n.scaredT = 0; n.facing = -away;
+      Sound.tone(110, 0.45, 'sawtooth', 0.09, 70); Sound.tone(90, 0.45, 'square', 0.04, 60);
+      return;
+    }
+    n.angry = 0; n.fighter = false;
+    if (n.swarm) n.leaving = true;
     n.scaredT = 3.5; n.fleeDir = away; n.facing = away; n.greeted = true;
     if (n.type === 'ptero') n.flyMax = n.flyT = 3;
     if (n.baby) { Sound.squeak(); Sound.tone(1300, 0.15, 'sine', 0.08, 1700, 0.3); }
@@ -125,10 +188,42 @@ const NPCs = {
       const far = Math.abs(n.body.x - (cam.x + Game.viewW / 2)) > Game.viewW * 1.6;
       if (far) continue;
       if (n.need) this.checkBoard(n);
+      if (n.leaving && (n.scaredT <= 0 || Math.abs(n.body.x - Player.cx) > Game.viewW * 1.2)) { this.remove(n); continue; }
       if (n.grabbedT > 0) { n.grabbedT -= dt; n.body.vx = 0; n.scaredT = 0; n.heartT = 0; continue; }
       if (n.tumble) { n.tumble += Math.sign(n.tumble) * dt * 14; if (n.body.onGround && Math.abs(n.tumble) > 1) n.tumble = 0; }
+      if (n.angry > 0 && !n.grabbedT) { this.fight(n, dt); continue; }
       this.wander(n, dt);
     }
+  },
+  // A cross dino: run at the player and use its own move on them.
+  fight(n, dt) {
+    const b = n.body, p = Player, pb = p.vehicle ? p.vehicle.body : p.body;
+    n.angry -= dt; n.atkCool -= dt;
+    if (n.angry <= 0) { n.home = b.x; n.range = 6 * TS; n.state = 'idle'; n.dir = 0; n.timer = rand(1, 3); n.atk = null; return; }
+    const dx = pb.x - b.x;
+    if (n.atk) {
+      const A = ATTACKS[n.atk.kind];
+      n.atk.t += dt;
+      if (!n.atk.hit && n.atk.t >= A.hitAt) { n.atk.hit = true; if (!p.vehicle && this.reachesPlayer(n, n.atk.kind)) p.hurt(b, n.atk.kind); }
+      if (n.atk.t >= A.len) n.atk = null;
+      b.vx = lerp(b.vx, 0, Math.min(1, dt * 8));
+    } else {
+      if (Math.abs(dx) > 8) n.facing = Math.sign(dx);
+      const close = !p.vehicle && Math.abs(dx) < 70 && Math.abs(pb.y - b.y) < 60;
+      if (close && n.atkCool <= 0 && b.onGround && !(p.hurtT > 0)) {
+        n.atk = { kind: DINO_TYPES[n.type].attack, t: 0, hit: false };
+        n.atkCool = rand(0.9, 1.6);
+        attackSound(n.atk.kind);
+      } else b.vx = lerp(b.vx, close ? 0 : n.facing * (n.swarm ? 250 : 230), Math.min(1, dt * 6));
+    }
+    moveBody(b, dt, { step: 1 });
+    if (b.hitWall && b.onGround) b.vy = -560;
+    n.walk = b.onGround && Math.abs(b.vx) > 15 ? n.walk + dt * Math.abs(b.vx) * 0.06 : 0;
+  },
+  reachesPlayer(n, kind) {
+    const b = n.body, pb = Player.body;
+    const dx = (pb.x - b.x) * n.facing, dy = Math.abs(pb.y - b.y);
+    return dy < 70 && (kind === 'tail' ? Math.abs(dx) < 95 : dx > -15 && dx < 95);
   },
   wander(n, dt) {
     const b = n.body;
@@ -215,10 +310,15 @@ const NPCs = {
         for (let i = 0; i < 3; i++) { const ly = b.y - 14 - i * 14, lx = b.x - n.fleeDir * (34 + (i % 2) * 10); c.beginPath(); c.moveTo(lx, ly); c.lineTo(lx - n.fleeDir * 30, ly); c.stroke(); }
       }
       if (n.tumble) { c.save(); c.translate(b.x, b.y - b.h / 2); c.rotate(n.tumble); c.translate(-b.x, -(b.y - b.h / 2)); }
-      drawDino(c, b.x + shake, b.y + 1, s, n.type, { t: n.t, walk: n.walk, flip: n.facing < 0, roar: n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0 });
+      const ap = n.atk ? attackPose(n.atk.kind, Math.min(1, n.atk.t / ATTACKS[n.atk.kind].len), n.facing) : null;
+      if (ap) drawAttackFx(c, ap, b.x, b.y, n.facing);
+      c.save(); c.translate(b.x + shake + (ap ? ap.dx : 0), b.y + 1 + (ap ? ap.dy : 0)); if (ap) c.rotate(ap.rot);
+      drawDino(c, 0, 0, s, n.type, { t: n.t, walk: ap && ap.pose ? 0 : n.walk, flip: (n.facing < 0) !== !!(ap && ap.flip), roar: ap && ap.roar !== null ? ap.roar : n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0, pose: ap ? ap.pose : null });
+      c.restore();
       if (n.tumble) c.restore();
       const top = b.y - (n.type === 'brachio' ? (n.baby ? 50 : 72) : n.baby ? 38 : 56);
       if (n.grabbedT > 0) bubble(c, b.x, top, '😫', n.t);
+      else if (n.angry > 0) bubble(c, b.x, top, '😡', n.t);
       else if (n.scaredT > 0) bubble(c, b.x, top, '😱', n.t);
       else if (n.angryT > 0) bubble(c, b.x, top, '😠', n.t);
       else if (n.need && n.bubble) bubble(c, b.x, top, n.bubble, n.t);
