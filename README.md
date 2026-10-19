@@ -22,7 +22,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 | Jump (automatic at walls) / climb walls | Up | ▲ |
 | Fly (Pterodactyl): hold to climb, let go to glide, down to dive | Up / Down | ▲ ▼ |
 | Dig / vehicle action | Space | big yellow button |
-| Play-fight a dino in front: meat-eaters (T-Rex, Raptor, Pterodactyl) maul, Triceratops headbutts, the others tail-whack. POW, and off they run yelping | Space | big yellow button turns 🦷 / 💥 / 🌀 |
+| Play-fight a dino in front (each dino has its own move, see Dinosaurs) | Space | big yellow button turns 🦷 💥 🌀 🐦 👍 🐾 🦶 |
 | Lick (a big wiggly tongue, just for fun) | L | 👅 button |
 | Get in / out | E or Enter | 🚪 |
 | Roar / horn | R | 🦖 / 📢 |
@@ -45,7 +45,19 @@ Everything except the bedrock at the bottom can be dug. Sparkly stars float arou
 
 ## Dinosaurs
 
-T-Rex, Triceratops, Stegosaurus, Brachiosaurus, Raptor, Ankylosaurus and Pterodactyl. The Pterodactyl really flies, and so do the other pterodactyls in the world. Flying high (Pterodactyl, plane, helicopter) zooms the view out so the ground stays in sight.
+Thirteen to pick from, each with its own real-ish play-fight move (the yellow button changes when a dino is in reach):
+
+| Dino | Move |
+|---|---|
+| T-Rex, Megalosaurus, Allosaurus, Carnotaurus | lunge, grab and maul (CHOMP!) |
+| Velociraptor | hop and kick with the sickle claw (KICK!) |
+| Baryonyx | raise the arm and slash with the big thumb claw (SLASH!) |
+| Pterodactyl | three quick pecks (PECK!). It flies too: hold up |
+| Iguanodon | rear up and stab with the thumb spike (JAB!) |
+| Triceratops, Styracosaurus | rock back and charge, head down (BONK!) |
+| Stegosaurus, Ankylosaurus, Brachiosaurus | spin round and whack with the tail (WHACK!) |
+
+The other dino tumbles away and runs off yelping. Flying high (Pterodactyl, plane, helicopter) zooms the view out so the ground stays in sight.
 
 ## Vehicles
 

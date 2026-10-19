@@ -4,13 +4,20 @@ const DINO_TYPES = {
   tri:     { name: 'Triceratops', say: 'Triceratops!', body: '#ff9f40', dark: '#e0761b', belly: '#ffe2b0', legs: 4, horn: '#fff3d6', attack: 'headbutt' },
   stego:   { name: 'Stegosaurus', say: 'Stegosaurus!', body: '#6f8dff', dark: '#4a63d8', belly: '#d6e2ff', legs: 4, accent: '#ff6b81', attack: 'tail' },
   brachio: { name: 'Brachiosaurus', say: 'Brachiosaurus!', body: '#c77dff', dark: '#9b4fd9', belly: '#f1d9ff', legs: 4, attack: 'tail' },
-  raptor:  { name: 'Raptor', say: 'Velociraptor!', body: '#20c9b5', dark: '#139a8a', belly: '#d5fff8', legs: 2, accent: '#ffd43b', attack: 'bite' },
+  raptor:  { name: 'Velociraptor', say: 'Velociraptor! Sickle claw kick!', body: '#20c9b5', dark: '#139a8a', belly: '#d5fff8', legs: 2, accent: '#ffd43b', attack: 'kick' },
   ankylo:  { name: 'Ankylosaurus', say: 'Ankylosaurus!', body: '#c49a62', dark: '#93703f', belly: '#f3dfc2', legs: 4, accent: '#e9c46a', attack: 'tail' },
-  ptero:   { name: 'Pterodactyl', say: 'Pterodactyl! I can fly!', body: '#ff6b6b', dark: '#d64545', belly: '#ffe3e3', legs: 2, accent: '#ffd43b', flies: true, attack: 'bite' },
+  ptero:   { name: 'Pterodactyl', say: 'Pterodactyl! I can fly!', body: '#ff6b6b', dark: '#d64545', belly: '#ffe3e3', legs: 2, accent: '#ffd43b', flies: true, attack: 'peck' },
+  styraco: { name: 'Styracosaurus', say: 'Styracosaurus! Look at my spiky frill!', body: '#f06595', dark: '#c2255c', belly: '#ffdeeb', legs: 4, horn: '#fff3d6', attack: 'headbutt' },
+  iguano:  { name: 'Iguanodon', say: 'Iguanodon! I have spiky thumbs!', body: '#8ca0b3', dark: '#5f7385', belly: '#e9f0f6', legs: 2, heavy: true, attack: 'thumb' },
+  megalo:  { name: 'Megalosaurus', say: 'Megalosaurus! The first dinosaur ever named!', body: '#d9480f', dark: '#a8380b', belly: '#ffd8a8', legs: 2, attack: 'bite' },
+  carno:   { name: 'Carnotaurus', say: 'Carnotaurus! The bull with horns!', body: '#c92a2a', dark: '#8f1d1d', belly: '#ffc9c9', legs: 2, horn: '#fff3d6', attack: 'bite' },
+  allo:    { name: 'Allosaurus', say: 'Allosaurus!', body: '#fab005', dark: '#c98a00', belly: '#fff3bf', legs: 2, accent: '#e8590c', stripes: true, attack: 'bite' },
+  bary:    { name: 'Baryonyx', say: 'Baryonyx! Big claws for catching fish!', body: '#6b8e23', dark: '#4a6317', belly: '#e6edb6', legs: 2, accent: '#fff3d6', attack: 'claw' },
 };
 DINO_TYPES.alien = { name: 'Moon dino', say: 'Hello Moon dino!', body: '#94e044', dark: '#5fae2e', belly: '#e6ffd0', legs: 2, accent: '#ff6bd6', antenna: true, hidden: true, attack: 'bite' };
 const DINO_KEYS = Object.keys(DINO_TYPES).filter(k => !DINO_TYPES[k].hidden);
-const ATTACK_ICON = { bite: '🦷', headbutt: '💥', tail: '🌀' };
+const ATTACK_ICON = { bite: '🦷', headbutt: '💥', tail: '🌀', peck: '🐦', thumb: '👍', claw: '🐾', kick: '🦶' };
+const THEROPOD_HEADS = new Set(['rex', 'megalo', 'allo', 'carno']);
 
 function drawEye(c, x, y, r, blink, look = 1.5) {
   if (blink) {
@@ -42,6 +49,14 @@ function drawHardHat(c, cx, top) {
   limb(c, [cx - 2, top - 10, cx + 8, top - 8], 3, '#dee2e6', 0);
 }
 
+// A claw or spike from (x, y) pointing at angle a; curl bends the tip round like a hook.
+function drawSpike(c, x, y, a, len, w, curl) {
+  const px = -Math.sin(a) * w, py = Math.cos(a) * w;
+  const tx = x + Math.cos(a + curl) * len, ty = y + Math.sin(a + curl) * len;
+  const mx = x + Math.cos(a) * len * 0.6, my = y + Math.sin(a) * len * 0.6;
+  c.beginPath(); c.moveTo(x + px, y + py); c.quadraticCurveTo(mx + px * 0.6, my + py * 0.6, tx, ty);
+  c.quadraticCurveTo(mx - px * 0.3, my - py * 0.3, x - px, y - py); c.closePath(); fillStroke(c, '#fff3d6', 2.5);
+}
 // A big pink tongue poking out and wiggling (k: 0..1 through the lick).
 function drawTongue(c, x, y, k, t) {
   const out = Math.sin(k * Math.PI) * (0.7 + 0.3 * Math.abs(Math.sin(k * Math.PI * 3)));
@@ -52,7 +67,7 @@ function drawTongue(c, x, y, k, t) {
   ell(c, ex, ey, 7, 6, '#ff8fab', 3);
   c.strokeStyle = '#e64980'; c.lineWidth = 2; c.beginPath(); c.moveTo(x + 2, y + 1); c.lineTo(mx, my); c.stroke();
 }
-const TONGUE_AT = { rex: [26, 8], raptor: [26, 5], tri: [26, 6], ptero: [30, 4], stego: [18, 6], brachio: [18, 6], ankylo: [20, 6], alien: [26, 8] };
+const TONGUE_AT = { rex: [26, 8], megalo: [26, 8], allo: [26, 8], carno: [26, 8], raptor: [26, 5], tri: [26, 6], styraco: [26, 6], ptero: [30, 4], stego: [18, 6], brachio: [18, 6], ankylo: [20, 6], alien: [26, 8], bary: [40, 6], iguano: [32, 4] };
 
 function drawDinoHead(c, type, hx, hy, d, o) {
   const roar = o.roar > 0 || o.lick > 0, blink = o.blink;
@@ -63,7 +78,7 @@ function drawDinoHead(c, type, hx, hy, d, o) {
     ell(c, hx - 4 + wob, hy - 46, 6, 6, d.accent, 3);
   }
   switch (type) {
-    case 'rex': {
+    case 'rex': case 'megalo': case 'allo': case 'carno': {
       if (roar) ell(c, hx + 10, hy + 12, 18, 10, '#8b1e2d', 0);
       c.save(); c.translate(hx - 14, hy + 6); c.rotate(roar ? 0.45 : 0.06);
       rbox(c, 0, -6, 46, 14, 7, d.body);
@@ -74,6 +89,52 @@ function drawDinoHead(c, type, hx, hy, d, o) {
       drawEye(c, hx - 4, hy - 8, 7.5, blink);
       limb(c, [hx - 12, hy - 18, hx + 4, hy - 19], 3, d.dark, 0);
       ell(c, hx + 25, hy - 10, 2, 2, OUT, 0);
+      if (type === 'allo') {
+        // Little horns in front of the eyes and a bumpy ridge down the snout.
+        poly(c, [hx - 12, hy - 18, hx - 7, hy - 30, hx - 1, hy - 18], d.accent, 3);
+        for (let i = 0; i < 4; i++) ell(c, hx + 6 + i * 6, hy - 20, 3, 2.5, d.dark, 0);
+      } else if (type === 'carno') {
+        // Two thick bull horns over the eyes.
+        poly(c, [hx - 14, hy - 18, hx - 24, hy - 32, hx - 4, hy - 20], d.horn, 3);
+        poly(c, [hx - 2, hy - 19, hx + 4, hy - 34, hx + 8, hy - 19], d.horn, 3);
+      } else if (type === 'megalo') {
+        for (const [sx, sy] of [[10, -12], [18, -4], [2, 2]]) ell(c, hx + sx, hy + sy, 3.5, 2.5, d.dark, 0);
+      }
+      break;
+    }
+    case 'bary': {
+      // Long, low crocodile snout full of teeth, rosette at the tip, little crest.
+      if (roar) { c.save(); c.translate(hx + 4, hy + 6); c.rotate(0.35); rbox(c, 0, -3, 46, 8, 4, d.body); c.restore(); }
+      rbox(c, hx - 18, hy - 15, 32, 24, 11, d.body);
+      rbox(c, hx + 6, hy - 6, 42, 12, 6, d.body);
+      ell(c, hx + 46, hy, 7, 7, d.body, 4);
+      poly(c, [hx + 12, hy - 6, hx + 18, hy - 15, hx + 24, hy - 6], d.dark, 3);
+      for (let i = 0; i < 5; i++) poly(c, [hx + 12 + i * 7, hy + 5, hx + 14 + i * 7, hy + 10, hx + 16 + i * 7, hy + 5], '#fff', 1.5);
+      drawEye(c, hx - 4, hy - 6, 6.5, blink);
+      break;
+    }
+    case 'iguano': {
+      // Long horse-like head ending in a toothless beak.
+      ell(c, hx - 2, hy - 2, 20, 15, d.body);
+      rbox(c, hx + 4, hy - 8, 30, 16, 8, d.body);
+      poly(c, [hx + 30, hy - 7, hx + 40, hy + 1, hx + 30, hy + 8], '#e9c46a', 3);
+      drawEye(c, hx - 2, hy - 6, 6.5, blink);
+      drawMouth(c, hx + 22, hy + 4, roar, 7);
+      ell(c, hx + 31, hy - 3, 1.8, 1.8, OUT, 0);
+      break;
+    }
+    case 'styraco': {
+      // Frill ringed with long spikes, one big horn on the nose.
+      for (let i = 0; i < 6; i++) {
+        const a = -2.6 + i * 0.42, bx = hx - 16 + Math.cos(a) * 20, by = hy - 6 + Math.sin(a) * 24;
+        poly(c, [bx - Math.sin(a) * 6, by + Math.cos(a) * 6, bx + Math.cos(a) * 26, by + Math.sin(a) * 26, bx + Math.sin(a) * 6, by - Math.cos(a) * 6], d.horn, 2.5);
+      }
+      ell(c, hx - 16, hy - 6, 24, 28, d.dark);
+      ell(c, hx + 4, hy, 24, 17, d.body);
+      poly(c, [hx + 22, hy - 6, hx + 37, hy + 2, hx + 22, hy + 10], d.horn, 3);
+      poly(c, [hx + 10, hy - 14, hx + 20, hy - 15, hx + 30, hy - 50], d.horn, 3);
+      drawEye(c, hx + 2, hy - 4, 6.5, blink);
+      drawMouth(c, hx + 14, hy + 8, roar, 7);
       break;
     }
     case 'raptor': {
@@ -121,7 +182,7 @@ function drawDinoHead(c, type, hx, hy, d, o) {
   }
   if (o.lick > 0) { const m = TONGUE_AT[type] || [22, 6]; drawTongue(c, hx + m[0], hy + m[1], o.lick, o.t || 0); }
   if (o.hivis) {
-    const at = { rex: [2, -20], raptor: [4, -13], tri: [4, -16], ptero: [0, -12] }[type] || [4, -13];
+    const at = { rex: [2, -20], megalo: [2, -20], allo: [2, -20], carno: [10, -20], raptor: [4, -13], tri: [4, -16], styraco: [4, -16], ptero: [0, -12], bary: [-2, -15], iguano: [0, -17] }[type] || [4, -13];
     drawHardHat(c, hx + at[0], hy + at[1] - 2);
   }
 }
@@ -156,20 +217,49 @@ function drawDino(c, x, y, s, type, o = {}) {
   }
 
   if (d.legs === 2) {
-    const slim = type === 'raptor';
+    const slim = type === 'raptor', heavy = !!d.heavy;
+    const pose = o.pose || {};
     c.beginPath(); c.moveTo(-8, -60); c.quadraticCurveTo(-50, -60, -78, -46 + tailWag);
     c.quadraticCurveTo(-46, -44, -6, -36); c.closePath(); fillStroke(c, d.body);
     if (slim) poly(c, [-74, -46 + tailWag, -86, -52 + tailWag, -82, -42 + tailWag], d.accent, 2);
     limb(c, [-4, -40, 2 - sw, -18, 8 - sw * 1.2, -2], slim ? 9 : 13, d.dark);
     ell(c, 14 - sw * 1.2, -4, slim ? 10 : 13, 6, d.dark);
-    ell(c, 2, -52, slim ? 22 : 27, slim ? 19 : 23, d.body, 4, -0.35);
+    const brx = slim ? 22 : heavy ? 31 : 27, bry = slim ? 19 : heavy ? 26 : 23;
+    ell(c, 2, -52, brx, bry, d.body, 4, -0.35);
+    if (d.stripes) {
+      c.save(); c.beginPath(); c.ellipse(2, -52, brx, bry, -0.35, 0, TAU); c.clip();
+      c.fillStyle = d.accent; for (let i = 0; i < 3; i++) c.fillRect(-20 + i * 12, -80, 5, 50);
+      c.restore(); c.beginPath(); c.ellipse(2, -52, brx, bry, -0.35, 0, TAU); fillStroke(c, null, 4);
+    }
+    if (type === 'carno') for (let i = 0; i < 5; i++) ell(c, -16 + i * 8, -72 + Math.abs(i - 2) * 2, 3.5, 3, d.dark, 0);
     ell(c, 12, -48, slim ? 9 : 12, slim ? 11 : 14, d.belly, 0, -0.35);
-    if (hv) drawVest(c, 2, -52, slim ? 22 : 27, slim ? 19 : 23, -0.35, [-58, -46]);
-    limb(c, [-2, -42, 4 + sw, -18, 10 + sw * 1.2, -2], slim ? 10 : 15, d.body);
-    ell(c, 16 + sw * 1.2, -4, slim ? 11 : 14, 6, d.body);
+    if (hv) drawVest(c, 2, -52, brx, bry, -0.35, [-58, -46]);
+    // Front leg: walking, or kicked out with the sickle claw up (raptor kick).
+    const kick = pose.kind === 'kick' ? pose.e : 0;
+    const kx = lerp(4 + sw, 22, kick), ky = lerp(-18, -50, kick), fx = lerp(10 + sw * 1.2, 46, kick), fy = lerp(-2, -40, kick);
+    limb(c, [-2, -42, kx, ky, fx, fy], slim ? 10 : 15, d.body);
+    ell(c, fx + 6, fy - 2, slim ? 11 : 14, 6, d.body, 4, -kick * 0.6);
+    if (slim) {
+      const s2 = 1 + kick * 0.8;
+      poly(c, [fx + 2, fy - 4, fx + 2 + 6 * s2, fy - 4 - 12 * s2, fx + 9, fy - 2], '#fff3d6', 2);   // sickle claw
+    }
     limb(c, [14, -64, 22, -76, 26, -84], slim ? 14 : 20, d.body);
     drawDinoHead(c, type, slim ? 34 : 32, slim ? -88 : -90, d, oo);
-    limb(c, [18, -56, 28, -50, 33, -55], 6, d.body);
+    // Arm: thumb jab (Iguanodon), claw slash (Baryonyx) or just hanging.
+    const sx0 = 18, sy0 = -56;
+    let ang = 0.5, bend = 0.6, L1 = type === 'bary' ? 14 : heavy ? 13 : 11, L2 = type === 'bary' ? 15 : heavy ? 10 : 8;
+    if (pose.kind === 'thumb') {
+      // Cocked back (e < 0), then punched straight out (e = 1).
+      const e = pose.e;
+      if (e < 0) { ang = 0.5 - e * 2.2; bend = 1.6; }
+      else { ang = lerp(0.5, -0.1, e); bend = lerp(0.6, 0, e); L1 += e * 10; L2 += e * 14; }
+    }
+    if (pose.kind === 'claw') ang = pose.a;
+    const ex = sx0 + Math.cos(ang) * L1, ey = sy0 + Math.sin(ang) * L1;
+    const ha = ang - bend, hx2 = ex + Math.cos(ha) * L2, hy2 = ey + Math.sin(ha) * L2;
+    limb(c, [sx0, sy0, ex, ey, hx2, hy2], type === 'bary' ? 9 : heavy ? 8 : 6, d.body);
+    if (type === 'iguano') drawSpike(c, hx2, hy2, ha - 0.5, pose.kind === 'thumb' && pose.e > 0.5 ? 20 : 14, 5, 0);
+    if (type === 'bary') drawSpike(c, hx2, hy2, ha + 0.5, 22, 7, 0.5);   // big curved thumb claw
     if (slim) poly(c, [18, -56, 24, -46, 28, -52], d.accent, 2);
   } else {
     const brach = type === 'brachio';
@@ -200,7 +290,7 @@ function drawDino(c, x, y, s, type, o = {}) {
       drawDinoHead(c, type, 58, -134, d, oo);
     } else {
       limb(c, [26, -54, 40, -60], 22, d.body);
-      drawDinoHead(c, type, type === 'tri' ? 52 : 50, -62, d, oo);
+      drawDinoHead(c, type, type === 'tri' || type === 'styraco' ? 52 : 50, -62, d, oo);
     }
   }
   c.restore();
@@ -227,7 +317,7 @@ function drawDinoSeated(c, x, y, s, type, o = {}) {
   ell(c, 0, -12, 24, 30, d.body);
   ell(c, 9, -8, 12, 20, d.belly, 0);
   if (hv) drawVest(c, 0, -12, 24, 30, 0, [-22, -6]);
-  const hxx = type === 'tri' ? hx + 2 : hx;
+  const hxx = type === 'tri' || type === 'styraco' ? hx + 2 : hx;
   drawDinoHead(c, type, hxx, type === 'ptero' ? hy + 8 : hy, d, oo);
   limb(c, [8, -20, 24, -10, 34, -14], 9, d.body);
   c.restore();

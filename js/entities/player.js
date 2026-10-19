@@ -9,7 +9,15 @@ const TREASURE_INFO = {
   [T.GOLDEGG]: { say: 'A golden egg!', stars: 5 },
 };
 // Attack timings: how long it lasts and when the blow lands.
-const ATTACKS = { bite: { len: 0.6, hitAt: 0.48 }, headbutt: { len: 0.45, hitAt: 0.22 }, tail: { len: 0.5, hitAt: 0.27 } };
+const ATTACKS = {
+  bite: { len: 0.6, hitAt: 0.48 },       // big meat-eaters: lunge, grab, shake
+  headbutt: { len: 0.45, hitAt: 0.22 },  // horned dinos: rock back and charge
+  tail: { len: 0.5, hitAt: 0.27 },       // spin and swing the tail
+  peck: { len: 0.5, hitAt: 0.36 },       // pterodactyl: three quick jabs of the beak
+  thumb: { len: 0.5, hitAt: 0.27 },      // Iguanodon: rear up, stab with the thumb spike
+  claw: { len: 0.5, hitAt: 0.28 },       // Baryonyx: raise the arm, slash down
+  kick: { len: 0.5, hitAt: 0.25 },       // Velociraptor: hop and kick with the sickle claw
+};
 const LICK_TIME = 0.9;   // lick, lick, slurp
 const DUST = {
   [T.GRASS]: ['#5cc84a', '#a0662e'], [T.DIRT]: ['#a0662e', '#8a5524'], [T.SAND]: ['#f2d48a', '#e0bd6c'],
@@ -160,6 +168,9 @@ const Player = {
       for (const n of this.attackTargets) n.grabbedT = a.hitAt;   // held still while being mauled
       [0, 0.14, 0.28, 0.42].forEach(d => setTimeout(() => Sound.chomp(), d * 1000));
     } else if (kind === 'tail') Sound.whoosh();
+    else if (kind === 'peck') [0, 0.12, 0.24].forEach(d => Sound.tone(1400, 0.04, 'square', 0.07, 900, d));
+    else if (kind === 'claw') { Sound.noise(0.1, 0.12, 'bandpass', 2500, 0.08); Sound.noise(0.14, 0.15, 'highpass', 3000, 0.12); }
+    else if (kind === 'thumb' || kind === 'kick') { Sound.noise(0.12, 0.1, 'bandpass', 900); Sound.tone(220, 0.1, 'square', 0.06, 120, 0.1); }
     else Sound.tone(140, 0.25, 'sawtooth', 0.08, 90);
   },
   updateAttack(dt) {
@@ -211,7 +222,7 @@ const Player = {
     let walk = this.walk;
     if (this.digAnim > 0) walk = Math.sin(this.t * 30) * 0.6;
     let flip = this.facing < 0, roar = this.roarT, x = b.x, rot = 0;
-    let y = b.y + 1, arc = 0;
+    let y = b.y + 1, arc = 0, pose = null, slash = 0;
     if (this.attackT > 0) {
       const k = 1 - this.attackT / this.attackLen, f = this.facing;
       const kind = this.attackKind;
@@ -226,6 +237,29 @@ const Player = {
         if (k < 0.35) { x -= f * 14 * (k / 0.35); rot = -f * 0.18 * (k / 0.35); }
         else if (k < 0.6) { const q = (k - 0.35) / 0.25; x += f * lerp(-14, 34, q); rot = f * lerp(-0.18, 0.4, q); }
         else { const q = (k - 0.6) / 0.4; x += f * 34 * (1 - q); rot = f * 0.4 * (1 - q); }
+      } else if (kind === 'peck') {
+        // Three quick stabs of the beak, leaning right in.
+        const jab = Math.abs(Math.sin(k * Math.PI * 3));
+        x += f * 14 * jab; rot = f * 0.5 * jab;
+      } else if (kind === 'thumb') {
+        // Rear up with the arm cocked, then lunge and stab with the thumb spike.
+        if (k < 0.4) { const q = k / 0.4; rot = -f * 0.22 * q; x -= f * 8 * q; pose = { kind, e: -0.5 * q }; }
+        else if (k < 0.7) { const q = Math.min(1, (k - 0.4) / 0.12); rot = f * lerp(-0.22, 0.15, q); x += f * lerp(-8, 26, q); pose = { kind, e: q }; }
+        else { const q = (k - 0.7) / 0.3; rot = f * 0.15 * (1 - q); x += f * 26 * (1 - q); pose = { kind, e: 1 - q }; }
+      } else if (kind === 'claw') {
+        // Arm up high, then a big slash down across the front, three claw marks.
+        let a;
+        if (k < 0.35) a = lerp(0.5, -1.5, k / 0.35);
+        else if (k < 0.6) a = lerp(-1.5, 1.2, (k - 0.35) / 0.25);
+        else a = lerp(1.2, 0.5, (k - 0.6) / 0.4);
+        pose = { kind, a };
+        x += f * (k > 0.35 && k < 0.8 ? 16 : 0); rot = f * (k > 0.35 && k < 0.7 ? 0.12 : -0.06);
+        slash = k > 0.45 && k < 0.95 ? 1 - Math.abs(k - 0.62) / 0.33 : 0;
+      } else if (kind === 'kick') {
+        // Hop, lean back and shoot the leg out with the sickle claw up.
+        const e = k < 0.2 ? 0 : k < 0.45 ? (k - 0.2) / 0.25 : k < 0.65 ? 1 : Math.max(0, 1 - (k - 0.65) / 0.25);
+        y -= Math.sin(Math.min(1, k / 0.7) * Math.PI) * 22; rot = -f * 0.25 * e; x += f * 10 * e;
+        pose = { kind, e };
       } else {
         // Spin round so the tail sweeps through, then back.
         if (k > 0.15 && k < 0.75) flip = !flip;
@@ -239,9 +273,15 @@ const Player = {
       c.strokeStyle = `rgba(255,255,255,${arc * 0.9})`; c.lineWidth = 5; c.lineCap = 'round';
       for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(b.x, b.y - 30, 50 + i * 12, Math.PI * 0.75, Math.PI * 1.25); c.stroke(); c.beginPath(); c.arc(b.x, b.y - 30, 50 + i * 12, -Math.PI * 0.25, Math.PI * 0.25); c.stroke(); }
     }
+    if (slash > 0) {
+      // Three claw marks raked through the air in front.
+      const cx = b.x + this.facing * 62, cy = b.y - 44;
+      c.strokeStyle = `rgba(255,255,255,${slash})`; c.lineWidth = 5; c.lineCap = 'round';
+      for (let i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(cx - this.facing * 16 + i * 10, cy - 24); c.lineTo(cx + this.facing * 14 + i * 10, cy + 24); c.stroke(); }
+    }
     c.save(); c.translate(x, y); c.rotate(rot);
     const lick = this.lickT > 0 ? 1 - this.lickT / LICK_TIME : 0;
-    drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk, flip, roar, flap: this.flap, lick });
+    drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk: pose ? 0 : walk, flip, roar, flap: this.flap, lick, pose });
     c.restore();
   },
 };

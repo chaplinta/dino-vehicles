@@ -81,10 +81,10 @@ const NPCs = {
   hit(n, fromX, kind = 'bite') {
     const b = n.body, away = Math.sign(b.x - fromX) || 1;
     n.grabbedT = 0;
-    Pow.add(b.x - away * 18, b.y - b.h * 0.6, { bite: 'CHOMP!', headbutt: 'BONK!', tail: 'WHACK!' }[kind] || 'POW!');
+    Pow.add(b.x - away * 18, b.y - b.h * 0.6, { bite: 'CHOMP!', headbutt: 'BONK!', tail: 'WHACK!', peck: 'PECK!', thumb: 'JAB!', claw: 'SLASH!', kick: 'KICK!' }[kind] || 'POW!');
     Fx.burst(b.x, b.y - b.h, 14, { speed: 260, up: 120, g: 300, life: 0.9, r: 10, color: ['#ffd43b', '#fff3bf'], shape: 'star' });
     Sound.noise(0.12, 0.25, 'lowpass', 700);
-    b.vy = -520; b.vx = away * 460;
+    b.vy = kind === 'kick' ? -620 : kind === 'peck' ? -420 : -520; b.vx = away * (kind === 'kick' ? 520 : kind === 'peck' ? 380 : 460);
     n.tumble = away * 0.01;   // spins head over tail while flying
     if (n.need) { n.angryT = 1.5; return; }   // dinos waiting for help stay put
     n.scaredT = 3.5; n.fleeDir = away; n.facing = away; n.greeted = true;

@@ -19,7 +19,8 @@ const Title = {
     c.fillStyle = OUT; c.fillRect(0, 430, W, 4);
     // Parade of dinos walking across.
     DINO_KEYS.forEach((k, i) => {
-      const x = ((this.t * 70 + i * 150) % (W + 300)) - 150;
+      const gap = (W + 300) / DINO_KEYS.length;
+      const x = ((this.t * 70 + i * gap) % (W + 300)) - 150;
       drawDino(c, x, 432, 0.7, k, { t: this.t + i, walk: this.t * 9 + i, roar: (Math.floor(this.t + i * 0.7) % 7 === 0) ? 1 : 0 });
     });
     const bounce = Math.sin(this.t * 3) * 6;
@@ -47,10 +48,12 @@ const Title = {
 const Picker = {
   t: 0, sel: 0, chosenT: 0,
   slots() {
+    // Rows of five, centred.
+    const per = 5, rows = Math.ceil(DINO_KEYS.length / per);
     return DINO_KEYS.map((k, i) => {
-      const row = i < 4 ? 0 : 1, col = row ? i - 4 : i;
-      const n = row ? 3 : 4;
-      return { k, x: W / 2 + (col - (n - 1) / 2) * 210, y: row ? 470 : 280 };
+      const row = Math.floor(i / per), col = i % per;
+      const n = Math.min(per, DINO_KEYS.length - row * per);
+      return { k, x: W / 2 + (col - (n - 1) / 2) * 180, y: 225 + row * 128 + (3 - rows) * 40 };
     });
   },
   enter() {
@@ -68,8 +71,8 @@ const Picker = {
     }
     if (Input.pressed.left) this.move(-1);
     if (Input.pressed.right) this.move(1);
-    if (Input.pressed.up) this.move(-4);
-    if (Input.pressed.down) this.move(4);
+    if (Input.pressed.up) this.move(-5);
+    if (Input.pressed.down) this.move(5);
     if (Input.pressed.action || Input.pressed.enter) this.choose(this.sel);
     if (Input.pressed.roar) Sound.roar();
   },
@@ -84,18 +87,18 @@ const Picker = {
   tap(x, y) {
     if (this.chosenT > 0) return;
     let best = -1, bd = 120;
-    this.slots().forEach((s, i) => { const d = dist(x, y, s.x, s.y - 50); if (d < bd) { bd = d; best = i; } });
+    this.slots().forEach((s, i) => { const d = dist(x, y, s.x, s.y - 40); if (d < bd) { bd = d; best = i; } });
     if (best >= 0) this.choose(best);
   },
   draw(c) {
     drawBackdrop(c, this.t * 20, 0, this.t);
     c.fillStyle = 'rgba(92,200,74,0.9)'; c.fillRect(0, 500, W, 40);
-    bigText(c, 'Pick your dino!', W / 2, 70, 56, '#fff');
+    bigText(c, 'Pick your dino!', W / 2, 52, 48, '#fff');
     this.slots().forEach((s, i) => {
       const on = i === this.sel;
       const jump = on ? Math.abs(Math.sin(this.t * 6)) * (this.chosenT > 0 ? 40 : 12) : 0;
-      ell(c, s.x, s.y + 4, 80, 16, on ? '#ffd43b' : 'rgba(0,0,0,0.15)', on ? 4 : 0);
-      drawDino(c, s.x + 10, s.y - jump, s.k === 'brachio' ? 0.95 : 1.05, s.k, {
+      ell(c, s.x, s.y + 4, 66, 13, on ? '#ffd43b' : 'rgba(0,0,0,0.15)', on ? 4 : 0);
+      drawDino(c, s.x + 8, s.y - jump, s.k === 'brachio' ? 0.62 : 0.72, s.k, {
         t: this.t + i, roar: on && this.chosenT > 0 ? 1 : 0, flap: s.k === 'ptero' ? this.t * 6 : 0,
       });
     });
