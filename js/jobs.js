@@ -149,7 +149,7 @@ const Jobs = {
     return Object.keys(JOB_TYPES).filter(k => {
       const def = JOB_TYPES[k];
       if (this.list.some(j => j.kind === k)) return false;
-      return VEHICLE_DEFS[def.vehicle] && Game.stars >= VEHICLE_DEFS[def.vehicle].unlock;
+      return vehicleUnlocked(def.vehicle);
     });
   },
   spawn(kind) {
@@ -263,7 +263,7 @@ const Jobs = {
   callFor(job) {
     const kind = job.def.vehicle, def = VEHICLE_DEFS[kind];
     if (Player.vehicle && Player.vehicle.kind === kind) { Sound.say(job.say); return; }
-    if (!def || Game.stars < def.unlock) { Sound.say(job.say); return; }
+    if (!def || !vehicleUnlocked(kind)) { Sound.say(job.say); return; }
     if (Player.vehicle) Vehicles.exit(Player);
     callVehicle(kind);
   },

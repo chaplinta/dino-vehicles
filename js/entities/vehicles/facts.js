@@ -120,6 +120,11 @@ const VEHICLE_FACTS = {
     'The holds are filled a bit at a time so the ship stays level in the water.',
     'Iron ore ships are huge. One ship can carry more than two thousand train wagons of ore.',
   ],
+  pirateship: [
+    'Sails catch the wind and push the ship along. More sail up means more speed.',
+    'On a ship, left is called port and right is called starboard.',
+    'Long ago a Dutch ship called the Batavia sailed to Western Australia and hit a reef. Divers still find its treasures.',
+  ],
   moonbuggy: [
     'Astronauts drove a real moon buggy, called the lunar rover, on the Moon.',
     'The Moon has much less gravity than Earth, so everything is lighter and you can jump really high.',

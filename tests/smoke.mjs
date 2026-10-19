@@ -61,7 +61,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 2. Every vehicle: get in, drive, use its action, get out.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 99; Jobs.t = 1e9; });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 99; Vehicles.spawnMissing(); Jobs.t = 1e9; });
   const kinds = await page.evaluate(() => VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k] && k !== 'rocket'));
   for (const k of kinds) {
     await page.evaluate(k => {
@@ -82,7 +82,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 3. Rocket to space and back.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 99; const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v); });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 99; Vehicles.spawnMissing(); const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v); });
   await page.keyboard.press('Space');
   await page.waitForTimeout(6500);
   check(await page.evaluate(() => Game.overlay === Space), 'rocket reaches space');
@@ -196,7 +196,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
 
   // In game: a quick press on the seedling does nothing; holding it makes a new world and keeps stars.
-  await page.evaluate(() => { Game.startPlay('rex'); Game.stars = 17; World.set(20, 30, T.BRICK); });
+  await page.evaluate(() => { Game.startPlay('rex'); Game.stars = 17; Vehicles.spawnMissing(); World.set(20, 30, T.BRICK); });
   const seed0 = await page.evaluate(() => World.seed);
   check(await page.locator('#btn-reset').isVisible(), 'new-world button shows in game');
   await page.dispatchEvent('#btn-reset', 'pointerdown', { pointerId: 5 });
@@ -246,7 +246,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 12. Awkward places a 5-year-old will find.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 99; });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 99; Vehicles.spawnMissing(); });
 
   // Deep hole: dig 20 down, then climb out by holding up against the wall.
   await page.evaluate(() => {
@@ -329,7 +329,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     ['firetruck', 10, 300], ['firetruck', 300, 10], ['digger', 215, 360], ['bulldozer', 300, 150], ['tractor', 420, 250], ['ambulance', 215, 420]];
   for (const [kind, from, to] of runs) {
     const r = await page.evaluate(([kind, from, to]) => {
-      Math.random = mulberry32(3); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 99;
+      Math.random = mulberry32(3); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 99; Vehicles.spawnMissing();
       for (const pt of BLUEPRINT) World.set(pt.col, pt.row, pt.id);   // builder's house finished: worst case
       let b = Player.body;
       const y = World.groundBelow(from, World.genSurf[from] - 3) * TS - 0.01;
@@ -388,7 +388,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   }, [n, keys]);
   await page.evaluate(() => {
     Game.loop = () => {}; Sound.say = () => {};
-    localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40;
+    localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; Vehicles.spawnMissing();
     World.set(100, 30, T.BRICK); Save.write(); window.__save = localStorage.getItem(SAVE_KEY);
     const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v);
     Input.set('action', true); Input.set('action', false);
@@ -431,7 +431,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     for (let i = 0; i < n; i++) { for (const k of ['left', 'right', 'up', 'down', 'action']) Input.held[k] = !!keys[k]; Game.update(1 / 60); Input.endFrame(); }
     for (const k of ['left', 'right', 'up', 'down', 'action']) Input.held[k] = false;
   }, [n, keys]);
-  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; Vehicles.spawnMissing(); });
   // Roar 5 times fast: shooting stars.
   await page.evaluate(() => { for (let i = 0; i < 5; i++) { Game.t += 0.3; Player.roar(); } });
   check(await page.evaluate(() => Pickups.list.filter(p => p.temp).length >= 10), 'roaring 5 times brings shooting stars');
@@ -484,7 +484,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 {
   const page = await open({ width: 960, height: 540 });
   const run = n => page.evaluate(n => { for (let i = 0; i < n; i++) { Game.update(1 / 60); Input.endFrame(); } ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); }, n);
-  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 20; });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 20; Vehicles.spawnMissing(); });
   check(await page.evaluate(() => Math.abs(Asteroid.left - 600) < 2), 'asteroid due in 10 minutes');
   await page.evaluate(() => { Asteroid.left = 100; World.set(20, 30, T.BRICK); });
   await run(60);
@@ -612,7 +612,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 20. Wrecking ball: smashes any material and brings a building down.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; Vehicles.spawnMissing(); });
   const r = await page.evaluate(() => {
     const run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
     // The house at x 106-113 in town.
@@ -678,6 +678,60 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     return !hurt;
   });
   check(safe, 'hiding in a vehicle keeps you safe from the swarm');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 22. Pirate Island: sail there, read the map, dig at the X, fend off pirates, carry the treasure home.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { Game.loop = () => {}; window.said = []; Sound.say = t => said.push(t); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
+    window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0 && !Input.held[k]) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); };
+    window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
+    World.set(20, 30, T.BRICK); Save.write(); });
+  check(await page.evaluate(() => { const s = Vehicles.list.find(v => v.kind === 'pirateship'); into(s); run(60); return !!s.floating; }), 'pirate ship floats in the sea');
+  check(await page.evaluate(() => { run(1, { action: 1 }); run(5); return Player.vehicle.s.balls.length === 1; }), 'cannon fires a cannonball');
+  await page.evaluate(() => { run(1, { up: 1 }); run(60 * 3); });
+  check(await page.evaluate(() => Game.overlay === Voyage), 'hoist the sails: the voyage begins');
+  await page.evaluate(() => run(60 * 10));
+  check(await page.evaluate(() => Game.away === 'pirate' && outfit() === 'pirate' && NPCs.list.some(n => n.captain)), 'land on Skull Island in pirate gear, captain waiting');
+  await page.evaluate(() => { window.__save = localStorage.getItem('dinoVehicles.save.v1'); Save.write(); });
+  await page.evaluate(() => { Game.tap(60, 112); run(20); });
+  check(await page.evaluate(() => Game.overlay === TreasureMap), 'tap the map: the treasure map opens');
+  await page.evaluate(() => { run(30); Game.tap(W / 2, H / 2); run(10); });
+  check(await page.evaluate(() => Hunt.mapRead && Hunt.step === 'dig'), 'next: dig at the X');
+  await page.evaluate(() => { Vehicles.exit(Player); Player.body.x = Hunt.x * TS + 16; Player.body.y = World.surfaceAt(Hunt.x) * TS - 0.01; Game.snapCamera(); run(10);
+    for (let i = 0; i < 6 && !Player.carry; i++) run(80, { down: 1, action: 1 }); });
+  check(await page.evaluate(() => Player.carry && Hunt.crew.length === 3), 'dig up the treasure chest: here come the pirates');
+  check(await page.evaluate(() => { let hurt = false; for (let i = 0; i < 400 && !hurt; i++) { run(1); if (Player.hurtT > 0) hurt = true; } return hurt; }), 'pirates swing their cutlasses');
+  await page.evaluate(() => { window.__stars = Game.stars; Player.body.x = (PR.JETTY[0] + 1) * TS; Player.body.y = SURF * TS - 0.01; run(30); });
+  check(await page.evaluate(() => !Player.carry && Hunt.found === 1 && Game.stars >= window.__stars + 10 && Hunt.step === 'map'), 'carry it to the ship: 10 stars and a new map');
+  check(await page.evaluate(() => { const sand = () => { let n = 0; for (let x = PR.FORT[0]; x <= PR.FORT[1]; x++) for (let y = SURF - 7; y < SURF; y++) if (World.get(x, y) === T.SAND) n++; return n; }; const before = sand(); const s = Vehicles.list.find(v => v.kind === 'pirateship'); into(s); s.body.x = (PR.FORT[0] - 30) * TS; s.body.y = SURF * TS - 100; s.facing = 1;
+    s.s.balls.push({ x: PR.FORT[0] * TS + 16, y: (SURF - 2) * TS, vx: 0, vy: 300, t: 0 }); run(10); s.body.x = PR.DOCK * TS; s.body.y = SEA_LEVEL * TS + 34; run(30); return sand() < before; }), 'a cannonball knocks a hole in the sandcastle fort');
+  check(await page.evaluate(() => { const s0 = Game.stars; Kraken.t = 6; Kraken.cool = 0; run(60); return Kraken.hit(PR.KRAKEN * TS, SEA_LEVEL * TS) && Game.stars >= s0 + 2; }), 'hit the Kraken: it waves and showers stars');
+  check(await page.evaluate(() => localStorage.getItem('dinoVehicles.save.v1') === window.__save), 'nothing saved on the island');
+  await page.evaluate(() => { run(1, { up: 1 }); run(60 * 3); run(60 * 10); });
+  check(await page.evaluate(() => !Game.away && Player.vehicle && Player.vehicle.kind === 'pirateship' && World.get(20, 30) === T.BRICK && Vehicles.list.filter(v => v.kind === 'pirateship').length === 1 && outfit() === null), 'sail home: Earth as it was');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 23. Vehicles: five to start, more with stars, some you find. Space suits on the Moon.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; });
+  check(await page.evaluate(() => JSON.stringify(Whistle.kinds()) === JSON.stringify(['digger', 'dumptruck', 'firetruck', 'tractor', 'train'])), 'start with five vehicles to call');
+  check(await page.evaluate(() => !Vehicles.list.some(v => v.kind === 'bulldozer' && !v.npcOwned) && Vehicles.list.some(v => v.kind === 'helicopter') && Vehicles.list.some(v => v.kind === 'rocket')), 'earned ones not parked yet; ones to find are out in the world');
+  await page.evaluate(() => { Game.addStars(8); });
+  await page.waitForTimeout(3000);
+  check(await page.evaluate(() => Whistle.kinds().includes('bulldozer') && Vehicles.list.some(v => v.kind === 'bulldozer' && !v.npcOwned)), '8 stars: the bulldozer turns up');
+  check(await page.evaluate(() => !Whistle.kinds().includes('helicopter')), 'helicopter has to be found first');
+  await page.evaluate(() => { const h = Vehicles.list.find(v => v.kind === 'helicopter' && !v.npcOwned); Player.body.x = h.body.x; Player.body.y = h.body.y - 10; Vehicles.enter(Player, h); Vehicles.exit(Player); });
+  check(await page.evaluate(() => Game.found.helicopter && Whistle.kinds().includes('helicopter')), 'get in the helicopter: found, now the whistle can call it');
+  await page.evaluate(() => Save.write());
+  await page.reload(); await page.waitForTimeout(300);
+  check(await page.evaluate(() => Game.found.helicopter === true), 'found vehicles are saved');
+  check(await page.evaluate(() => { Game.loop = () => {}; Game.startPlay('rex'); const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r); const a = outfit(); Moon.leave(r, true); return a === 'space'; }), 'space suit on the Moon');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

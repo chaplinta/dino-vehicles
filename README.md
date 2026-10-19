@@ -61,7 +61,10 @@ The other dino tumbles away and runs off yelping. About 1 in 5 are tough and fig
 
 ## Vehicles
 
-Stars unlock more vehicles. The whistle menu brings any unlocked vehicle to you.
+You start with five: digger, dump truck, tractor, fire truck and train. The whistle menu brings any of yours to you.
+
+- **Earn with stars:** bulldozer 8, ambulance 12, police car 16, crane 20, garbage truck 25, tugboat 30, harvester 35, fishing boat 40, drill 50, wrecking ball 60. Each one turns up at its parking spot when earned.
+- **Find them:** the plane (airport), helicopter (up in the mountains), submarine and pirate ship (in the sea) and rocket (launch pad) are out in the world. Get in one to find it; then the whistle can call it too.
 
 | Vehicle | Button does |
 |---|---|
@@ -82,9 +85,10 @@ Stars unlock more vehicles. The whistle menu brings any unlocked vehicle to you.
 | Fishing boat | drop and lift the net |
 | Submarine | light. Find treasure chests on the sea floor |
 | Plane | water the crops while flying (up to take off) |
+| Pirate ship | fire the cannon. Up hoists the sails and sails off to Skull Island; down drops the anchor |
 | Rocket | countdown, blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
 
-On the Moon there's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
+On the Moon everyone wears a space suit and helmet. There's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
 
 Hop in any vehicle and it says its name and a real fact. Press ℹ️ for another fact.
 
@@ -100,6 +104,17 @@ Walk up to the big FIFO jet at the airport and hop aboard: the pilot flies you t
 6. **Ship:** the ship loader pours ore into the ship's three holds. Full ship sails for 10 stars.
 
 Board the jet at the camp to fly home. The mine isn't saved; Earth is left as it was.
+
+## Pirate Island
+
+Hoist the pirate ship's sails and it sails to Skull Island. Everyone there wears a pirate hat and eye patch, and a parrot rides on your back. The treasure hunt, shown top left:
+
+1. **Map:** tap 🗺️ to read the treasure map. X marks the spot.
+2. **Dig** at the red X to find the chest.
+3. **Pirates!** The crew come running with cutlasses. Fight them off (three hits each) or just run.
+4. **Carry** the chest back to the ship (or the jetty): 10 stars, and a new map.
+
+Also on the island: coconuts to knock out of the palm trees, a message in a bottle, a plank to walk off the jetty, Skull Cave with a torch, a hidden chest and a friendly ghost, a shipwreck with treasure on the sea floor, a sandcastle fort to knock down with the cannon, and the Kraken, who throws you stars if you splash a cannonball near it. Hoist the sails again to go home. The island isn't saved.
 
 ## Secrets (spoilers for grown-ups)
 

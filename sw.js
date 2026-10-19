@@ -6,11 +6,11 @@ const FILES = [
   './', 'index.html', 'style.css', 'manifest.webmanifest',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'js/core.js', 'js/audio.js', 'js/input.js', 'js/draw.js',
-  'js/world/tiles.js', 'js/world/gen.js', 'js/world/world.js', 'js/world/render.js', 'js/world/sim.js', 'js/world/fire.js', 'js/world/pickups.js', 'js/world/away.js', 'js/world/moon.js', 'js/world/pilbara.js',
+  'js/world/tiles.js', 'js/world/gen.js', 'js/world/world.js', 'js/world/render.js', 'js/world/sim.js', 'js/world/fire.js', 'js/world/pickups.js', 'js/world/away.js', 'js/world/moon.js', 'js/world/pilbara.js', 'js/world/pirate.js',
   'js/entities/physics.js', 'js/entities/dino.js', 'js/entities/player.js', 'js/entities/vehicle.js',
   'js/entities/vehicles/construction.js', 'js/entities/vehicles/emergency.js', 'js/entities/vehicles/farm.js',
   'js/entities/vehicles/water.js', 'js/entities/vehicles/air.js', 'js/entities/vehicles/rail.js',
-  'js/entities/vehicles/rocket.js', 'js/entities/vehicles/moonbuggy.js', 'js/entities/vehicles/fifo.js', 'js/entities/vehicles/facts.js', 'js/entities/vehicles/registry.js',
+  'js/entities/vehicles/rocket.js', 'js/entities/vehicles/moonbuggy.js', 'js/entities/vehicles/fifo.js', 'js/entities/vehicles/pirate.js', 'js/entities/vehicles/facts.js', 'js/entities/vehicles/registry.js',
   'js/entities/npcs.js', 'js/jobs.js', 'js/eggs.js', 'js/asteroid.js', 'js/chess.js', 'js/ui/menus.js', 'js/ui/hud.js', 'js/ui/install.js', 'js/save.js', 'js/main.js',
 ];
 

@@ -35,13 +35,41 @@ function drawMouth(c, x, y, roar, w = 8) {
 }
 
 // On a mine site everyone wears hi-vis and a hard hat.
-function onSite() { return typeof Game !== 'undefined' && Game.away === 'pilbara'; }
-function drawVest(c, x, y, rx, ry, rot, bands) {
+function onSite() { return outfit() === 'hivis'; }
+// What everyone wears where: hi-vis at the mine, pirate gear on the island, space suits on the Moon.
+function outfit() {
+  if (typeof Game === 'undefined') return null;
+  return { pilbara: 'hivis', pirate: 'pirate', moon: 'space' }[Game.away] || null;
+}
+function pickOutfit(o, type) {
+  if (type === 'alien') return null;   // Moon dinos live there
+  if (o.outfit !== undefined) return o.outfit;
+  if (o.hivis !== undefined) return o.hivis ? 'hivis' : null;
+  return outfit();
+}
+function drawVest(c, x, y, rx, ry, rot, bands, fill = '#ff7a1a', band = '#e9ecef') {
   c.save(); c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); c.clip();
-  c.fillStyle = '#ff7a1a'; c.fillRect(x - rx - 4, y - ry - 4, rx * 2 + 8, ry * 2 + 8);
-  c.fillStyle = '#e9ecef'; for (const by of bands) c.fillRect(x - rx - 4, by, rx * 2 + 8, 5);
+  c.fillStyle = fill; c.fillRect(x - rx - 4, y - ry - 4, rx * 2 + 8, ry * 2 + 8);
+  c.fillStyle = band; for (const by of bands) c.fillRect(x - rx - 4, by, rx * 2 + 8, 5);
   c.restore();
   c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); fillStroke(c, null, 4);
+}
+// The body part of an outfit: hi-vis vest, space suit or stripy pirate shirt.
+function drawSuit(c, fit, x, y, rx, ry, rot, bands) {
+  if (fit === 'hivis') drawVest(c, x, y, rx, ry, rot, bands);
+  else if (fit === 'space') { drawVest(c, x, y, rx, ry, rot, bands, '#f1f3f5', '#adb5bd'); ell(c, x + rx * 0.35, y - ry * 0.3, 5, 4, '#4dabf7', 2); }
+  else if (fit === 'pirate') drawVest(c, x, y, rx, ry, rot, [bands[0] - 6, bands[0] + 4, bands[1] + 4], '#f8f9fa', '#e03131');
+}
+function drawTricorn(c, cx, top, captain) {
+  if (captain) poly(c, [cx - 4, top - 10, cx - 20, top - 34, cx - 8, top - 12], '#e03131', 2);   // feather
+  poly(c, [cx - 26, top + 5, cx - 12, top - 16, cx + 12, top - 16, cx + 26, top + 5, cx, top - 1], '#212529', 3);
+  c.strokeStyle = '#fcc419'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx - 22, top + 2); c.lineTo(cx, top - 3); c.lineTo(cx + 22, top + 2); c.stroke();
+  ell(c, cx, top - 8, 4, 3.5, '#fff', 0); c.fillStyle = '#212529'; c.fillRect(cx - 2, top - 9, 1.5, 1.5); c.fillRect(cx + 1, top - 9, 1.5, 1.5);
+}
+function drawHelmet(c, x, y, r) {
+  ell(c, x, y, r, r, 'rgba(190,235,255,0.35)', 4);
+  c.strokeStyle = 'rgba(255,255,255,0.8)'; c.lineWidth = 4; c.beginPath(); c.arc(x, y, r * 0.75, -2.6, -1.9); c.stroke();
+  rbox(c, x - r * 0.6, y + r * 0.85, r * 1.2, 7, 3, '#adb5bd', 3);
 }
 function drawHardHat(c, cx, top) {
   c.beginPath(); c.arc(cx, top + 3, 15, Math.PI, 0); c.closePath(); fillStroke(c, '#f8f9fa', 3);
@@ -181,11 +209,24 @@ function drawDinoHead(c, type, hx, hy, d, o) {
     }
   }
   if (o.lick > 0) { const m = TONGUE_AT[type] || [22, 6]; drawTongue(c, hx + m[0], hy + m[1], o.lick, o.t || 0); }
-  if (o.hivis) {
+  const fit = o.outfit;
+  if (fit === 'hivis' || fit === 'pirate') {
     const at = { rex: [2, -20], megalo: [2, -20], allo: [2, -20], carno: [10, -20], raptor: [4, -13], tri: [4, -16], styraco: [4, -16], ptero: [0, -12], bary: [-2, -15], iguano: [0, -17] }[type] || [4, -13];
-    drawHardHat(c, hx + at[0], hy + at[1] - 2);
+    if (fit === 'hivis') drawHardHat(c, hx + at[0], hy + at[1] - 2);
+    else {
+      // Eye patch over the eye, strap round the head, tricorn on top.
+      const e = EYE_AT[type] || [1, -4];
+      limb(c, [hx + e[0] - 16, hy + e[1] - 10, hx + e[0], hy + e[1], hx + e[0] + 14, hy + e[1] + 8], 2.5, '#212529', 0);
+      ell(c, hx + e[0], hy + e[1], 7.5, 7, '#212529', 0);
+      drawTricorn(c, hx + at[0], hy + at[1] - 2, o.captain);
+    }
+  } else if (fit === 'space') {
+    const h = HELMET_AT[type] || [6, -2, 30];
+    drawHelmet(c, hx + h[0], hy + h[1], h[2]);
   }
 }
+const EYE_AT = { rex: [-4, -8], megalo: [-4, -8], allo: [-4, -8], carno: [-4, -8], raptor: [-2, -5], tri: [2, -4], styraco: [2, -4], ptero: [1, -3], bary: [-4, -6], iguano: [-2, -6], stego: [1, -4], brachio: [1, -4], ankylo: [1, -4] };
+const HELMET_AT = { rex: [4, -4, 36], megalo: [4, -4, 36], allo: [4, -4, 36], carno: [6, -6, 38], raptor: [6, -3, 31], tri: [0, -6, 38], styraco: [2, -8, 42], ptero: [10, -4, 32], bary: [12, -4, 38], iguano: [10, -2, 32] };
 
 // Full body, feet at (x,y). o: { t, walk, flip, roar, flap, blinkSeed }
 function drawDino(c, x, y, s, type, o = {}) {
@@ -194,8 +235,8 @@ function drawDino(c, x, y, s, type, o = {}) {
   const blink = ((t + (o.blinkSeed || 0)) % 3.7) < 0.13;
   const sw = Math.sin(o.walk || 0) * 9;
   const bob = Math.abs(Math.cos(o.walk || 0)) * (o.walk ? 3 : 0);
-  const hv = o.hivis !== undefined ? o.hivis : onSite();
-  const oo = { roar: o.roar, blink, t, hivis: hv, lick: o.lick || 0 };
+  const fit = pickOutfit(o, type), hv = !!fit;
+  const oo = { roar: o.roar, blink, t, outfit: fit, captain: o.captain, lick: o.lick || 0 };
   c.save(); c.translate(x, y); c.scale(o.flip ? -s : s, s);
   c.translate(0, -bob);
   const tailWag = Math.sin(t * 3) * 4;
@@ -207,7 +248,7 @@ function drawDino(c, x, y, s, type, o = {}) {
     limb(c, [-6, -24, -8 + sw * 0.4, 0], 6, d.dark);
     ell(c, 0, -38, 16, 22, d.body);
     ell(c, 4, -34, 8, 13, d.belly, 0);
-    if (hv) drawVest(c, 0, -38, 16, 22, 0, [-44, -32]);
+    if (hv) drawSuit(c, fit, 0, -38, 16, 22, 0, [-44, -32]);
     limb(c, [6, -24, 6 - sw * 0.4, 0], 6, d.body);
     limb(c, [4, -54, 10, -66], 12, d.body);
     drawDinoHead(c, type, 14, -72, d, oo);
@@ -233,7 +274,7 @@ function drawDino(c, x, y, s, type, o = {}) {
     }
     if (type === 'carno') for (let i = 0; i < 5; i++) ell(c, -16 + i * 8, -72 + Math.abs(i - 2) * 2, 3.5, 3, d.dark, 0);
     ell(c, 12, -48, slim ? 9 : 12, slim ? 11 : 14, d.belly, 0, -0.35);
-    if (hv) drawVest(c, 2, -52, brx, bry, -0.35, [-58, -46]);
+    if (hv) drawSuit(c, fit, 2, -52, brx, bry, -0.35, [-58, -46]);
     // Front leg: walking, or kicked out with the sickle claw up (raptor kick).
     const kick = pose.kind === 'kick' ? pose.e : 0;
     const kx = lerp(4 + sw, 22, kick), ky = lerp(-18, -50, kick), fx = lerp(10 + sw * 1.2, 46, kick), fy = lerp(-2, -40, kick);
@@ -260,6 +301,19 @@ function drawDino(c, x, y, s, type, o = {}) {
     limb(c, [sx0, sy0, ex, ey, hx2, hy2], type === 'bary' ? 9 : heavy ? 8 : 6, d.body);
     if (type === 'iguano') drawSpike(c, hx2, hy2, ha - 0.5, pose.kind === 'thumb' && pose.e > 0.5 ? 20 : 14, 5, 0);
     if (type === 'bary') drawSpike(c, hx2, hy2, ha + 0.5, 22, 7, 0.5);   // big curved thumb claw
+    if (o.captain) {
+      // Captain's hook.
+      c.strokeStyle = '#ced4da'; c.lineWidth = 4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(hx2, hy2); c.lineTo(hx2 + Math.cos(ha) * 8, hy2 + Math.sin(ha) * 8); c.arc(hx2 + Math.cos(ha) * 8 + Math.cos(ha + 1.57) * 6, hy2 + Math.sin(ha) * 8 + Math.sin(ha + 1.57) * 6, 6, ha - 1.57, ha + 2.2); c.stroke();
+    }
+    if (o.cutlass) {
+      // A curved pirate cutlass held out along the arm.
+      const ba = ha - 0.4, L = 34;
+      c.save(); c.translate(hx2, hy2); c.rotate(ba);
+      c.beginPath(); c.moveTo(4, -3); c.quadraticCurveTo(L * 0.6, -8, L, -2); c.quadraticCurveTo(L * 0.6, 2, 4, 3); c.closePath(); fillStroke(c, '#dee2e6', 2.5);
+      rbox(c, -4, -6, 6, 12, 2, '#fcc419', 2);
+      c.restore();
+    }
     if (slim) poly(c, [18, -56, 24, -46, 28, -52], d.accent, 2);
   } else {
     const brach = type === 'brachio';
@@ -279,7 +333,7 @@ function drawDino(c, x, y, s, type, o = {}) {
     limb(c, [22, -36, 22 + sw * 0.7, 0], 13, d.dark);
     ell(c, 0, -46, 40, brach ? 26 : 24, d.body);
     ell(c, 6, -36, 26, 10, d.belly, 0);
-    if (hv) drawVest(c, 0, -46, 40, brach ? 26 : 24, 0, [-54, -42]);
+    if (hv) drawSuit(c, fit, 0, -46, 40, brach ? 26 : 24, 0, [-54, -42]);
     if (type === 'ankylo') {
       for (let i = 0; i < 6; i++) ell(c, -28 + i * 11, -64 + Math.abs(i - 2.5) * 2, 6, 5, d.accent, 2);
     }
@@ -301,8 +355,8 @@ function drawDinoSeated(c, x, y, s, type, o = {}) {
   const d = DINO_TYPES[type] || DINO_TYPES.rex;
   const t = o.t || 0;
   const blink = ((t + (o.blinkSeed || 0)) % 3.7) < 0.13;
-  const hv = o.hivis !== undefined ? o.hivis : onSite();
-  const oo = { roar: o.roar, blink, t, hivis: hv };
+  const fit = pickOutfit(o, type), hv = !!fit;
+  const oo = { roar: o.roar, blink, t, outfit: fit, captain: o.captain };
   const neck = type === 'brachio' ? 40 : 0;
   const hx = 20, hy = -52 - neck;
   c.save(); c.translate(x, y); c.scale(o.flip ? -s : s, s);
@@ -316,7 +370,7 @@ function drawDinoSeated(c, x, y, s, type, o = {}) {
   limb(c, [2, -30, hx - 8, hy + 10], type === 'brachio' ? 18 : 20, d.body);
   ell(c, 0, -12, 24, 30, d.body);
   ell(c, 9, -8, 12, 20, d.belly, 0);
-  if (hv) drawVest(c, 0, -12, 24, 30, 0, [-22, -6]);
+  if (hv) drawSuit(c, fit, 0, -12, 24, 30, 0, [-22, -6]);
   const hxx = type === 'tri' || type === 'styraco' ? hx + 2 : hx;
   drawDinoHead(c, type, hxx, type === 'ptero' ? hy + 8 : hy, d, oo);
   limb(c, [8, -20, 24, -10, 34, -14], 9, d.body);

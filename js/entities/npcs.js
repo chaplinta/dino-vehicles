@@ -211,7 +211,7 @@ const NPCs = {
       if (Math.abs(dx) > 8) n.facing = Math.sign(dx);
       const close = !p.vehicle && Math.abs(dx) < 70 && Math.abs(pb.y - b.y) < 60;
       if (close && n.atkCool <= 0 && b.onGround && !(p.hurtT > 0)) {
-        n.atk = { kind: DINO_TYPES[n.type].attack, t: 0, hit: false };
+        n.atk = { kind: n.attackKind || DINO_TYPES[n.type].attack, t: 0, hit: false };
         n.atkCool = rand(0.9, 1.6);
         attackSound(n.atk.kind);
       } else b.vx = lerp(b.vx, close ? 0 : n.facing * (n.swarm ? 250 : 230), Math.min(1, dt * 6));
@@ -314,7 +314,7 @@ const NPCs = {
       const ap = n.atk ? attackPose(n.atk.kind, Math.min(1, n.atk.t / ATTACKS[n.atk.kind].len), n.facing) : null;
       if (ap) drawAttackFx(c, ap, b.x, b.y, n.facing);
       c.save(); c.translate(b.x + shake + (ap ? ap.dx : 0), b.y + 1 + (ap ? ap.dy : 0)); if (ap) c.rotate(ap.rot);
-      drawDino(c, 0, 0, s, n.type, { t: n.t, walk: ap && ap.pose ? 0 : n.walk, flip: (n.facing < 0) !== !!(ap && ap.flip), roar: ap && ap.roar !== null ? ap.roar : n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0, pose: ap ? ap.pose : null });
+      drawDino(c, 0, 0, s, n.type, { t: n.t, walk: ap && ap.pose ? 0 : n.walk, flip: (n.facing < 0) !== !!(ap && ap.flip), roar: ap && ap.roar !== null ? ap.roar : n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0, pose: ap ? ap.pose : null, captain: n.captain, cutlass: n.crew && !n.captain });
       c.restore();
       if (n.tumble) c.restore();
       const top = b.y - (n.type === 'brachio' ? (n.baby ? 50 : 72) : n.baby ? 38 : 56);

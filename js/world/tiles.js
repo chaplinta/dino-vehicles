@@ -4,7 +4,7 @@ const T = {
   GLASS: 9, ROAD: 10, RAIL: 11, BONE: 12, EGG: 13, GEM: 14, FOSSIL: 15, LEAVES: 16, TRUNK: 17,
   CROP: 18, ROOF: 19, CONCRETE: 20, FLOWER: 21,
   MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25, GOLDEGG: 26,
-  REDDIRT: 27, IRONORE: 28, BROKENORE: 29, WASTE: 30, SPINIFEX: 31,
+  REDDIRT: 27, IRONORE: 28, BROKENORE: 29, WASTE: 30, SPINIFEX: 31, TREASURE: 32,
 };
 
 // Per-tile hash so textures look varied but stable.
@@ -216,6 +216,14 @@ defTile(T.SPINIFEX, { name: 'spinifex', solid: false, draw(c, x, y, tx, ty) {
     c.beginPath(); c.moveTo(x + 16, y + TS); c.lineTo(x + 16 + Math.cos(a) * 16, y + TS + Math.sin(a) * (14 + tileHash(tx, i) * 6)); c.stroke();
   }
 } });
+
+// Pirate treasure chest, buried in the sand.
+defTile(T.TREASURE, { name: 'treasure chest', treasure: true, draw: treasureTile(T.SAND, (c, cx, cy) => {
+  rbox(c, cx - 12, cy - 6, 24, 15, 3, '#a86d35', 2);
+  rbox(c, cx - 13, cy - 11, 26, 8, 4, '#8a5524', 2);
+  c.fillStyle = '#fcc419'; c.fillRect(cx - 2, cy - 6, 4, 6);
+  ell(c, cx + 7, cy - 12, 3, 2, '#ffd43b', 1);
+}) });
 
 // Blocks the player can build with.
 const BUILD_BLOCKS = [T.DIRT, T.BRICK, T.WOOD, T.GLASS, T.STONE, T.ROAD];

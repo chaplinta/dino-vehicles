@@ -159,13 +159,17 @@ const Vehicles = {
   },
   spawnDefaults() {
     this.list = [];
-    for (const [kind, tx, f] of DEFAULT_VEHICLES) if (VEHICLE_DEFS[kind]) this.spawnAtGround(kind, tx, f || 1);
+    for (const [kind, tx, f] of DEFAULT_VEHICLES) if (vehicleParked(kind)) this.spawnAtGround(kind, tx, f || 1);
+  },
+  // Park any earned vehicle that isn't in the world yet.
+  spawnMissing() {
+    for (const [kind, tx, f] of DEFAULT_VEHICLES) if (vehicleParked(kind) && !this.list.some(v => v.kind === kind && !v.npcOwned)) this.spawnAtGround(kind, tx, f || 1);
   },
   serialize() { return this.list.filter(v => !v.def.noSave && !v.npcOwned).map(v => [v.kind, Math.round(v.body.x), Math.round(v.body.y), v.facing]); },
   load(arr) {
     this.list = [];
     for (const [kind, x, y, f] of arr) if (VEHICLE_DEFS[kind]) this.spawn(kind, x, y, f);
-    for (const [kind, tx, f] of DEFAULT_VEHICLES) if (VEHICLE_DEFS[kind] && !this.list.some(v => v.kind === kind)) this.spawnAtGround(kind, tx, f || 1);
+    for (const [kind, tx, f] of DEFAULT_VEHICLES) if (vehicleParked(kind) && !this.list.some(v => v.kind === kind)) this.spawnAtGround(kind, tx, f || 1);
   },
   nearest(x, y, r, filter) {
     let best = null, bd = r;
@@ -233,6 +237,11 @@ const Vehicles = {
     // Name, then a real fact about it.
     const fact = p === Player ? Facts.next(v.kind) : null;
     Sound.say((v.def.say || v.def.name) + (fact ? ' ' + fact : ''));
+    if (p === Player && v.def.find && !Game.found[v.kind]) {
+      // Found one out in the world: now the whistle can call it.
+      Game.found[v.kind] = true;
+      setTimeout(() => { Game.addStars(2); Game.celebrate('Found: ' + v.def.name + '!', `You found the ${v.def.name}! Now you can call it with the whistle.`); }, 2800);
+    }
     if (p === Player && !Game.drove[v.kind]) {
       Game.drove[v.kind] = true;
       Game.addStars(1);
@@ -287,7 +296,7 @@ const Whistle = {
     Sound.tone(1400, 0.15, 'sine', 0.15, 1800); Sound.tone(1800, 0.25, 'sine', 0.12, 1400, 0.15);
     Sound.say('Which vehicle?');
   },
-  kinds() { return VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k] && Game.stars >= VEHICLE_DEFS[k].unlock); },
+  kinds() { return VEHICLE_ORDER.filter(k => vehicleUnlocked(k)); },
   cells() {
     const ks = VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k]);
     const cols = 7, cw = 132, ch = 124;
@@ -313,7 +322,7 @@ const Whistle = {
   },
   pick(kind) {
     const def = VEHICLE_DEFS[kind];
-    if (Game.stars < def.unlock) { Sound.bonk(); Sound.say(`Collect ${def.unlock} stars to unlock`); return; }
+    if (!vehicleUnlocked(kind)) { Sound.bonk(); Sound.say(def.find ? `Find the ${def.name} ${def.find}!` : `Collect ${def.unlock} stars to unlock`); return; }
     this.close();
     callVehicle(kind);
   },
@@ -322,7 +331,7 @@ const Whistle = {
     c.fillStyle = 'rgba(20,30,50,0.7)'; c.fillRect(0, 0, W, H);
     for (const [i, cell] of this.cells().entries()) {
       const def = VEHICLE_DEFS[cell.k];
-      const locked = Game.stars < def.unlock;
+      const locked = !vehicleUnlocked(cell.k);
       const on = i === this.sel;
       rbox(c, cell.x, cell.y, cell.w, cell.h, 16, on ? '#fff3bf' : '#ffffff', on ? 6 : 4);
       c.save();
@@ -336,8 +345,11 @@ const Whistle = {
       def.draw(c, fake);
       c.restore();
       if (locked) {
-        drawStar(c, cell.x + cell.w / 2 - 22, cell.y + cell.h / 2, 18, 0, '#ffd43b', 3);
-        bigText(c, String(def.unlock), cell.x + cell.w / 2 + 14, cell.y + cell.h / 2 + 2, 28, '#fff');
+        if (def.find) { bigText(c, '?', cell.x + cell.w / 2, cell.y + cell.h / 2 - 4, 46, '#fff'); bigText(c, 'find it', cell.x + cell.w / 2, cell.y + cell.h - 16, 18, '#fff'); }
+        else {
+          drawStar(c, cell.x + cell.w / 2 - 22, cell.y + cell.h / 2, 18, 0, '#ffd43b', 3);
+          bigText(c, String(def.unlock), cell.x + cell.w / 2 + 14, cell.y + cell.h / 2 + 2, 28, '#fff');
+        }
       }
     }
   },

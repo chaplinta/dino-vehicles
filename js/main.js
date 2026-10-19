@@ -41,8 +41,24 @@ function drawMoonSky(c, camX, camY, t) {
   c.beginPath(); c.ellipse(ex + 20, ey + 16, 16, 22, -0.3, 0, TAU); c.fill();
   c.fillStyle = 'rgba(255,255,255,0.8)'; c.beginPath(); c.ellipse(ex + 4, ey - 36, 22, 6, 0, 0, TAU); c.fill();
 }
+// Skull Island: bright tropical sky, open sea to the horizon, little islands far off.
+function drawTropicSky(c, camX, camY, t, zoom) {
+  const g = c.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#3bc9db'); g.addColorStop(1, '#e3fafc');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const surfY = (SURF * TS - camY) * zoom, off = surfY - 440;
+  Game.sunAt = { x: 170, y: 120 + off * 0.1 };
+  drawSun(c, 170, 120 + off * 0.1, t, Eggs.sunCool);
+  Asteroid.drawSky(c, t);
+  for (let i = 0; i < 4; i++) drawCloud(c, ((i * 330 - camX * 0.06 - t * 5) % (W + 300) + W + 300) % (W + 300) - 150, 80 + (i * 41 % 70) + off * 0.15, 0.8);
+  const hy = 400 + off * 0.6;
+  c.fillStyle = '#1c7ed6'; c.fillRect(0, hy, W, H - hy);
+  for (let i = 0; i < 3; i++) { const ix = ((i * 520 + 200 - camX * 0.1) % (W + 400) + W + 400) % (W + 400) - 200; ell(c, ix, hy, 70 + i * 20, 18, '#2f9e44', 0); }
+  c.fillStyle = 'rgba(255,255,255,0.35)'; for (let i = 0; i < 10; i++) c.fillRect(((i * 97 - t * 15 - camX * 0.1) % W + W) % W, hy + 8 + (i * 13) % 40, 30, 3);
+}
 function drawBackdrop(c, camX, camY, t, zoom = 1) {
   if (Game.onMoon) { drawMoonSky(c, camX, camY, t); return; }
+  if (Game.away === 'pirate') { drawTropicSky(c, camX, camY, t, zoom); return; }
   const pil = Game.away === 'pilbara';
   const g = c.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, pil ? '#4fb3f0' : '#6cc6ff'); g.addColorStop(1, pil ? '#ffe3bf' : '#d4f1ff');
@@ -171,6 +187,9 @@ function drawProps(c, camX, camY) {
       rbox(c, sx + 50, sy - 22, 26, 6, 2, '#8a5a2b', 2); limb(c, [sx + 63, sy - 16, sx + 63, sy], 4, '#8a5a2b');
       drawDinoSeated(c, sx + 62, sy - 28, 0.55, Chess.opp, { t: Game.t, flip: true });
       if (Math.floor(Game.t / 3) % 2 === 0) bubble(c, sx + 50, sy - 90, '♟️', Game.t);
+    } else if (PIRATE_PROPS.has(p.type)) {
+      if (sx < -300 || sx > Game.viewW + 300) continue;
+      drawPirateProp(c, p, sx, p.y * TS - camY);
     } else if (PILBARA_PROPS.has(p.type)) {
       if (sx < -700 || sx > Game.viewW + 700) continue;
       drawPilbaraProp(c, p, sx, p.y * TS - camY);
@@ -196,8 +215,13 @@ const Game = {
   away: null,   // 'moon' or 'pilbara' while on a trip
   get onMoon() { return this.away === 'moon'; },
   moonVisits: 0,
-  saveExtra() { return { drove: this.drove, moonVisits: this.moonVisits, eggs: Eggs.save(), doom: Asteroid.save() }; },
-  loadExtra(e) { this.drove = (e && e.drove) || {}; this.moonVisits = (e && e.moonVisits) || 0; Eggs.load(e && e.eggs); Asteroid.load(e && e.doom); },
+  found: {},   // vehicles found out in the world (the whistle can call them)
+  saveExtra() { return { drove: this.drove, found: this.found, moonVisits: this.moonVisits, eggs: Eggs.save(), doom: Asteroid.save() }; },
+  loadExtra(e) {
+    this.drove = (e && e.drove) || {}; this.found = (e && e.found) || {};
+    for (const k in this.drove) if (FINDS[k]) this.found[k] = true;   // older saves: driven means found
+    this.moonVisits = (e && e.moonVisits) || 0; Eggs.load(e && e.eggs); Asteroid.load(e && e.doom);
+  },
   zoom: 1,
   get viewW() { return W / this.zoom; },
   get viewH() { return H / this.zoom; },
@@ -236,6 +260,7 @@ const Game = {
     this.overlay = null;
     this.newWorld();
     this.stars = stars;
+    Vehicles.spawnMissing();
     if (this.mode === 'play') this.configurePlay();
     Save.write();
     Hud.celebrate('New world!');
@@ -310,10 +335,11 @@ const Game = {
     Hud.starBump = 1;
     for (const k of VEHICLE_ORDER) {
       const def = VEHICLE_DEFS[k];
-      if (def && def.unlock > before && def.unlock <= this.stars) {
+      if (def && !def.find && def.unlock > before && def.unlock <= this.stars) {
         setTimeout(() => {
+          if (!this.away) Vehicles.spawnMissing();   // it turns up at its parking spot
           Hud.celebrate('New: ' + def.name + '!');
-          Sound.say(`You can now drive the ${def.name}! Press the whistle to call it.`);
+          Sound.say(`You earned the ${def.name}! Press the whistle to call it.`);
         }, 2600);
       }
     }
@@ -333,10 +359,12 @@ const Game = {
     if (this.overlay && this.overlay.tap(x, y)) return;
     if (Jobs.tap(x, y)) return;
     if (this.away === 'pilbara' && Mine.tap(x, y)) return;
+    if (this.away === 'pirate' && Pirate.tap(x, y)) return;
     if (!this.onMoon && this.sunAt && dist(x, y, this.sunAt.x, this.sunAt.y) < 55) { Eggs.tapSun(); return; }
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
     if (this.onMoon && Eggs.tapSaucer(wx, wy)) return;
     if (this.away === 'pilbara' && Mine.tapWorld(wx, wy)) return;
+    if (this.away === 'pirate' && Pirate.tapWorld(wx, wy)) return;
     if (Jobs.tapWorld(wx, wy)) return;
     if (!Player.vehicle && !this.away) {
       const table = World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - wx) < 90 && wy > t.y * TS - 120 && wy < t.y * TS + 10);
@@ -404,6 +432,7 @@ const Game = {
     Swarm.update(dt);
     if (!this.overlay && !this.away) Jobs.update(dt);
     if (this.away === 'pilbara') Mine.update(dt);
+    if (this.away === 'pirate') Pirate.update(dt);
     Fire.update(dt);
     Fish.update(dt);
     Falling.update(dt);
@@ -437,6 +466,7 @@ const Game = {
     Player.draw(c);
     if (!this.away) Jobs.drawWorld(c);
     if (this.away === 'pilbara') Mine.drawWorld(c);
+    if (this.away === 'pirate') Pirate.drawWorld(c);
     Fx.draw(c);
     Pow.draw(c);
     this.drawDigHint(c);
@@ -446,6 +476,7 @@ const Game = {
     if (depth > 0) { c.fillStyle = `rgba(10,5,20,${Math.min(0.35, depth * 0.03)})`; c.fillRect(0, 0, W, H); }
     if (!this.away) Jobs.drawHud(c);
     if (this.away === 'pilbara') Mine.drawHud(c);
+    if (this.away === 'pirate') Pirate.drawHud(c);
     Asteroid.drawHud(c);
     Swarm.drawHud(c);
     if (this.overlay) this.overlay.draw(c);

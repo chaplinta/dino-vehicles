@@ -7,6 +7,7 @@ const TREASURE_INFO = {
   [T.CRYSTAL]: { say: 'A moon crystal!', stars: 2 },
   [T.CHEESE]: { say: 'Moon cheese!', stars: 1 },
   [T.GOLDEGG]: { say: 'A golden egg!', stars: 5 },
+  [T.TREASURE]: { say: 'A treasure chest! Gold coins!', stars: 3 },
 };
 // Attack timings: how long it lasts and when the blow lands.
 const ATTACKS = {
@@ -17,14 +18,15 @@ const ATTACKS = {
   thumb: { len: 0.5, hitAt: 0.27 },      // Iguanodon: rear up, stab with the thumb spike
   claw: { len: 0.5, hitAt: 0.28 },       // Baryonyx: raise the arm, slash down
   kick: { len: 0.5, hitAt: 0.25 },       // Velociraptor: hop and kick with the sickle claw
+  cutlass: { len: 0.5, hitAt: 0.28 },    // pirate crew: swing the cutlass
 };
-const POW_WORD = { bite: 'CHOMP!', headbutt: 'BONK!', tail: 'WHACK!', peck: 'PECK!', thumb: 'JAB!', claw: 'SLASH!', kick: 'KICK!' };
+const POW_WORD = { bite: 'CHOMP!', headbutt: 'BONK!', tail: 'WHACK!', peck: 'PECK!', thumb: 'JAB!', claw: 'SLASH!', kick: 'KICK!', cutlass: 'SWISH!' };
 // The noise each move makes, for you and for dinos who fight back.
 function attackSound(kind) {
   if (kind === 'bite') [0, 0.14, 0.28, 0.42].forEach(d => { Sound.tone(300, 0.06, 'square', 0.12, 120, d); Sound.noise(0.06, 0.15, 'lowpass', 900, d + 0.07); });
   else if (kind === 'tail') Sound.whoosh();
   else if (kind === 'peck') [0, 0.12, 0.24].forEach(d => Sound.tone(1400, 0.04, 'square', 0.07, 900, d));
-  else if (kind === 'claw') { Sound.noise(0.1, 0.12, 'bandpass', 2500, 0.08); Sound.noise(0.14, 0.15, 'highpass', 3000, 0.12); }
+  else if (kind === 'claw' || kind === 'cutlass') { Sound.noise(0.1, 0.12, 'bandpass', 2500, 0.08); Sound.noise(0.14, 0.15, 'highpass', 3000, 0.12); }
   else if (kind === 'thumb' || kind === 'kick') { Sound.noise(0.12, 0.1, 'bandpass', 900); Sound.tone(220, 0.1, 'square', 0.06, 120, 0.1); }
   else Sound.tone(140, 0.25, 'sawtooth', 0.08, 90);
 }
@@ -52,6 +54,7 @@ function digEffects(tx, ty, id) {
     Sound.collect();
     Sound.say(info.say);
     Eggs.onDig(tx, ty, id);
+    if (typeof Hunt !== 'undefined') Hunt.onDig(tx, ty, id);
   }
 }
 
@@ -253,6 +256,27 @@ const Player = {
     drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk: pose ? 0 : walk, flip, roar, flap: this.flap, lick, pose });
     c.restore();
     c.globalAlpha = 1;
+    const top = y - (this.type === 'brachio' ? 92 : 64);
+    if (outfit() === 'pirate') {
+      // A parrot riding along on your back.
+      const px = x - this.facing * 8, py = top + 6 + Math.sin(this.t * 4) * 2;
+      c.save(); c.translate(px, py); c.scale(this.facing, 1);
+      ell(c, 0, 0, 9, 12, '#e03131', 3);
+      poly(c, [-2, -4, -16, 4, -4, 8], '#1c7ed6', 2);
+      ell(c, 3, -12, 7, 7, '#e03131', 3);
+      poly(c, [8, -14, 15, -10, 8, -8], '#fcc419', 2);
+      ell(c, 4, -14, 1.8, 1.8, OUT, 0);
+      c.restore();
+    }
+    if (this.carry) {
+      // The treasure chest held up over your head.
+      const cx = x, cy = top - 22 + Math.sin(this.walk) * 2;
+      rbox(c, cx - 24, cy - 6, 48, 26, 5, '#a86d35', 3);
+      rbox(c, cx - 26, cy - 16, 52, 14, 6, '#8a5524', 3);
+      c.fillStyle = '#fcc419'; c.fillRect(cx - 4, cy - 6, 8, 10);
+      for (let i = 0; i < 3; i++) ell(c, cx - 12 + i * 12, cy - 18, 5, 3, '#ffd43b', 1.5);
+      if (Math.floor(this.t * 3) % 2) drawStar(c, cx + 20, cy - 22, 6, this.t, '#fff', 0);
+    }
   },
 };
 
@@ -279,13 +303,13 @@ function attackPose(kind, k, f) {
     if (k < 0.4) { const q = k / 0.4; rot = -f * 0.22 * q; x -= f * 8 * q; pose = { kind, e: -0.5 * q }; }
     else if (k < 0.7) { const q = Math.min(1, (k - 0.4) / 0.12); rot = f * lerp(-0.22, 0.15, q); x += f * lerp(-8, 26, q); pose = { kind, e: q }; }
     else { const q = (k - 0.7) / 0.3; rot = f * 0.15 * (1 - q); x += f * 26 * (1 - q); pose = { kind, e: 1 - q }; }
-  } else if (kind === 'claw') {
+  } else if (kind === 'claw' || kind === 'cutlass') {
     // Arm up high, then a big slash down across the front, three claw marks.
     let a;
     if (k < 0.35) a = lerp(0.5, -1.5, k / 0.35);
     else if (k < 0.6) a = lerp(-1.5, 1.2, (k - 0.35) / 0.25);
     else a = lerp(1.2, 0.5, (k - 0.6) / 0.4);
-    pose = { kind, a };
+    pose = { kind: 'claw', a };
     x += f * (k > 0.35 && k < 0.8 ? 16 : 0); rot = f * (k > 0.35 && k < 0.7 ? 0.12 : -0.06);
     slash = k > 0.45 && k < 0.95 ? 1 - Math.abs(k - 0.62) / 0.33 : 0;
   } else if (kind === 'kick') {
