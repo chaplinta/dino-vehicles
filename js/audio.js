@@ -79,14 +79,14 @@ const Sound = {
     this.voice = vs.find(v => /en-AU/i.test(v.lang)) || vs.find(v => /en-GB/i.test(v.lang)) ||
       vs.find(v => /^en/i.test(v.lang)) || null;
   },
-  say(text) {
+  say(text, rate = 0.95) {
     if (this.muted || !('speechSynthesis' in window)) return;
     try {
       if (!this.voice) this.pickVoice();
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       if (this.voice) u.voice = this.voice;
-      u.rate = 0.95; u.pitch = 1.25;
+      u.rate = rate; u.pitch = 1.25;
       speechSynthesis.speak(u);
     } catch (e) { /* speech unavailable */ }
   },

@@ -731,6 +731,8 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.evaluate(() => Save.write());
   await page.reload(); await page.waitForTimeout(300);
   check(await page.evaluate(() => Game.found.helicopter === true), 'found vehicles are saved');
+  check(await page.evaluate(() => { const labels = World.props.filter(p => p.type === 'label'); return labels.length >= 10 && labels.every(l => { const n = l.text.split(' ').length; return n >= 3 && n <= 4; }); }), 'reading signs around the world, three or four words each');
+  check(await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; Game.startPlay('rex'); const l = World.props.find(p => p.type === 'label'); Player.body.x = l.x * TS; Player.body.y = l.y * TS - 0.01; Reading.current = null; l.heard = false; Game.update(1 / 60); return Reading.current === l; }), 'walk up to a sign and it reads itself out');
   check(await page.evaluate(() => { Game.loop = () => {}; Game.startPlay('rex'); const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r); const a = outfit(); Moon.leave(r, true); return a === 'space'; }), 'space suit on the Moon');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();

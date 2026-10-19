@@ -43,6 +43,8 @@ Everything except the bedrock at the bottom can be dug. Sparkly stars float arou
 
 **Chess:** a Triceratops plays chess at a table by the road into town. Walk up and press ♟️ (or tap the table) to play a real game from your own seat, with dino hands moving the pieces. He's very bad at it. Captured pieces line up in trays beside the board. Checkmate him for 10 stars.
 
+**Reading signs:** short three and four word signs stand around every place ("Welcome to the farm", "Walk the plank"). Walk up to one, or tap it, and it reads itself out slowly with each word lighting up, so kids can read along.
+
 ## Dinosaurs
 
 Thirteen to pick from, each with its own real-ish play-fight move (the yellow button changes when a dino is in reach):

@@ -14,8 +14,9 @@ defVehicle('jet', {
   },
   // Glide down onto column tx from the side the jet faces away from.
   landAt(v, tx) {
-    const x1 = tx * TS + 16;
-    Object.assign(v.s, { state: 'land', t: 0, pitch: 0.12, gear: 1, land: { x0: x1 - v.facing * 1300, y0: (SURF - 18) * TS, x1, y1: World.surfaceAt(tx) * TS - 0.01 } });
+    const x1 = tx * TS + 16, edge = 4 * TS, far = ((World.limitW || WORLD_W) - 4) * TS;
+    if (x1 - v.facing * 1300 < edge || x1 - v.facing * 1300 > far) v.facing = -v.facing;   // come in from the side with room
+    Object.assign(v.s, { state: 'land', t: 0, pitch: 0.12, gear: 1, land: { x0: clamp(x1 - v.facing * 1300, edge, far), y0: (SURF - 18) * TS, x1, y1: World.surfaceAt(tx) * TS - 0.01 } });
     v.body.x = v.s.land.x0; v.body.y = v.s.land.y0; v.body.vx = v.facing * 300; v.body.vy = 0;
   },
   move(v, dt, inp, dir) {
@@ -30,7 +31,7 @@ defVehicle('jet', {
     } else if (s.state === 'roll') {
       // Take-off run: engines roar, wheels spin, the nose lifts.
       b.vx += v.facing * 650 * dt;
-      b.x += b.vx * dt;
+      b.x = clamp(b.x + b.vx * dt, 4 * TS, ((World.limitW || WORLD_W) - 4) * TS);   // never off the end of the world
       v.wheel += b.vx * dt / 12;
       if (s.t > 0.6) s.pitch = lerp(s.pitch, -0.25, dt * 4);
       if (s.t > 0.8) { s.state = 'climb'; s.t = 0; Sound.say('Wheels up!'); }

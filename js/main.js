@@ -187,6 +187,9 @@ function drawProps(c, camX, camY) {
       rbox(c, sx + 50, sy - 22, 26, 6, 2, '#8a5a2b', 2); limb(c, [sx + 63, sy - 16, sx + 63, sy], 4, '#8a5a2b');
       drawDinoSeated(c, sx + 62, sy - 28, 0.55, Chess.opp, { t: Game.t, flip: true });
       if (Math.floor(Game.t / 3) % 2 === 0) bubble(c, sx + 50, sy - 90, '♟️', Game.t);
+    } else if (p.type === 'label') {
+      if (sx < -200 || sx > Game.viewW + 200) continue;
+      Reading.draw(c, p, sx, p.y * TS - camY);
     } else if (PIRATE_PROPS.has(p.type)) {
       if (sx < -300 || sx > Game.viewW + 300) continue;
       drawPirateProp(c, p, sx, p.y * TS - camY);
@@ -362,6 +365,7 @@ const Game = {
     if (this.away === 'pirate' && Pirate.tap(x, y)) return;
     if (!this.onMoon && this.sunAt && dist(x, y, this.sunAt.x, this.sunAt.y) < 55) { Eggs.tapSun(); return; }
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
+    if (Reading.tapWorld(wx, wy)) return;
     if (this.onMoon && Eggs.tapSaucer(wx, wy)) return;
     if (this.away === 'pilbara' && Mine.tapWorld(wx, wy)) return;
     if (this.away === 'pirate' && Pirate.tapWorld(wx, wy)) return;
@@ -430,6 +434,7 @@ const Game = {
     }
     NPCs.update(dt);
     Swarm.update(dt);
+    Reading.update(dt);
     if (!this.overlay && !this.away) Jobs.update(dt);
     if (this.away === 'pilbara') Mine.update(dt);
     if (this.away === 'pirate') Pirate.update(dt);
