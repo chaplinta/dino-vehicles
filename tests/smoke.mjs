@@ -224,7 +224,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
       Game.startPlay(type);
       const n = NPCs.list.find(n => !n.vehicle && !n.baby && n.type !== 'ptero');
       Player.body.x = n.body.x - 50; Player.body.y = n.body.y; Player.facing = 1; Player.body.vx = 0;
-      n.scaredT = 0; n.need = null;
+      n.scaredT = 0; n.need = null; n.fighter = false;
       Game.snapCamera();
       return { x: n.body.x, id: n.id };
     }, type);
@@ -629,6 +629,55 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.evaluate(() => { Save.write(); });
   await page.reload(); await page.waitForTimeout(300);
   check(await page.evaluate(() => { let n = 0; for (let x = 106; x < 114; x++) for (let y = SURF - 8; y < SURF; y++) if (World.getBg(x, y)) n++; return n < 12; }), 'knocked-down walls stay down after reload');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 21. Some dinos fight back: three hits to send them off. Pick on 20 and a swarm comes.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
+    window.run = n => { for (let i = 0; i < n; i++) { Game.update(1 / 60); Input.endFrame(); } ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); }; });
+  check(await page.evaluate(() => NPCs.list.filter(n => !n.vehicle && n.fighter).length === 2), 'two of the nine wanderers fight back');
+  const r = await page.evaluate(() => {
+    const n = NPCs.list.find(n => !n.vehicle && !n.baby && n.type !== 'ptero');
+    n.type = 'tri'; n.fighter = true; n.hits = 0; n.need = null;
+    n.body.x = 30 * TS; n.body.y = World.surfaceAt(30) * TS - 0.01; n.body.vx = 0;
+    Player.body.x = n.body.x - 50; Player.body.y = n.body.y; Player.facing = 1;
+    window.__n = n; Player.attack(); run(40);
+    const back = n.angry > 0 && !(n.scaredT > 0);
+    let hurt = false; for (let i = 0; i < 300 && !hurt; i++) { run(1); if (Player.hurtT > 0) hurt = true; }
+    return { back, hurt };
+  });
+  check(r.back, 'a fighter comes back for more after one hit');
+  check(r.hurt, 'and headbutts you back (POW, knocked flying)');
+  const r2 = await page.evaluate(() => {
+    const n = __n;
+    for (let k = 0; k < 2; k++) {
+      for (let i = 0; i < 200; i++) { run(1); if (Math.abs(n.body.x - Player.body.x) < 80 && !(Player.hurtT > 0)) break; }
+      Player.facing = Math.sign(n.body.x - Player.body.x) || 1; Player.attackCool = 0; Player.attack(); run(40);
+    }
+    return { hits: n.hits, scared: n.scaredT > 0, angry: n.angry };
+  });
+  check(r2.hits === 3 && r2.scared && r2.angry === 0, 'third hit: it runs away');
+  const sw = await page.evaluate(() => {
+    Swarm.hits = 19;
+    const n = NPCs.list.find(n => !n.vehicle && !n.baby && n !== __n && n.type !== 'ptero');
+    n.fighter = false; n.need = null; n.body.x = Player.body.x + 50; n.body.y = Player.body.y; Player.facing = 1; Player.attackCool = 0; Player.hurtT = 0;
+    Player.attack(); run(40);
+    return { active: Swarm.active, n: NPCs.list.filter(n => n.swarm).length };
+  });
+  check(sw.active && sw.n === 8, '20th dino picked on: a swarm of 8 comes');
+  const end = await page.evaluate(() => { const stars = Game.stars; run(60 * 11); run(60 * 8); return { active: Swarm.active, left: NPCs.list.filter(n => n.swarm).length, stars: Game.stars - stars }; });
+  check(!end.active && end.left === 0 && end.stars >= 3, 'after 10 seconds they calm down and go home (3 stars)');
+  // Hiding in a vehicle: they can't get you.
+  const safe = await page.evaluate(() => {
+    Swarm.start(); const v = Vehicles.list.find(v => v.kind === 'tractor'); Player.body.x = v.body.x; Vehicles.enter(Player, v);
+    let hurt = false; for (let i = 0; i < 60 * 5; i++) { run(1); if (Player.hurtT > 0) hurt = true; }
+    Vehicles.exit(Player); Swarm.t = 0; run(5);
+    return !hurt;
+  });
+  check(safe, 'hiding in a vehicle keeps you safe from the swarm');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

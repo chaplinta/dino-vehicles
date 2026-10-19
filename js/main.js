@@ -223,6 +223,7 @@ const Game = {
     Fish.reset(); Fire.cells.clear(); Pickups.generate(World.seed);
     NPCs.spawnDefaults();
     Jobs.reset();
+    Swarm.reset();
     this.worldReady = true;
     this.snapCamera();
   },
@@ -400,6 +401,7 @@ const Game = {
       Vehicles.update(dt);
     }
     NPCs.update(dt);
+    Swarm.update(dt);
     if (!this.overlay && !this.away) Jobs.update(dt);
     if (this.away === 'pilbara') Mine.update(dt);
     Fire.update(dt);
@@ -445,6 +447,7 @@ const Game = {
     if (!this.away) Jobs.drawHud(c);
     if (this.away === 'pilbara') Mine.drawHud(c);
     Asteroid.drawHud(c);
+    Swarm.drawHud(c);
     if (this.overlay) this.overlay.draw(c);
     Hud.draw(c);
   },
