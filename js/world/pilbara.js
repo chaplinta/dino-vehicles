@@ -218,7 +218,7 @@ const Mine = {
     if (this.holes.some(h => Math.abs(h.x * TS - Player.cx) < 8 * TS)) { Sound.bonk(); Sound.say('Too close! Everyone out of the blast zone first!'); return; }
     this.blastT = 0; this.lastN = 5;
     Sound.say('Fire in the hole! Everyone clear!');
-    for (const n of NPCs.list) if (Math.abs(n.body.x - PIL.PIT[0] * TS - 40 * TS) < 50 * TS) n.scaredT = 4;
+    for (const n of NPCs.list) if (Math.abs(n.body.x - PIL.PIT[0] * TS - 40 * TS) < 50 * TS) { n.scaredT = 4; n.fleeDir = Math.sign(n.body.x - (PIL.PIT[0] + 40) * TS) || 1; }
   },
   updateBlast(dt) {
     const before = this.blastT;

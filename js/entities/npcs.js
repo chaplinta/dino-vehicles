@@ -135,6 +135,7 @@ const NPCs = {
     if (n.scaredT > 0) {
       // Running away from the player.
       n.scaredT -= dt;
+      if (!n.fleeDir) n.fleeDir = n.facing || 1;
       b.vx = lerp(b.vx, n.fleeDir * (n.baby ? 340 : 400), Math.min(1, dt * 6));
       if (b.onGround && Math.random() < 0.4) Fx.add({ x: b.x - n.fleeDir * 16, y: b.y - 4, vx: -n.fleeDir * rand(30, 80), vy: rand(-40, -10), life: 0.5, r: 7, color: 'rgba(200,180,150,0.6)', shape: 'grow' });
       n.facing = n.fleeDir; n.dir = n.fleeDir; n.state = 'walk';

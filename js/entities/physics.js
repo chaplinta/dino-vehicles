@@ -24,6 +24,9 @@ function moveBody(b, dt, opts = {}) {
 
   b.hitWall = 0;
   b.stepped = 0;
+  // A bad speed (NaN) would make the step loops below run forever.
+  if (!Number.isFinite(b.vx)) b.vx = 0;
+  if (!Number.isFinite(b.vy)) b.vy = 0;
   // Horizontal, in small sub-steps.
   let dx = b.vx * dt;
   const sx = Math.sign(dx);
