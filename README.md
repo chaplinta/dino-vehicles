@@ -57,7 +57,7 @@ Thirteen to pick from, each with its own real-ish play-fight move (the yellow bu
 | Triceratops, Styracosaurus | rock back and charge, head down (BONK!) |
 | Stegosaurus, Ankylosaurus, Brachiosaurus | spin round and whack with the tail (WHACK!) |
 
-The other dino tumbles away and runs off yelping. Flying high (Pterodactyl, plane, helicopter) zooms the view out so the ground stays in sight.
+The other dino tumbles away and runs off yelping. About 1 in 5 are tough and fight back with their own move (you get knocked flying, no damage); it takes three hits to send them off. Pick on 20 dinos and 8 cross dinos swarm you for 10 seconds; hide in a vehicle until they calm down. Flying high (Pterodactyl, plane, helicopter) zooms the view out so the ground stays in sight.
 
 ## Vehicles
 
