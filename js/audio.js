@@ -1,6 +1,6 @@
 // Synthesised sound effects and spoken prompts. No audio files needed.
 const Sound = {
-  ac: null, master: null, muted: false, voice: null,
+  ac: null, master: null, muted: false,
 
   unlock() {
     try {
@@ -73,22 +73,9 @@ const Sound = {
     [262, 330, 392, 523].forEach((f, i) => this.tone(f, i === 3 ? 0.5 : 0.16, 'triangle', 0.12, null, i * 0.15));
   },
 
-  pickVoice() {
-    if (!('speechSynthesis' in window)) return;
-    const vs = speechSynthesis.getVoices();
-    this.voice = vs.find(v => /en-AU/i.test(v.lang)) || vs.find(v => /en-GB/i.test(v.lang)) ||
-      vs.find(v => /^en/i.test(v.lang)) || null;
-  },
-  say(text, rate = 0.95) {
-    if (this.muted || !('speechSynthesis' in window)) return;
-    try {
-      if (!this.voice) this.pickVoice();
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      if (this.voice) u.voice = this.voice;
-      u.rate = rate; u.pitch = 1.25;
-      speechSynthesis.speak(u);
-    } catch (e) { /* speech unavailable */ }
-  },
+  // No voice-over: the game is silent apart from sound effects. Kept as a no-op so
+  // the places that used to talk don't need changing.
+  say() {},
 };
-if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => Sound.pickVoice();
+// Stop anything an older version left talking.
+try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) { /* speech unavailable */ }

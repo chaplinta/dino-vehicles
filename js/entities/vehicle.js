@@ -207,7 +207,6 @@ const Vehicles = {
         else if (v.kind === 'train') { Sound.noise(0.07, 0.04, 'bandpass', 700); v.engT = clamp(30 / sp, 0.1, 0.5); }
         else { Sound.tone(55 + sp * 0.12, 0.09, 'sawtooth', 0.025); v.engT = 0.11; }
       }
-      if (Input.pressed.info) Facts.sayNext(v.kind);
       if (Input.pressed.enter) this.exit(p);
       else if (Input.pressed.roar) { p.vehicle.hornSound(); }
     } else {

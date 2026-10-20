@@ -43,7 +43,7 @@ Everything except the bedrock at the bottom can be dug. Sparkly stars float arou
 
 **Chess:** a Triceratops plays chess at a table by the road into town. Walk up and press ♟️ (or tap the table) to play a real game from your own seat, with dino hands moving the pieces. He's very bad at it. Captured pieces line up in trays beside the board. Checkmate him for 10 stars.
 
-**Reading signs:** one short word on signs around every place (FARM, CORN, FIRE, DIG, MOON, ROCK, CAVE...), all 3 or 4 letters. Walk up to one, or tap it, and it lights up and is read out slowly. Getting in a vehicle pops up its word too (DIG, DUMP, FIRE, COP, SHIP, ZOOM...).
+**Reading signs:** one short word on signs around every place (FARM, CORN, FIRE, DIG, MOON, ROCK, CAVE...), all 3 or 4 letters. Walk up to one, or tap it, and the word lights up to read along with. Getting in a vehicle pops up its word too (DIG, DUMP, FIRE, COP, SHIP, ZOOM...). There's no voice-over: the game only makes sound effects.
 
 ## Dinosaurs
 
@@ -92,7 +92,6 @@ You start with five: digger, dump truck, tractor, fire truck and train. The whis
 
 On the Moon everyone wears a space suit and helmet. There's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
 
-Hop in any vehicle and it says its name and a real fact. Press ℹ️ for another fact.
 
 ## The Pilbara
 
@@ -129,7 +128,7 @@ Also on the island: coconuts to knock out of the palm trees, a message in a bott
 
 ## Jobs
 
-Jobs pop up now and then, with a voice prompt, a bubble in the world and an arrow at the screen edge. Tap the arrow or the bubble and the right vehicle for the job comes to you:
+Jobs pop up now and then, with a chime, a bubble in the world and an arrow at the screen edge. Tap the arrow or the bubble and the right vehicle for the job comes to you:
 
 - fire in a house
 - dino with a sore toe

@@ -1,6 +1,6 @@
 // Core constants, maths helpers, seeded RNG, noise and particles.
 // Shown on the title screen. Bump both with each release.
-const GAME_VERSION = '2.0';
+const GAME_VERSION = '2.1';
 const RELEASE_DATE = '20 Oct 2026';
 let W = 960;               // widens on wide screens (phones), see resize()
 const H = 540;

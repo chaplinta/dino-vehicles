@@ -315,8 +315,8 @@ const Game = {
   },
   configurePlay() {
     const v = Player.vehicle;
-    if (v && v.def.passenger) UI.configure({ dirs: 'none', action: null, roar: false, reset: true, info: true, enter: false, whistle: false, palette: false });
-    else if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, info: !!VEHICLE_FACTS[v.kind], enter: true, whistle: false, palette: !!v.builds });
+    if (v && v.def.passenger) UI.configure({ dirs: 'none', action: null, roar: false, reset: true, info: false, enter: false, whistle: false, palette: false });
+    else if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, info: false, enter: true, whistle: false, palette: !!v.builds });
     else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, lick: true, attack: ATTACK_ICON[DINO_TYPES[Player.type].attack], enter: false, whistle: !this.away, palette: true, reset: true });
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
@@ -330,7 +330,6 @@ const Game = {
   toggleMute() {
     Sound.muted = !Sound.muted;
     document.getElementById('btn-mute').textContent = Sound.muted ? '🔇' : '🔊';
-    if (Sound.muted && 'speechSynthesis' in window) speechSynthesis.cancel();
   },
   addStars(n) {
     const before = this.stars;

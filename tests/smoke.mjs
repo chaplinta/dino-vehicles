@@ -741,6 +741,30 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 24. No voice-over: nothing is spoken, signs and word cards just light up.
+{
+  const page = await open({ width: 960, height: 540 });
+  const r = await page.evaluate(() => {
+    window.spoke = 0;
+    if ('speechSynthesis' in window) speechSynthesis.speak = () => { window.spoke++; };
+    Game.loop = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex');
+    const l = World.props.find(p => p.type === 'label'); Player.body.x = l.x * TS; Player.body.y = l.y * TS - 0.01; l.heard = false; Reading.current = null;
+    for (let i = 0; i < 30; i++) { Game.update(1 / 60); Input.endFrame(); }
+    const lit = Reading.current === l;
+    const d = Vehicles.list.find(v => v.kind === 'digger' && !v.npcOwned); Player.body.x = d.body.x; Player.body.y = d.body.y - 10; Vehicles.enter(Player, d);
+    const infoHidden = document.querySelector('[data-key=info]').classList.contains('hidden');
+    Jobs.spawn('fire'); Sound.say('hello');
+    for (let i = 0; i < 120; i++) { Game.update(1 / 60); Input.endFrame(); }
+    return { lit, infoHidden, card: !!Reading.card };
+  });
+  await page.waitForTimeout(1600);   // the delayed vehicle name would have spoken by now
+  check(await page.evaluate(() => window.spoke === 0), 'no voice-over: nothing is spoken');
+  check(r.lit && r.card, 'signs and word cards still light up');
+  check(r.infoHidden, 'no fact button in vehicles');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');
