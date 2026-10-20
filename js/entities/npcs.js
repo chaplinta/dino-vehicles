@@ -96,14 +96,19 @@ const NPCs = {
     const g = tx => World.groundBelow(tx, World.genSurf[tx] - 3) * TS - 0.01;
     const walker = (tx, extra = {}) => this.list.push(makeNPC(Object.assign({ x: tx * TS + 16, y: g(tx) }, extra)));
     // Wanderers.
-    walker(8, { type: 'tri' }); walker(40, { type: 'stego', baby: true });
-    walker(128, { baby: true }); walker(146, { type: 'brachio' }); walker(165, {}); walker(178, { baby: true, type: 'tri' });
-    walker(236, { type: 'ankylo' }); walker(318, { type: 'raptor', baby: true });
-    walker(480, { type: 'ptero' });
-    // About 1 in 5 fight back: two of the grown-up wanderers, chosen at random.
+    // Wanderers all over: farm, town, building site, beach, mountains, launch pad.
+    walker(8, { type: 'tri' }); walker(40, { type: 'stego', baby: true }); walker(52, { type: 'iguano' }); walker(72, {});
+    walker(110, {}); walker(128, { baby: true }); walker(146, { type: 'brachio' }); walker(165, {}); walker(178, { baby: true, type: 'tri' });
+    walker(206, { type: 'styraco' });
+    walker(236, { type: 'ankylo' }); walker(286, {});
+    walker(308, { type: 'raptor', baby: true }); walker(318, { type: 'bary' }); walker(404, { baby: true });
+    walker(448, {}); walker(480, { type: 'ptero' }); walker(520, { type: 'ptero', baby: true });
+    walker(572, { type: 'megalo' });
+    // About 1 in 5 of the grown-ups fight back, chosen at random.
     const adults = this.list.filter(n => !n.baby);
     for (const n of adults) n.fighter = false;
-    for (let k = 0; k < 2 && adults.length; k++) adults.splice(Math.floor(Math.random() * adults.length), 1)[0].fighter = true;
+    const fighters = Math.round(adults.length / 5);
+    for (let k = 0; k < fighters && adults.length; k++) adults.splice(Math.floor(Math.random() * adults.length), 1)[0].fighter = true;
     // Workers with vehicles.
     this.worker('tractor', 20, 'rex', farmerScript);
     this.worker('digger', 246, 'tri', diggerScript, -1);

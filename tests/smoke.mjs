@@ -218,7 +218,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 {
   const page = await open({ width: 960, height: 540 });
   await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; });
-  check(await page.evaluate(() => NPCs.list.filter(n => !n.vehicle).length) === 9, 'nine wandering dinos');
+  check(await page.evaluate(() => NPCs.list.filter(n => !n.vehicle).length) >= 16, 'lots of dinos wandering about');
   for (const type of await page.evaluate(() => DINO_KEYS)) {
     const r = await page.evaluate(type => {
       Game.startPlay(type);
@@ -638,7 +638,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   const page = await open({ width: 960, height: 540 });
   await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
     window.run = n => { for (let i = 0; i < n; i++) { Game.update(1 / 60); Input.endFrame(); } ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); }; });
-  check(await page.evaluate(() => NPCs.list.filter(n => !n.vehicle && n.fighter).length === 2), 'two of the nine wanderers fight back');
+  check(await page.evaluate(() => { const a = NPCs.list.filter(n => !n.vehicle && !n.baby); const f = a.filter(n => n.fighter).length; return f === Math.round(a.length / 5) && f >= 2; }), 'about 1 in 5 grown-up dinos fight back');
   const r = await page.evaluate(() => {
     const n = NPCs.list.find(n => !n.vehicle && !n.baby && n.type !== 'ptero');
     n.type = 'tri'; n.fighter = true; n.hits = 0; n.need = null;
@@ -731,8 +731,11 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.evaluate(() => Save.write());
   await page.reload(); await page.waitForTimeout(300);
   check(await page.evaluate(() => Game.found.helicopter === true), 'found vehicles are saved');
-  check(await page.evaluate(() => { const labels = World.props.filter(p => p.type === 'label'); return labels.length >= 10 && labels.every(l => { const n = l.text.split(' ').length; return n >= 3 && n <= 4; }); }), 'reading signs around the world, three or four words each');
+  check(await page.evaluate(() => { const labels = World.props.filter(p => p.type === 'label'); return labels.length >= 10 && labels.every(l => /^[A-Z]{3,4}$/.test(l.text)); }), 'reading signs around the world, one 3 or 4 letter word each');
   check(await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; Game.startPlay('rex'); const l = World.props.find(p => p.type === 'label'); Player.body.x = l.x * TS; Player.body.y = l.y * TS - 0.01; Reading.current = null; l.heard = false; Game.update(1 / 60); return Reading.current === l; }), 'walk up to a sign and it reads itself out');
+  check(await page.evaluate(() => { const d = Vehicles.list.find(v => v.kind === 'digger' && !v.npcOwned); Player.body.x = d.body.x; Player.body.y = d.body.y - 10; Vehicles.enter(Player, d); const ok = Reading.card && Reading.card.word === 'DIG'; Vehicles.exit(Player); return ok; }), 'get in the digger: the word DIG pops up');
+  check(await page.evaluate(() => { Game.configurePlay(); const b = document.querySelector('[data-key=attack]'); return !b.classList.contains('hidden') && b.textContent === ATTACK_ICON[DINO_TYPES[Player.type].attack]; }), 'attack button shows on foot with your dino\'s move');
+  check(await page.evaluate(() => { Player.attackCool = 0; Player.attackT = 0; Input.pressed.attack = true; Game.update(1 / 60); Input.endFrame(); return Player.attackT > 0; }), 'attack button swings even with nobody in reach');
   check(await page.evaluate(() => { Game.loop = () => {}; Game.startPlay('rex'); const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r); const a = outfit(); Moon.leave(r, true); return a === 'space'; }), 'space suit on the Moon');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();

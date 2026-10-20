@@ -58,8 +58,7 @@ function generatePilbara(world, seed) {
     if (free && rng() < 0.35) put(x, SURF - 1, T.SPINIFEX);
   }
   world.genSurf = Int16Array.from(surf);
-  for (const [x, text] of [[24, 'Welcome to the mine'], [42, 'Drill the red rock'], [125, 'Stand back for blasting'], [146, 'Big trucks dump here'],
-    [174, 'The long ore train'], [286, 'Trains empty here'], [300, 'Ships take the ore']]) addLabel(world, x, text);
+  for (const [x, text] of [[24, 'MINE'], [42, 'ROCK'], [125, 'BANG'], [146, 'DUMP'], [174, 'ORE'], [286, 'TIP'], [300, 'SHIP']]) addLabel(world, x, text);
   const P = world.props;
   P.push({ type: 'donga', x: 8, y: SURF }, { type: 'donga', x: 14, y: SURF }, { type: 'windsock', x: 31, y: SURF });
   P.push({ type: 'pilsign', x: 37, y: SURF });
@@ -98,7 +97,7 @@ const Pilbara = {
     // Miners about the place, all in hi-vis.
     NPCs.list = [];
     const g = tx => World.groundBelow(tx, World.genSurf[tx] - 3) * TS - 0.01;
-    for (const [tx, type] of [[20, 'tri'], [126, 'stego'], [150, 'raptor'], [294, 'ankylo']]) NPCs.add({ x: tx * TS + 16, y: g(tx), type, range: 4 * TS });
+    for (const [tx, type] of [[20, 'tri'], [60, 'iguano'], [126, 'stego'], [150, 'raptor'], [220, 'carno'], [294, 'ankylo']]) NPCs.add({ x: tx * TS + 16, y: g(tx), type, range: 4 * TS });
     // Land on the camp strip.
     jet.facing = 1;
     VEHICLE_DEFS.jet.landAt(jet, 18);

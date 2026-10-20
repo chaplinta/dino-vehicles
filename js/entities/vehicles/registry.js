@@ -21,6 +21,14 @@ function vehicleUnlocked(kind) {
 // Is it parked out in the world? Ones to find always are; earned ones once earned.
 function vehicleParked(kind) { const d = VEHICLE_DEFS[kind]; return !!d && (!!d.find || Game.stars >= d.unlock); }
 
+// A short word for each vehicle, shown big when you get in, to read along with.
+const VEHICLE_WORDS = {
+  digger: 'DIG', dumptruck: 'DUMP', firetruck: 'FIRE', tractor: 'FARM', train: 'RAIL', bulldozer: 'PUSH', crane: 'LIFT',
+  ambulance: 'HELP', police: 'COP', tugboat: 'TUG', helicopter: 'FLY', harvester: 'CORN', wrecker: 'BALL', garbage: 'BIN',
+  drill: 'HOLE', fishboat: 'FISH', submarine: 'SUB', plane: 'WING', rocket: 'ZOOM', moonbuggy: 'MOON', pirateship: 'SHIP',
+  jet: 'JET', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD',
+};
+
 const DEFAULT_VEHICLES = [
   ['tractor', 12, 1], ['harvester', 38, -1], ['plane', 76, -1], ['jet', 86, -1],
   ['firetruck', 134, 1], ['ambulance', 164, 1], ['police', 194, 1], ['garbage', 178, -1],

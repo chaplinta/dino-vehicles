@@ -66,7 +66,7 @@ function generatePirate(world, seed) {
   put(PR.WRECK + 2, PR.SEABED - 1, T.TREASURE);
   put(PR.CAVE[1] - 2, SURF - 1, T.TREASURE);
   world.genSurf = Int16Array.from(surf);
-  for (const [x, text] of [[52, 'Walk the plank'], [70, 'Welcome to Skull Island'], [101, 'Palm trees have coconuts'], [149, 'Skull Cave is spooky'], [201, 'Pirate camp keep out']]) addLabel(world, x, text);
+  for (const [x, text] of [[52, 'DIVE'], [70, 'LAND'], [101, 'NUTS'], [149, 'CAVE'], [201, 'CAMP']]) addLabel(world, x, text);
   const P = world.props;
   for (const x of PR.PALMS) P.push({ type: 'palm', x: x + 0.5, y: SURF, coco: 2, lean: (rng() - 0.5) * 0.5 });
   P.push({ type: 'plank', x: PR.JETTY[0], y: SURF });
@@ -125,7 +125,7 @@ const Pirate = {
     Kraken.update(dt);
     const p = Player, b = p.body;
     // Headbutt (or bite, or kick...) a palm tree: a coconut drops.
-    if (Input.pressed.action && !p.vehicle) {
+    if ((Input.pressed.action || Input.pressed.attack) && !p.vehicle) {
       const palm = World.props.find(q => q.type === 'palm' && q.coco > 0 && Math.abs(q.x * TS - b.x) < 56 && Math.abs(q.y * TS - b.y) < 40);
       if (palm && !NPCs.inReach(b.x, b.y, p.facing, DINO_TYPES[p.type].attack).length) {
         palm.coco--; palm.shake = 0.5;

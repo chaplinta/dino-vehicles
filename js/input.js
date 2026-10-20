@@ -13,7 +13,7 @@ const KEYMAP = {
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
   Space: 'action', KeyE: 'enter', Enter: 'enter', KeyR: 'roar', KeyQ: 'whistle',
-  Escape: 'home', KeyM: 'mute', KeyN: 'reset', KeyI: 'info', KeyL: 'lick',
+  Escape: 'home', KeyM: 'mute', KeyN: 'reset', KeyI: 'info', KeyL: 'lick', KeyF: 'attack',
   Digit1: 'b1', Digit2: 'b2', Digit3: 'b3', Digit4: 'b4', Digit5: 'b5', Digit6: 'b6',
 };
 
@@ -106,6 +106,9 @@ const UI = {
     document.querySelector('[data-key=whistle]').classList.toggle('hidden', !cfg.whistle);
     document.querySelector('[data-key=info]').classList.toggle('hidden', !cfg.info);
     document.querySelector('[data-key=lick]').classList.toggle('hidden', !cfg.lick);
+    const atk = document.querySelector('[data-key=attack]');
+    atk.classList.toggle('hidden', !cfg.attack);
+    if (cfg.attack) atk.textContent = cfg.attack;
     show('palette', !!cfg.palette);
     show('btn-home', cfg.home !== false);
     show('btn-reset', !!cfg.reset);

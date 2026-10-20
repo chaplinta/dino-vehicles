@@ -317,7 +317,7 @@ const Game = {
     const v = Player.vehicle;
     if (v && v.def.passenger) UI.configure({ dirs: 'none', action: null, roar: false, reset: true, info: true, enter: false, whistle: false, palette: false });
     else if (v) UI.configure({ dirs: v.dirs || 'lr', action: v.icon, roar: true, roarIcon: '📢', reset: true, info: !!VEHICLE_FACTS[v.kind], enter: true, whistle: false, palette: !!v.builds });
-    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, lick: true, enter: false, whistle: !this.away, palette: true, reset: true });
+    else UI.configure({ dirs: DINO_TYPES[Player.type].flies ? 'all' : 'all', action: '⛏️', roar: true, lick: true, attack: ATTACK_ICON[DINO_TYPES[Player.type].attack], enter: false, whistle: !this.away, palette: true, reset: true });
     if (!v) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (v && v.builds) UI.buildPalette(BUILD_BLOCKS, Player.block, i => { Player.block = i; UI.markPalette(i); Sound.click(); });
     if (!v) UI.setEnter(false); else UI.setEnter(!v.def.passenger, '🚪');
@@ -484,6 +484,7 @@ const Game = {
     if (this.away === 'pirate') Pirate.drawHud(c);
     Asteroid.drawHud(c);
     Swarm.drawHud(c);
+    Reading.drawHud(c);
     if (this.overlay) this.overlay.draw(c);
     Hud.draw(c);
   },

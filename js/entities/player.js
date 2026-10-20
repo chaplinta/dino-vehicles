@@ -90,6 +90,7 @@ const Player = {
     if (Input.pressed.roar && !this.vehicle) this.roar();
     this.lickT = Math.max(0, (this.lickT || 0) - dt);
     if (Input.pressed.lick && !this.vehicle && !this.lickT) { this.lickT = LICK_TIME; Sound.lick(); }
+    if (Input.pressed.attack && !this.vehicle && !Game.overlay) this.attack();   // the attack button: swings even at thin air
     if (this.vehicle) return;
 
     const b = this.body;

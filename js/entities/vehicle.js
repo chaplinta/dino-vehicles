@@ -236,7 +236,12 @@ const Vehicles = {
     Sound.click(); v.hornSound();
     // Name, then a real fact about it.
     const fact = p === Player ? Facts.next(v.kind) : null;
-    Sound.say((v.def.say || v.def.name) + (fact ? ' ' + fact : ''));
+    const word = p === Player && VEHICLE_WORDS[v.kind];
+    if (word) {
+      // The short word first, nice and slow to read along, then the name and a fact.
+      Reading.show(word);
+      setTimeout(() => { if (Player.vehicle === v) Sound.say((v.def.say || v.def.name) + (fact ? ' ' + fact : '')); }, 1300);
+    } else Sound.say((v.def.say || v.def.name) + (fact ? ' ' + fact : ''));
     if (p === Player && v.def.find && !Game.found[v.kind]) {
       // Found one out in the world: now the whistle can call it.
       Game.found[v.kind] = true;

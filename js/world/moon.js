@@ -41,7 +41,7 @@ function generateMoon(world, seed) {
     if (((x - 76) / 10) ** 2 + ((y - 64) / 6) ** 2 <= 1) world.t[y * Wt + x] = T.CHEESE;
   }
   world.genSurf = Int16Array.from(surf);
-  for (const [x, text] of [[14, 'Welcome to the Moon'], [36, 'Bounce up very high'], [62, 'Dig for moon cheese'], [96, 'Moon dinos live here']]) addLabel(world, x, text);
+  for (const [x, text] of [[14, 'MOON'], [36, 'JUMP'], [62, 'DIG'], [96, 'WAVE']]) addLabel(world, x, text);
   world.props.push({ type: 'saucer', x: 110, y: surf[110] });
 }
 
