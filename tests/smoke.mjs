@@ -62,7 +62,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 {
   const page = await open({ width: 960, height: 540 });
   await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 99; Vehicles.spawnMissing(); Jobs.t = 1e9; });
-  const kinds = await page.evaluate(() => VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k] && k !== 'rocket'));
+  const kinds = await page.evaluate(() => VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k] && k !== 'rocket' && vehicleParked(k)));
   for (const k of kinds) {
     await page.evaluate(k => {
       const v = Vehicles.list.find(v => v.kind === k && !v.npcOwned);
