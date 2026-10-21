@@ -34,6 +34,7 @@ const Hud = {
     drawStar(c, 0, 0, 24, 0, '#ffd43b', 4);
     c.restore();
     bigText(c, String(Game.stars), W - 176, 46, 36, '#fff', 'left');
+    if (Game.found && Game.found.goldtruck) { c.font = `30px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🏅', W - 248, 46); }   // Mine Boss medal
     // Treasure popups.
     for (const p of this.popups) {
       const k = Math.min(1, p.t / 1.2);

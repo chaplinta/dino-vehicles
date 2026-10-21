@@ -349,7 +349,8 @@ const Whistle = {
       def.draw(c, fake);
       c.restore();
       if (locked) {
-        if (def.find) { bigText(c, '?', cell.x + cell.w / 2, cell.y + cell.h / 2 - 4, 46, '#fff'); bigText(c, 'find it', cell.x + cell.w / 2, cell.y + cell.h - 16, 18, '#fff'); }
+        if (def.special) { c.font = `40px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🏅', cell.x + cell.w / 2, cell.y + cell.h / 2 - 6); bigText(c, 'mine boss', cell.x + cell.w / 2, cell.y + cell.h - 16, 16, '#fff'); }
+        else if (def.find) { bigText(c, '?', cell.x + cell.w / 2, cell.y + cell.h / 2 - 4, 46, '#fff'); bigText(c, 'find it', cell.x + cell.w / 2, cell.y + cell.h - 16, 18, '#fff'); }
         else {
           drawStar(c, cell.x + cell.w / 2 - 22, cell.y + cell.h / 2, 18, 0, '#ffd43b', 3);
           bigText(c, String(def.unlock), cell.x + cell.w / 2 + 14, cell.y + cell.h / 2 + 2, 28, '#fff');

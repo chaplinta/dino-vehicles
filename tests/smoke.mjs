@@ -582,7 +582,10 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(await page.evaluate(() => onSite() && Mine.step === 'drill'), 'hi-vis on, first step is drilling');
   await page.evaluate(() => { window.__save = localStorage.getItem('dinoVehicles.save.v1'); Save.write(); });
   await page.evaluate(() => { const r = Mine.vehicle('blastrig'); into(r); for (const x of [76, 80, 84]) { drive(r, x * TS); run(120, { action: 1 }); } });
-  check(await page.evaluate(() => Mine.holes.length === 3 && Mine.step === 'blast'), 'drill three blast holes');
+  check(await page.evaluate(() => Mine.holes.length === 3 && !Mine.holes.some(h => h.charged) && Mine.step === 'charge'), 'drill three blast holes, empty for now');
+  check(await page.evaluate(() => { Vehicles.exit(Player); Player.body.x = PIL.DET * TS; Player.body.y = SURF * TS - 0.01; run(10); run(1, { enter: 1 }); run(30); return Mine.blastT < 0 && Mine.holes.length === 3; }), 'no blast until the holes have explosives in');
+  await page.evaluate(() => { const t = Mine.vehicle('chargetruck'); into(t); for (const h of [...Mine.holes]) { drive(t, h.x * TS + 16 - 80, 1500); run(90, { action: 1 }); } });
+  check(await page.evaluate(() => Mine.holes.every(h => h.charged) && Mine.step === 'blast'), 'explosives truck fills each hole');
   await page.evaluate(() => { Vehicles.exit(Player); Player.body.x = PIL.DET * TS; Player.body.y = SURF * TS - 0.01; run(10); run(1, { enter: 1 }); run(60 * 6); });
   check(await page.evaluate(() => !Mine.holes.length && Mine.broken > 20 && Mine.step === 'dig'), 'blast breaks up the iron ore');
   await page.evaluate(() => {
@@ -593,12 +596,18 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(await page.evaluate(() => Mine.vehicle('haultruck').s.ore >= 12), 'digger loads the haul truck with ore');
   await page.evaluate(() => { const h = Mine.vehicle('haultruck'); into(h); drive(h, PIL.HOPPER * TS + 60, 2400); run(1, { action: 1 }); run(90); });
   check(await page.evaluate(() => Mine.stock + Mine.train().s.ore.reduce((a, b) => a + b, 0) >= 12), 'haul truck tips the ore into the crusher');
-  await page.evaluate(() => { const t = Mine.train(); into(t); run(10); drive(t, PIL.LOADOUT * TS); run(60 * 6); drive(t, PIL.DUMPER * TS, 3000); run(60 * 6); });
+  await page.evaluate(() => { const t = Mine.train(); into(t); run(10); drive(t, PIL.LOADOUT * TS); run(60 * 6); drive(t, PIL.DUMPER * TS, 3000); run(60 * 2); });
+  check(await page.evaluate(() => Mine.port === 0 && Mine.train().s.ore.some(o => o > 0)), 'ore train waits at the dumper for the button');
+  await page.evaluate(() => { run(1, { action: 1 }); run(60 * 6); });
   check(await page.evaluate(() => Mine.port >= 12 && Mine.train().s.ore.every(o => o === 0) && Mine.step === 'ship'), 'ore train loads, then empties at the port');
   await page.evaluate(() => { Mine.port = 18; window.__stars = Game.stars; const l = Mine.vehicle('shiploader'); into(l); for (const h of PIL.HOLDS) { drive(l, h * TS + 16 - LOADER_BOOM, 900); run(60 * 3, { action: 1 }); } });
   check(await page.evaluate(() => Mine.ship.state === 'leave' && Game.stars >= window.__stars + 10), 'ship loader fills the ship and it sails: 10 stars');
+  await page.waitForTimeout(3300);
+  check(await page.evaluate(() => Game.found.goldtruck && Game.stars >= window.__stars + 30), 'first full ship: Mine Boss medal, 20 more stars and the golden haul truck');
+  check(await page.evaluate(() => { const t = Mine.train(); Vehicles.exit(Player); into(t); t.body.x = 220 * TS; t.s.ore = [6, 0, 0]; run(5); const before = Mine.port; run(1, { action: 1 }); run(30); return t.s.ore.every(o => o === 0) && Mine.port === before; }), 'tipping the train away from the port spills the ore');
   check(await page.evaluate(() => localStorage.getItem('dinoVehicles.save.v1') === window.__save), 'nothing saved while away');
   await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(60 * 9); run(60 * 11); run(60 * 5); });
+  check(await page.evaluate(() => Vehicles.list.some(v => v.kind === 'goldtruck') && Whistle.kinds().includes('goldtruck')), 'the golden haul truck is waiting at home');
   check(await page.evaluate(() => !Game.away && !Player.vehicle && Vehicles.list.find(v => v.kind === 'jet').s.state === 'idle' && World.get(20, 30) === T.BRICK && Vehicles.list.filter(v => v.kind === 'jet').length === 1 && !onSite()), 'fly home: Earth as it was');
   // Asteroid while at the mine: game over and a fresh Earth.
   await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); Flight.start(j); Flight.finish(); run(60 * 5); Asteroid.left = 1; run(120); });
@@ -638,7 +647,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   const page = await open({ width: 960, height: 540 });
   await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
     window.run = n => { for (let i = 0; i < n; i++) { Game.update(1 / 60); Input.endFrame(); } ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); }; });
-  check(await page.evaluate(() => { const a = NPCs.list.filter(n => !n.vehicle && !n.baby); const f = a.filter(n => n.fighter).length; return f === Math.round(a.length / 5) && f >= 2; }), 'about 1 in 5 grown-up dinos fight back');
+  check(await page.evaluate(() => { const a = NPCs.list.filter(n => !n.vehicle && !n.baby); const f = a.filter(n => n.fighter).length; return f === Math.round(a.length / 2) && f >= 5; }), 'half the grown-up dinos fight back');
   const r = await page.evaluate(() => {
     const n = NPCs.list.find(n => !n.vehicle && !n.baby && n.type !== 'ptero');
     n.type = 'tri'; n.fighter = true; n.hits = 0; n.need = null;
@@ -720,12 +729,12 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 {
   const page = await open({ width: 960, height: 540 });
   await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; });
-  check(await page.evaluate(() => JSON.stringify(Whistle.kinds()) === JSON.stringify(['digger', 'dumptruck', 'firetruck', 'tractor', 'train'])), 'start with five vehicles to call');
-  check(await page.evaluate(() => !Vehicles.list.some(v => v.kind === 'bulldozer' && !v.npcOwned) && Vehicles.list.some(v => v.kind === 'helicopter') && Vehicles.list.some(v => v.kind === 'rocket')), 'earned ones not parked yet; ones to find are out in the world');
-  await page.evaluate(() => { Game.addStars(8); });
+  check(await page.evaluate(() => JSON.stringify(Whistle.kinds()) === JSON.stringify(['digger', 'dumptruck', 'firetruck', 'tractor', 'train', 'bulldozer', 'ambulance', 'police'])), 'start with eight vehicles to call');
+  check(await page.evaluate(() => !Vehicles.list.some(v => v.kind === 'garbage' && !v.npcOwned) && Vehicles.list.some(v => v.kind === 'crane') && Vehicles.list.some(v => v.kind === 'rocket') && !Whistle.kinds().includes('crane')), 'earned ones not parked yet; ones to find are out in the world');
+  await page.evaluate(() => { Game.addStars(10); });
   await page.waitForTimeout(3000);
-  check(await page.evaluate(() => Whistle.kinds().includes('bulldozer') && Vehicles.list.some(v => v.kind === 'bulldozer' && !v.npcOwned)), '8 stars: the bulldozer turns up');
-  check(await page.evaluate(() => !Whistle.kinds().includes('helicopter')), 'helicopter has to be found first');
+  check(await page.evaluate(() => Whistle.kinds().includes('garbage') && Vehicles.list.some(v => v.kind === 'garbage' && !v.npcOwned)), '10 stars: the garbage truck turns up');
+  check(await page.evaluate(() => !Whistle.kinds().includes('helicopter') && !Whistle.kinds().includes('goldtruck')), 'helicopter has to be found first');
   await page.evaluate(() => { const h = Vehicles.list.find(v => v.kind === 'helicopter' && !v.npcOwned); Player.body.x = h.body.x; Player.body.y = h.body.y - 10; Vehicles.enter(Player, h); Vehicles.exit(Player); });
   check(await page.evaluate(() => Game.found.helicopter && Whistle.kinds().includes('helicopter')), 'get in the helicopter: found, now the whistle can call it');
   await page.evaluate(() => Save.write());

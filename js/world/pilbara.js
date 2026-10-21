@@ -89,6 +89,7 @@ const Pilbara = {
     Vehicles.list = [jet];
     const sp = (kind, tx, f) => { const v = Vehicles.spawnAtGround(kind, tx, f); return v; };
     sp('blastrig', 46, 1);
+    sp('chargetruck', 30, 1);
     sp('digger', 60, 1);
     sp('haultruck', 104, -1);
     const tr = Vehicles.spawn('oretrain', (PIL.LOADOUT + 4) * TS, TRACK_Y - 6, 1);
@@ -115,6 +116,7 @@ const Pilbara = {
   },
   leave(jet) {
     Away.home();
+    Vehicles.spawnMissing();   // a Mine Boss's golden truck turns up at home
     if (jet) {
       if (!Vehicles.list.includes(jet)) Vehicles.list.push(jet);
       Vehicles.list = Vehicles.list.filter(v => v === jet || v.kind !== 'jet');
@@ -130,6 +132,7 @@ const Pilbara = {
 // ---------- The mine: what's been done and what to do next ----------
 const MINE_STEPS = [
   { key: 'drill', icon: '🛠️', say: 'Step one: drive the drill rig into the pit and hold the button to drill blast holes in the rock.' },
+  { key: 'charge', icon: '🧨', say: 'Next: drive the explosives truck to each hole and hold the button to fill it with explosives.' },
   { key: 'blast', icon: '💥', say: 'Step two: go to the red blast button and set off the blast!' },
   { key: 'dig', icon: '🦖', say: 'Step three: use the digger to scoop up the broken ore and load the big haul truck.' },
   { key: 'haul', icon: '🚚', say: 'Step four: drive the haul truck up out of the pit and tip the ore into the crusher.' },
@@ -173,7 +176,8 @@ const Mine = {
     if (this.haulers().some(h => h.s.ore > 0)) return 'haul';
     const dg = this.vehicle('digger');
     if (this.broken > 0 || (dg && dg.s.load.length)) return 'dig';
-    if (this.holes.length) return 'blast';
+    if (this.holes.some(h => h.charged)) return 'blast';
+    if (this.holes.length) return 'charge';
     return 'drill';
   },
   sayStep(force) {
@@ -207,15 +211,24 @@ const Mine = {
   addHole(tx, ty) {
     if (this.holes.some(h => Math.abs(h.x - tx) < 2)) { Sound.bonk(); Sound.say('There is already a hole here. Move along a bit!'); return false; }
     if (this.holes.length >= 6) { Sound.bonk(); Sound.say('That is plenty of holes. Time to blast!'); return false; }
-    this.holes.push({ x: tx, y: ty });
+    this.holes.push({ x: tx, y: ty, charged: false });
     Sound.collect();
     if (this.holes.length === 1) { Game.addStars(1); Game.popupStar(tx * TS, ty * TS - 60); Sound.say('A blast hole! ' + MINE_FACTS.drill + ' Drill some more, then blast!'); }
     else Sound.say(pick(['Another hole!', 'Good drilling!', 'Nice and deep!']));
     return true;
   },
+  // Explosives truck pumps explosives into a hole.
+  holeNear(x) { return this.holes.find(h => !h.charged && Math.abs(h.x * TS + 16 - x) < 2 * TS); },
+  charge(h) {
+    h.charged = true;
+    Sound.collect();
+    if (this.holes.filter(q => q.charged).length === 1) { Game.addStars(1); Game.popupStar(h.x * TS, h.y * TS - 60); }
+    Pow.add(h.x * TS + 16, h.y * TS - 40, 'BANG');
+  },
   blast() {
     if (this.blastT >= 0) return;
     if (!this.holes.length) { Sound.bonk(); Sound.say('Drill some blast holes in the pit first!'); return; }
+    if (!this.holes.some(h => h.charged)) { Sound.bonk(); Sound.say('Fill the holes with explosives first! Use the explosives truck.'); return; }
     if (this.holes.some(h => Math.abs(h.x * TS - Player.cx) < 8 * TS)) { Sound.bonk(); Sound.say('Too close! Everyone out of the blast zone first!'); return; }
     this.blastT = 0; this.lastN = 5;
     Sound.say('Fire in the hole! Everyone clear!');
@@ -232,7 +245,7 @@ const Mine = {
   },
   boom() {
     let made = 0;
-    for (const h of this.holes) {
+    for (const h of this.holes.filter(h => h.charged)) {
       const cx = h.x, cy = h.y + 2;
       for (let y = cy - 4; y <= cy + 4; y++) for (let x = cx - 4; x <= cx + 4; x++) {
         if (dist(x, y, cx, cy) > 3.6) continue;
@@ -244,7 +257,7 @@ const Mine = {
       Fx.burst(px, py, 30, { speed: 420, up: 300, g: 700, life: 1.6, r: 12, color: ['#c4532a', '#8a3a2a', '#ffd8a8', '#ffa94d'], shape: 'grow' });
       Fx.burst(px, py, 14, { speed: 260, up: 360, g: 900, life: 1.2, r: 7, color: ['#5a2a22', '#7a2e22'], shape: 'rect' });
     }
-    this.holes = [];
+    this.holes = this.holes.filter(h => !h.charged);   // empty holes stay for next time
     this.shake = 1.2;
     Sound.noise(1.6, 0.5, 'lowpass', 300); Sound.noise(0.5, 0.4, 'bandpass', 900);
     Game.addStars(2); Game.popupStar(Player.cx, Player.cy - 100);
@@ -257,6 +270,15 @@ const Mine = {
   hopperNear(v) {
     const h = PIL.HOPPER * TS + 16;
     return Game.away === 'pilbara' && Math.abs(v.body.x - h) < v.body.w / 2 + 2 * TS && Math.abs(v.body.y - SURF * TS) < 3 * TS;
+  },
+  // Tip straight onto the stockpile by the train loader.
+  stockNear(v) {
+    return Game.away === 'pilbara' && Math.abs(v.body.x - (PIL.STOCK + 7) * TS) < 8 * TS && Math.abs(v.body.y - SURF * TS) < 3 * TS;
+  },
+  toStock(ore, v) {
+    this.stock += ore;
+    Sound.noise(1, 0.15, 'lowpass', 500);
+    if (ore > 0) { Game.addStars(2); Game.popupStar(v.body.x, v.body.y - 140); Pow.add(v.body.x, v.body.y - 120, 'DUMP'); }
   },
   toHopper(ore, v) {
     this.stock += ore;
@@ -287,7 +309,7 @@ const Mine = {
         }
       }
     }
-    if (this.trainAt(tr, PIL.DUMPER) && s.ore.some(o => o > 0)) {
+    if (s.dumping && this.trainAt(tr, PIL.DUMPER) && s.ore.some(o => o > 0)) {
       s.tipT = (s.tipT || 0) + dt;
       if (s.tipT > 1.2) {
         s.tipT = 0;
@@ -299,8 +321,23 @@ const Mine = {
           Sound.say('The car dumper flips each wagon upside down to empty it! Now use the ship loader.');
         }
       }
-    } else s.tipT = 0;
+    } else { s.tipT = 0; if (!s.ore.some(o => o > 0) || !this.trainAt(tr, PIL.DUMPER)) s.dumping = false; }
     s.tipShow = Math.max(0, (s.tipShow || 0) - dt);
+  },
+  // The train's button: tip the wagons. At the car dumper the ore goes to the port; anywhere else it spills out.
+  trainDump(tr) {
+    const s = tr.s;
+    if (!s.ore.some(o => o > 0)) { Sound.bonk(); return; }
+    if (this.trainAt(tr, PIL.DUMPER)) { s.dumping = true; s.tipT = 1.2; Sound.tone(150, 0.5, 'sawtooth', 0.06, 90); return; }
+    // Spill each wagon's ore beside the track.
+    for (let k = 0; k < 3; k++) {
+      const wx = tr.body.x - tr.facing * (k + 1) * 124, tx = Math.floor(wx / TS);
+      for (let n = 0; n < s.ore[k]; n++) dropTileInColumn(tx + (n % 3) - 1, T.BROKENORE, SURF - 8);
+      s.ore[k] = 0;
+    }
+    s.tipShow = 1; s.tipWagon = 0;
+    Pow.add(tr.body.x, tr.body.y - 120, 'TIP');
+    Sound.noise(0.8, 0.2, 'lowpass', 500);
   },
 
   // ---------- Ship ----------
@@ -322,6 +359,16 @@ const Mine = {
     Game.addStars(10); Game.popupStar(PIL.SHIP * TS, SURF * TS - 200);
     Pickups.shower(PIL.SHIP * TS - 300, SURF * TS - 300, 6);
     Game.celebrate('Ship full!', 'The ship is full! ' + MINE_FACTS.ship + ' You are a real Pilbara miner!');
+    if (!Game.found.goldtruck) {
+      // Special reward for the first full ship: the Mine Boss medal and a golden haul truck back home.
+      Game.found.goldtruck = true;
+      setTimeout(() => {
+        Game.addStars(20);
+        Pickups.shower(Player.cx, Player.cy - 300, 10);
+        Hud.celebrate('MINE BOSS! 🏅');
+        Sound.fanfare();
+      }, 3000);
+    }
   },
   updateShip(dt) {
     const sh = this.ship;
@@ -336,6 +383,11 @@ const Mine = {
     const at = (v, icon) => v ? { x: v.body.x, y: v.body.y - v.body.h - 30, icon } : null;
     switch (this.step) {
       case 'drill': return k === 'blastrig' ? { x: 84 * TS, y: (PIL.FLOOR - 2) * TS, icon: '🛠️' } : at(this.vehicle('blastrig'), '🛠️');
+      case 'charge': {
+        if (k !== 'chargetruck') return at(this.vehicle('chargetruck'), '🧨');
+        const h = this.holes.find(q => !q.charged);
+        return h ? { x: h.x * TS + 16, y: (h.y - 2) * TS, icon: '🧨' } : null;
+      }
       case 'blast': return { x: PIL.DET * TS + 16, y: (SURF - 3) * TS, icon: '💥' };
       case 'dig': {
         const dg = this.vehicle('digger');
@@ -351,7 +403,7 @@ const Mine = {
         const tr = this.train();
         if (k !== 'oretrain') return at(tr, '🚂');
         return tr.s.ore.some(o => o > 0) && (this.stock === 0 || tr.s.ore.every(o => o >= this.CAP))
-          ? { x: PIL.DUMPER * TS, y: (SURF - 5) * TS, icon: '⚓' } : { x: PIL.LOADOUT * TS, y: (SURF - 7) * TS, icon: '⬇️' };
+          ? { x: PIL.DUMPER * TS, y: (SURF - 5) * TS, icon: '⤵️' } : { x: PIL.LOADOUT * TS, y: (SURF - 7) * TS, icon: '⬇️' };
       }
       case 'ship': {
         if (this.ship.state !== 'berth') return null;
@@ -363,12 +415,17 @@ const Mine = {
     return null;
   },
   drawWorld(c) {
-    // Blast holes: a dark hole with an orange marker cone.
+    // Blast holes: an empty one has an orange marker cone; a charged one a red cap and a wire to the blast button.
     for (const h of this.holes) {
       const x = h.x * TS + 16, y = h.y * TS;
       ell(c, x, y + 2, 9, 4, '#2b2233', 2);
-      poly(c, [x + 10, y, x + 22, y, x + 16, y - 18], '#ff922b', 2);
-      c.fillStyle = '#fff'; c.fillRect(x + 13, y - 10, 6, 3);
+      if (h.charged) {
+        rbox(c, x - 7, y - 8, 14, 10, 3, '#e03131', 2);
+        c.strokeStyle = '#fcc419'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y - 8); c.quadraticCurveTo(x + 30, y - 40, x + 60, y - 6); c.stroke();
+      } else {
+        poly(c, [x + 10, y, x + 22, y, x + 16, y - 18], '#ff922b', 2);
+        c.fillStyle = '#fff'; c.fillRect(x + 13, y - 10, 6, 3);
+      }
     }
     const g = this.target();
     if (g) {

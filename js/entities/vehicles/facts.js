@@ -120,6 +120,16 @@ const VEHICLE_FACTS = {
     'The holds are filled a bit at a time so the ship stays level in the water.',
     'Iron ore ships are huge. One ship can carry more than two thousand train wagons of ore.',
   ],
+  chargetruck: [
+    'Explosives trucks pump the explosive right down into each blast hole.',
+    'The explosive is only mixed inside the truck, just before it goes in the hole, to keep everyone safe.',
+    'Every hole gets a detonator, so the whole blast can be set off from far away.',
+  ],
+  goldtruck: [
+    'You earned the golden haul truck by filling a whole ship with iron ore!',
+    'Real haul trucks can carry as much as three hundred tonnes.',
+    'Iron ore from the Pilbara is made into steel for cars, bridges and buildings.',
+  ],
   pirateship: [
     'Sails catch the wind and push the ship along. More sail up means more speed.',
     'On a ship, left is called port and right is called starboard.',

@@ -5,7 +5,7 @@ function makeNPC(o) {
   const n = Object.assign({
     id: npcId++, type: pick(DINO_KEYS), baby, facing: pick([-1, 1]), walk: 0, t: rand(0, 9), blinkSeed: rand(0, 9),
     roarT: 0, state: 'idle', timer: rand(1, 3), dir: 0, home: o.x, range: 6 * TS, bubble: null, hop: 0,
-    fighter: !o.baby && Math.random() < 0.2, hits: 0, angry: 0, atk: null, atkCool: 0,   // about 1 in 5 fight back
+    fighter: !o.baby && Math.random() < 0.5, hits: 0, angry: 0, atk: null, atkCool: 0,   // about half fight back
     vehicle: null, ride: null, need: null, input: null, script: null, heartT: 0,
   }, o);
   n.body = makeBody(o.x, o.y, baby ? 20 : 28, baby ? 34 : 52);
@@ -104,10 +104,10 @@ const NPCs = {
     walker(308, { type: 'raptor', baby: true }); walker(318, { type: 'bary' }); walker(404, { baby: true });
     walker(448, {}); walker(480, { type: 'ptero' }); walker(520, { type: 'ptero', baby: true });
     walker(572, { type: 'megalo' });
-    // About 1 in 5 of the grown-ups fight back, chosen at random.
+    // Half the grown-ups fight back, chosen at random.
     const adults = this.list.filter(n => !n.baby);
     for (const n of adults) n.fighter = false;
-    const fighters = Math.round(adults.length / 5);
+    const fighters = Math.round(adults.length / 2);
     for (let k = 0; k < fighters && adults.length; k++) adults.splice(Math.floor(Math.random() * adults.length), 1)[0].fighter = true;
     // Workers with vehicles.
     this.worker('tractor', 20, 'rex', farmerScript);

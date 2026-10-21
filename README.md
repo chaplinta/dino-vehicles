@@ -59,14 +59,14 @@ Thirteen to pick from, each with its own real-ish play-fight move (the yellow bu
 | Triceratops, Styracosaurus | rock back and charge, head down (BONK!) |
 | Stegosaurus, Ankylosaurus, Brachiosaurus | spin round and whack with the tail (WHACK!) |
 
-The other dino tumbles away and runs off yelping. About 1 in 5 are tough and fight back with their own move (you get knocked flying, no damage); it takes three hits to send them off. Pick on 20 dinos and 8 cross dinos swarm you for 10 seconds; hide in a vehicle until they calm down. Flying high (Pterodactyl, plane, helicopter) zooms the view out so the ground stays in sight.
+The other dino tumbles away and runs off yelping. Half the grown-ups are tough and fight back with their own move (you get knocked flying, no damage); it takes three hits to send them off. Pick on 20 dinos and 8 cross dinos swarm you for 10 seconds; hide in a vehicle until they calm down. Flying high (Pterodactyl, plane, helicopter) zooms the view out so the ground stays in sight.
 
 ## Vehicles
 
-You start with five: digger, dump truck, tractor, fire truck and train. The whistle menu brings any of yours to you.
+You start with eight: digger, dump truck, tractor, fire truck, train, bulldozer, ambulance and police car. The whistle menu brings any of yours to you.
 
-- **Earn with stars:** bulldozer 8, ambulance 12, police car 16, crane 20, garbage truck 25, tugboat 30, harvester 35, fishing boat 40, drill 50, wrecking ball 60. Each one turns up at its parking spot when earned.
-- **Find them:** the plane (airport), helicopter (up in the mountains), submarine and pirate ship (in the sea) and rocket (launch pad) are out in the world. Get in one to find it; then the whistle can call it too.
+- **Earn with stars:** garbage truck 10, harvester 20, drill 30, wrecking ball 45. Each one turns up at its parking spot when earned.
+- **Find them:** the crane (building site), plane (airport), helicopter (up in the mountains), tugboat, fishing boat, submarine and pirate ship (in the sea) and rocket (launch pad) are out in the world. Get in one to find it; then the whistle can call it too.
 
 | Vehicle | Button does |
 |---|---|
@@ -95,14 +95,15 @@ On the Moon everyone wears a space suit and helmet. There's also a **moon buggy*
 
 ## The Pilbara
 
-Walk up to the big FIFO jet at the airport and hop aboard: the pilot flies you to an iron ore mine in the Pilbara, no driving needed. On site everyone wears hi-vis and a hard hat. Icons top left show the six steps, and an arrow points to what's next:
+Walk up to the big FIFO jet at the airport and hop aboard: the pilot flies you to an iron ore mine in the Pilbara, no driving needed. On site everyone wears hi-vis and a hard hat. Icons top left show the seven steps, and an arrow points to what's next:
 
 1. **Drill:** drive the blast hole drill into the pit and hold the button to drill holes in the rock.
-2. **Blast:** press the red blast button. Siren, 3-2-1, boom: the iron ore breaks up.
-3. **Dig:** the digger scoops broken ore into the giant haul truck (solid ore is too hard to dig).
-4. **Haul:** drive up out of the pit and tip into the crusher at the OPF.
-5. **Train:** stop the ore train under the loader to fill the wagons, then drive to the port. The car dumper empties them.
-6. **Ship:** the ship loader pours ore into the ship's three holds. Full ship sails for 10 stars.
+2. **Charge:** drive the explosives truck to each hole and hold the button to pump explosives in (red caps and wires).
+3. **Blast:** press the red blast button. Siren, 3-2-1, boom: the iron ore breaks up.
+4. **Dig:** the digger scoops broken ore into the giant haul truck (solid ore is too hard to dig).
+5. **Haul:** drive up out of the pit and tip into the crusher at the OPF.
+6. **Train:** stop the ore train under the loader to fill the wagons, then drive to the port and press the button to tip them into the car dumper. (The haul truck can also tip straight onto the train's stockpile.)
+7. **Ship:** the ship loader pours ore into the ship's three holds. Full ship sails for 10 stars. Your first full ship makes you **Mine Boss**: a gold medal by your stars, 20 bonus stars, and a golden haul truck waiting at home.
 
 Board the jet at the camp to fly home. The mine isn't saved; Earth is left as it was.
 

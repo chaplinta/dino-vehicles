@@ -224,6 +224,7 @@ function truckTip(v, dt, inp) {
     s.tip = Math.min(1, s.tip + dt * 1.6);
     if (s.tip >= 1 && s.load > 0) {
       if (typeof Mine !== 'undefined' && Mine.hopperNear(v)) Mine.toHopper(s.ore || 0, v);
+      else if (typeof Mine !== 'undefined' && Mine.stockNear(v)) Mine.toStock(s.ore || 0, v);
       else {
         const back = Math.floor((v.body.x - v.facing * (v.body.w / 2 + 6)) / TS);
         const cols = [back, back - v.facing, back - 2 * v.facing];
@@ -243,36 +244,79 @@ function truckTip(v, dt, inp) {
 
 defVehicle('haultruck', {
   name: 'Haul truck', iconScale: 0.36, say: 'Giant haul truck!', icon: '⤵️', w: 170, h: 110, speed: 210, accel: 2, unlock: 0, noSave: true,
-  hauls: true, cap: 18, exhaust: [10, -128], look: 200,
+  hauls: true, cap: 18, exhaust: [10, -128], look: 200, color: '#fab005', trim: '#e67700',
   init(v) { Object.assign(v.s, { load: 0, ore: 0, tip: 0, tipping: false }); },
   act(v, dt, inp) { truckTip(v, dt, inp); },
   draw(c, v) {
-    const s = v.s;
+    const s = v.s, col = this.color, trim = this.trim;
     rbox(c, -82, -52, 164, 20, 6, '#495057', 4);
     // Huge tray, hinged at the back.
     c.save(); c.translate(-84, -50); c.rotate(-(s.tip || 0) * 0.75);
-    poly(c, [0, 0, 112, 0, 124, -48, 112, -58, -6, -58], '#fab005', 4);
+    poly(c, [0, 0, 112, 0, 124, -48, 112, -58, -6, -58], col, 4);
     const fill = Math.min(1, (s.load || 0) / this.cap);
     if (fill > 0) ell(c, 58, -58, 54 * Math.max(0.5, fill), 18 * fill + 4, s.ore ? '#7a2e22' : '#c4532a', 3);
-    c.fillStyle = '#e67700'; c.fillRect(10, -40, 96, 5); c.fillRect(10, -22, 96, 5);
+    c.fillStyle = trim; c.fillRect(10, -40, 96, 5); c.fillRect(10, -22, 96, 5);
     c.restore();
     drawRam(c, 10, -50, 10 - Math.sin((s.tip || 0) * 0.75) * 60, -56 - (s.tip || 0) * 50);
     // Cab perched up top with a ladder: real ones are as tall as a house.
-    rbox(c, 34, -96, 54, 46, 6, '#fab005');
+    rbox(c, 34, -96, 54, 46, 6, col);
     cabWindow(c, v, 48, -126, 34, 30, 6, [58, -96, 0.42]);
-    rbox(c, 30, -132, 62, 8, 3, '#fab005', 3);
+    rbox(c, 30, -132, 62, 8, 3, col, 3);
     for (let i = 0; i < 4; i++) limb(c, [82, -48 + i * -12, 92, -48 + i * -12], 2, '#343a40', 0);
     limb(c, [82, -96, 82, -48], 2, '#343a40', 0); limb(c, [92, -96, 92, -48], 2, '#343a40', 0);
     drawStack(c, 10, -96, 22);
     drawHeadlight(c, 86, -70);
     // Tyres taller than a dino.
-    drawWheel(c, -50, -24, 26, v.wheel, '#fab005'); drawWheel(c, 54, -24, 26, v.wheel, '#fab005');
+    drawWheel(c, -50, -24, 26, v.wheel, col); drawWheel(c, 54, -24, 26, v.wheel, col);
+  },
+});
+
+// The Mine Boss reward: a golden haul truck to drive at home.
+defVehicle('goldtruck', Object.assign({}, VEHICLE_DEFS.haultruck, {
+  name: 'Golden haul truck', say: 'The golden haul truck!', noSave: false, special: 'Fill a ship at the Pilbara mine',
+  color: '#ffd43b', trim: '#f08c00',
+}));
+
+// ---------- Explosives truck ----------
+// Park over a drilled hole and hold the button: the hose pumps explosives down into it.
+defVehicle('chargetruck', {
+  name: 'Explosives truck', iconScale: 0.45, say: 'Explosives truck!', icon: '🧨', w: 120, h: 70, speed: 200, unlock: 0, noSave: true, exhaust: [30, -76],
+  init(v) { Object.assign(v.s, { fill: 0, hose: 0, held: false }); },
+  act(v, dt, inp) {
+    const s = v.s;
+    const hole = Game.away === 'pilbara' ? Mine.holeNear(v.frontX(20)) : null;
+    if (!inp.action) { s.held = false; s.fill = 0; }
+    else if (!s.held) {
+      if (!hole || Math.abs(v.body.vx) > 30) { if (inp.actionP) Sound.bonk(); s.held = true; }
+      else {
+        s.fill += dt;
+        if (Math.random() < 0.3) Sound.noise(0.06, 0.06, 'bandpass', 600);
+        if (s.fill >= 1.2) { s.fill = 0; s.held = true; Mine.charge(hole); }
+      }
+    }
+    s.hose = lerp(s.hose, s.fill > 0 ? 1 : 0, Math.min(1, dt * 6));
+    s.slow = s.fill > 0 ? 0 : 1;
+  },
+  draw(c, v) {
+    const s = v.s;
+    rbox(c, -60, -30, 120, 14, 5, '#495057', 4);
+    // Tank with warning stripes, cab at the front.
+    rbox(c, -58, -74, 76, 46, 10, '#f8f9fa');
+    c.fillStyle = '#e64980'; c.fillRect(-56, -60, 72, 8); c.fillRect(-56, -44, 72, 4);
+    rbox(c, -16, -92, 22, 10, 3, '#e64980', 3);
+    rbox(c, 22, -70, 38, 42, 7, '#e64980');
+    cabWindow(c, v, 28, -66, 26, 22, 6, [34, -36, 0.38]);
+    drawHeadlight(c, 58, -40);
+    // Hose reel, and the hose down into the hole while filling.
+    ell(c, -40, -40, 9, 9, '#343a40', 3);
+    if (s.hose > 0.05) { c.strokeStyle = '#343a40'; c.lineWidth = 5; c.beginPath(); c.moveTo(60, -36); c.quadraticCurveTo(84, -30, 84, -30 + s.hose * 40); c.stroke(); }
+    drawWheel(c, -36, -12, 14, v.wheel); drawWheel(c, 36, -12, 14, v.wheel);
   },
 });
 
 // ---------- Ore train ----------
 defVehicle('oretrain', {
-  name: 'Ore train', iconScale: 0.3, iconX: 50, say: 'The ore train!', icon: '📯', w: 130, h: 86, mover: 'rail', speed: 320, horn: 'boat', unlock: 0, back: true, look: 260, noSave: true,
+  name: 'Ore train', iconScale: 0.3, iconX: 50, say: 'The ore train!', icon: '⤵️', w: 130, h: 86, mover: 'rail', speed: 320, horn: 'boat', unlock: 0, back: true, look: 260, noSave: true,
   init(v) { v.s.ore = [0, 0, 0]; },
   canExit() { return true; },
   move(v, dt, inp, dir) {
@@ -287,7 +331,7 @@ defVehicle('oretrain', {
     if (Math.abs(b.vx) > 40 && Math.random() < 0.15) Fx.add({ x: b.x + v.facing * 20, y: b.y - 92, vx: -b.vx * 0.2, vy: rand(-40, -20), life: 1, r: 6, color: 'rgba(90,90,100,0.4)', shape: 'grow' });
   },
   act(v, dt, inp) {
-    if (inp.actionP) v.hornSound();
+    if (inp.actionP && Game.away === 'pilbara') Mine.trainDump(v);   // tip the wagons (the horn is on 📢)
     Mine.updateTrain(v, dt);
   },
   draw(c, v) {
