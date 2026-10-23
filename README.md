@@ -165,6 +165,14 @@ npm test
 
 `npm run playtest` runs a bot that plays like a 5-year-old (mashing buttons, wandering, calling vehicles, chasing jobs) for 5 minutes per dinosaur and reports bugs, stuck spots and how often rewards come.
 
+`npm run glitch` hunts for glitches (about 10 minutes). It mashes buttons with every dino and every vehicle, leaves mid-trip (jet, rocket, voyage, blast), starts fights and the swarm, builds and smashes, reloads mid-game and changes screen size. After every frame it checks for:
+- positions that aren't numbers;
+- dinos, vehicles or you stuck in walls or fallen out of the world;
+- seat mix-ups;
+- the camera losing you;
+- effects or dinos piling up;
+- slow frames.
+
 `tests/smoke.mjs` plays the game headless and checks:
 - walking, digging and building;
 - saving and reloading;

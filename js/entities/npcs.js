@@ -94,11 +94,7 @@ const NPCs = {
     this.list = [];
     Vehicles.list = Vehicles.list.filter(v => !v.def.noSave && !v.npcOwned);
     const g = tx => World.groundBelow(tx, World.genSurf[tx] - 3) * TS - 0.01;
-    const walker = (tx, extra = {}) => {
-      const n = makeNPC(Object.assign({ x: tx * TS + 16, y: g(tx) }, extra));
-      for (let i = 0; i < 12 && bodySolidAt(n.body, n.body.x, n.body.y); i++) n.body.y -= TS;   // never start inside the ground
-      this.list.push(n);
-    };
+    const walker = (tx, extra = {}) => this.add(Object.assign({ x: tx * TS + 16, y: g(tx) }, extra));
     // Wanderers.
     // Wanderers all over: farm, town, building site, beach, mountains, launch pad.
     walker(8, { type: 'tri' }); walker(40, { type: 'stego', baby: true }); walker(52, { type: 'iguano' }); walker(72, {});
@@ -131,7 +127,7 @@ const NPCs = {
     this.list.push(n);
     return n;
   },
-  add(o) { const n = makeNPC(o); this.list.push(n); return n; },
+  add(o) { const n = makeNPC(o); liftOut(n.body); this.list.push(n); return n; },
   remove(n) {
     if (n.ride) { const ps = n.ride.passengers; ps.splice(ps.indexOf(n), 1); }
     this.list.splice(this.list.indexOf(n), 1);

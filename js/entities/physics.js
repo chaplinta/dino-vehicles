@@ -10,6 +10,8 @@ function boxSolid(l, t, r, b) {
   return false;
 }
 function bodySolidAt(b, x, y) { return boxSolid(x - b.w / 2, y - b.h, x + b.w / 2, y); }
+// Never start inside the ground: step up a tile at a time until clear.
+function liftOut(b) { for (let i = 0; i < 16 && bodySolidAt(b, b.x, b.y); i++) b.y -= TS; return b; }
 
 // opts: { step: max tiles to auto-climb, gravity: multiplier, float: true to bob in water }
 function moveBody(b, dt, opts = {}) {
