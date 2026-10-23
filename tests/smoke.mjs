@@ -234,6 +234,19 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     const after = await page.evaluate(id => { const n = NPCs.list.find(n => n.id === id); return { x: n.body.x, scared: n.scaredT > 0 }; }, r.id);
     check(after.scared && after.x - r.x > 64, `${type}: ${await page.evaluate(t => DINO_TYPES[t].attack, type)} sends the dino running (${Math.round((after.x - r.x) / 32)} tiles)`);
   }
+  // Headbutters really charge: from four tiles away they run in and BONK on contact.
+  for (const type of ['tri', 'pachy']) {
+    const c = await page.evaluate(type => {
+      Game.loop = () => {}; Game.startPlay(type);
+      const n = NPCs.list.find(n => !n.vehicle && !n.baby && n.type !== 'ptero');
+      n.fighter = false; n.need = null; n.scaredT = 0; n.body.x = 30 * TS; n.body.y = World.surfaceAt(30) * TS - 0.01; n.body.vx = 0; n.state = 'idle'; n.dir = 0; n.timer = 99;
+      Player.body.x = n.body.x - 4 * TS; Player.body.y = n.body.y; Player.facing = 1; Player.body.vx = 0; Player.attackCool = 0;
+      const x0 = Player.body.x; Player.attack();
+      for (let i = 0; i < 60; i++) { Game.update(1 / 60); Input.endFrame(); }
+      return { ran: Player.body.x - x0, scared: n.scaredT > 0 };
+    }, type);
+    check(c.ran > 40 && c.scared, `${type} charges in (${Math.round(c.ran)}px) and sends the dino running`);
+  }
   // Lick button: just a big wiggly tongue.
   await page.keyboard.press('KeyL');
   await page.waitForTimeout(200);

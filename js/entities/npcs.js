@@ -100,7 +100,7 @@ const NPCs = {
     walker(8, { type: 'tri' }); walker(40, { type: 'stego', baby: true }); walker(52, { type: 'iguano' }); walker(72, {});
     walker(110, {}); walker(128, { baby: true }); walker(146, { type: 'brachio' }); walker(165, {}); walker(178, { baby: true, type: 'tri' });
     walker(206, { type: 'styraco' });
-    walker(236, { type: 'ankylo' }); walker(286, {});
+    walker(236, { type: 'ankylo' }); walker(262, { type: 'pachy' }); walker(286, {});
     walker(308, { type: 'raptor', baby: true }); walker(318, { type: 'bary' }); walker(404, { baby: true });
     walker(448, {}); walker(480, { type: 'ptero' }); walker(520, { type: 'ptero', baby: true });
     walker(572, { type: 'megalo' });
@@ -165,7 +165,7 @@ const NPCs = {
     return this.list.filter(n => {
       if (n.vehicle || n.ride) return false;
       const dx = (n.body.x - x) * facing, dy = Math.abs(n.body.y - y);
-      return dy < 70 && (kind === 'tail' ? Math.abs(dx) < 95 : dx > -15 && dx < 95);
+      return dy < 70 && (kind === 'tail' ? Math.abs(dx) < 95 : kind === 'charge' ? dx > -15 && dx < 230 : dx > -15 && dx < 95);
     });
   },
   heardRoar(x, y) {
@@ -209,12 +209,23 @@ const NPCs = {
     if (n.atk) {
       const A = ATTACKS[n.atk.kind];
       n.atk.t += dt;
-      if (!n.atk.hit && n.atk.t >= A.hitAt) { n.atk.hit = true; if (!p.vehicle && this.reachesPlayer(n, n.atk.kind)) p.hurt(b, n.atk.kind); }
+      const charging = A.charge && !n.atk.hit && n.atk.t >= A.charge[0] && n.atk.t < A.charge[1];
+      if (charging) {
+        // Run at you head down; the BONK lands when it reaches you.
+        b.vx = n.facing * 440;
+        if (b.onGround && Math.random() < 0.5) Fx.add({ x: b.x - n.facing * 14, y: b.y - 4, vx: -n.facing * rand(40, 100), vy: rand(-60, -20), life: 0.5, r: 7, color: 'rgba(200,180,150,0.7)', shape: 'grow' });
+        if (!p.vehicle && this.reachesPlayer(n, n.atk.kind) && (pb.x - b.x) * n.facing < 60) {
+          n.atk.hit = true; p.hurt(b, n.atk.kind); b.vx = -n.facing * 150; n.atk.t = Math.max(n.atk.t, A.len - 0.25);
+        }
+      } else {
+        if (!n.atk.hit && n.atk.t >= A.hitAt) { n.atk.hit = true; if (!A.charge && !p.vehicle && this.reachesPlayer(n, n.atk.kind)) p.hurt(b, n.atk.kind); }
+        b.vx = lerp(b.vx, 0, Math.min(1, dt * 8));
+      }
       if (n.atk.t >= A.len) n.atk = null;
-      b.vx = lerp(b.vx, 0, Math.min(1, dt * 8));
     } else {
       if (Math.abs(dx) > 8) n.facing = Math.sign(dx);
-      const close = !p.vehicle && Math.abs(dx) < 70 && Math.abs(pb.y - b.y) < 60;
+      const charger = !!ATTACKS[n.attackKind || DINO_TYPES[n.type].attack].charge;
+      const close = !p.vehicle && Math.abs(dx) < (charger ? 200 : 70) && Math.abs(pb.y - b.y) < 60;
       if (close && n.atkCool <= 0 && b.onGround && !(p.hurtT > 0)) {
         n.atk = { kind: n.attackKind || DINO_TYPES[n.type].attack, t: 0, hit: false };
         n.atkCool = rand(0.9, 1.6);

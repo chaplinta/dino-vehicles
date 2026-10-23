@@ -12,7 +12,7 @@ const TREASURE_INFO = {
 // Attack timings: how long it lasts and when the blow lands.
 const ATTACKS = {
   bite: { len: 0.6, hitAt: 0.48 },       // big meat-eaters: lunge, grab, shake
-  headbutt: { len: 0.45, hitAt: 0.22 },  // horned dinos: rock back and charge
+  headbutt: { len: 0.85, hitAt: 0.6, charge: [0.15, 0.6] },   // horned and dome-headed dinos: paw, charge, BONK on contact
   tail: { len: 0.5, hitAt: 0.27 },       // spin and swing the tail
   peck: { len: 0.5, hitAt: 0.36 },       // pterodactyl: three quick jabs of the beak
   thumb: { len: 0.5, hitAt: 0.27 },      // Iguanodon: rear up, stab with the thumb spike
@@ -98,6 +98,7 @@ const Player = {
     const dir = (Input.held.right ? 1 : 0) - (Input.held.left ? 1 : 0);
     const speed = 230;
     if (this.hurtT > 0) b.vx = lerp(b.vx, 0, Math.min(1, dt * 2));   // knocked flying
+    else if (this.charging) { /* charging: keep running */ }
     else b.vx = lerp(b.vx, dir * speed, Math.min(1, dt * (b.onGround || dinoDef.flies ? 12 : 5)));
     if (dir) this.facing = dir;
 
@@ -148,7 +149,7 @@ const Player = {
 
     // The action button attacks a dino in reach, otherwise digs.
     const kind = dinoDef.attack;
-    const targets = NPCs.inReach(b.x, b.y, this.facing, kind);
+    const targets = NPCs.inReach(b.x, b.y, this.facing, ATTACKS[kind].charge ? 'charge' : kind);
     const icon = targets.length ? ATTACK_ICON[kind] : '⛏️';
     if (icon !== this.actIcon && !Game.overlay) { this.actIcon = icon; UI.setAction(icon); }
     if (Input.pressed.action && targets.length) { this.attack(); this.attackHeld = true; }
@@ -180,7 +181,7 @@ const Player = {
     const a = ATTACKS[kind];
     this.attackKind = kind; this.attackLen = a.len; this.attackT = a.len; this.attackCool = a.len + 0.1;
     this.attackHit = false;
-    this.attackTargets = NPCs.inReach(this.body.x, this.body.y, this.facing, kind);
+    this.attackTargets = ATTACKS[kind].charge ? [] : NPCs.inReach(this.body.x, this.body.y, this.facing, kind);   // a charge hits whoever it runs into
     if (kind === 'bite') for (const n of this.attackTargets) n.grabbedT = a.hitAt;   // held still while being mauled
     attackSound(kind);
   },
@@ -199,9 +200,26 @@ const Player = {
     return true;
   },
   updateAttack(dt) {
+    this.charging = false;
     if (this.attackT <= 0) return;
     this.attackT = Math.max(0, this.attackT - dt);
-    const a = ATTACKS[this.attackKind];
+    const a = ATTACKS[this.attackKind], k = this.attackLen - this.attackT, b = this.body;
+    if (a.charge && !this.attackHit && k >= a.charge[0] && k < a.charge[1]) {
+      // Charge! Run flat out, head down, and BONK whoever you run into.
+      this.charging = true;
+      b.vx = this.facing * 520;
+      if (b.onGround && Math.random() < 0.6) Fx.add({ x: b.x - this.facing * 14, y: b.y - 4, vx: -this.facing * rand(40, 100), vy: rand(-60, -20), life: 0.5, r: 7, color: 'rgba(200,180,150,0.7)', shape: 'grow' });
+      this.drumT = (this.drumT || 0) - dt;
+      if (this.drumT <= 0) { this.drumT = 0.11; Sound.noise(0.07, 0.12, 'lowpass', 180); }
+      const hit = NPCs.inReach(b.x, b.y, this.facing, this.attackKind).filter(n => (n.body.x - b.x) * this.facing < 60);
+      if (hit.length) {
+        this.attackHit = true;
+        for (const n of hit) NPCs.hit(n, b.x, this.attackKind);
+        b.vx = -this.facing * 160; b.vy = -180;
+        this.attackT = Math.min(this.attackT, 0.25);   // straight to the bounce-back
+        return;
+      }
+    }
     if (!this.attackHit && this.attackLen - this.attackT >= a.hitAt) {
       this.attackHit = true;
       for (const n of this.attackTargets || []) NPCs.hit(n, this.body.x, this.attackKind);
@@ -291,10 +309,10 @@ function attackPose(kind, k, f) {
     rot = Math.sin(k * Math.PI * 10) * 0.16 * (k < 0.8 ? 1 : 0);
     roar = Math.floor(k * 12) % 2 ? 1 : 0;
   } else if (kind === 'headbutt') {
-    // Rock back, then charge in head down.
-    if (k < 0.35) { x -= f * 14 * (k / 0.35); rot = -f * 0.18 * (k / 0.35); }
-    else if (k < 0.6) { const q = (k - 0.35) / 0.25; x += f * lerp(-14, 34, q); rot = f * lerp(-0.18, 0.4, q); }
-    else { const q = (k - 0.6) / 0.4; x += f * 34 * (1 - q); rot = f * 0.4 * (1 - q); }
+    // Paw the ground and rear back, then run in head down; after the BONK, back up.
+    if (k < 0.18) { rot = -f * 0.22 * (k / 0.18); x -= f * 6 * Math.sin(k * 60); }
+    else if (k < 0.7) rot = f * 0.35;
+    else rot = f * 0.35 * (1 - (k - 0.7) / 0.3);
   } else if (kind === 'peck') {
     // Three quick stabs of the beak, leaning right in.
     const jab = Math.abs(Math.sin(k * Math.PI * 3));

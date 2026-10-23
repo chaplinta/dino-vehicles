@@ -47,16 +47,16 @@ Everything except the bedrock at the bottom can be dug. Sparkly stars float arou
 
 ## Dinosaurs
 
-Thirteen to pick from, each with its own real-ish play-fight move (the yellow button changes when a dino is in reach):
+Fourteen to pick from, each with its own real-ish play-fight move (the yellow button changes when a dino is in reach):
 
 | Dino | Move |
 |---|---|
 | T-Rex, Megalosaurus, Allosaurus, Carnotaurus | lunge, grab and maul (CHOMP!) |
-| Velociraptor | hop and kick with the sickle claw (KICK!) |
+| Deinonychus (blue, feathered) | hop and kick with the sickle claw (KICK!) |
 | Baryonyx | raise the arm and slash with the big thumb claw (SLASH!) |
 | Pterodactyl | three quick pecks (PECK!). It flies too: hold up |
 | Iguanodon | rear up and stab with the thumb spike (JAB!) |
-| Triceratops, Styracosaurus | rock back and charge, head down (BONK!) |
+| Triceratops, Styracosaurus, Pachycephalosaurus | paw the ground, then really charge across head down; BONK when they hit |
 | Stegosaurus, Ankylosaurus, Brachiosaurus | spin round and whack with the tail (WHACK!) |
 
 The other dino tumbles away and runs off yelping. Half the grown-ups are tough and fight back with their own move (you get knocked flying, no damage); it takes three hits to send them off. Pick on 20 dinos and 8 cross dinos swarm you for 10 seconds; hide in a vehicle until they calm down. Flying high (Pterodactyl, plane, helicopter) zooms the view out so the ground stays in sight.
