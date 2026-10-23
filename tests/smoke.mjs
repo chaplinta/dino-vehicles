@@ -224,7 +224,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
       Game.startPlay(type);
       const n = NPCs.list.find(n => !n.vehicle && !n.baby && n.type !== 'ptero');
       Player.body.x = n.body.x - 50; Player.body.y = n.body.y; Player.facing = 1; Player.body.vx = 0;
-      n.scaredT = 0; n.need = null; n.fighter = false;
+      n.scaredT = 0; n.need = null; n.fighter = false; n.body.vx = n.body.vy = 0; n.tumble = 0; n.state = 'idle'; n.dir = 0; n.timer = 99;
       Game.snapCamera();
       return { x: n.body.x, id: n.id };
     }, type);
@@ -249,8 +249,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   }
   // Lick button: just a big wiggly tongue.
   await page.keyboard.press('KeyL');
-  await page.waitForTimeout(200);
-  check(await page.evaluate(() => Player.lickT > 0 && !document.querySelector('[data-key=lick]').classList.contains('hidden')), 'lick button sticks the tongue out');
+  check(await page.evaluate(() => { Game.update(1 / 60); Input.endFrame(); return Player.lickT > 0; }) && await page.evaluate(() => Player.lickT > 0 && !document.querySelector('[data-key=lick]').classList.contains('hidden')), 'lick button sticks the tongue out');
   check(await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'tractor'); Vehicles.enter(Player, v); const hidden = document.querySelector('[data-key=lick]').classList.contains('hidden'); Vehicles.exit(Player); return hidden; }), 'no lick button while driving');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
