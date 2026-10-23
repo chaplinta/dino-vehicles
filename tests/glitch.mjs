@@ -95,6 +95,7 @@ async function install() {
       },
       fresh(type, seed) {
         Math.random = mulberry32(seed);
+        Away.abandon(); Game.overlay = null; if (Player.vehicle) Vehicles.exit(Player);
         localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay(type); Jobs.t = 20;
         this.release(); this.solidT = 0; this.offT = 0; this.npcSolid.clear();
       },
@@ -119,7 +120,7 @@ for (const type of await page.evaluate(() => DINO_KEYS)) {
     for (let leg = 0; leg < 4; leg++) {
       // Drop in somewhere new each leg: farm, town, sea, mountains, launch pad.
       const tx = [12, 150, 360, 470, 575][(leg + type.length) % 5];
-      if (!Player.vehicle) { Player.body.x = tx * TS + 16; Player.body.y = World.surfaceAt(tx) * TS - 0.01; Game.snapCamera(); }
+      if (!Player.vehicle && !Game.away) { Player.body.x = tx * TS + 16; Player.body.y = World.surfaceAt(tx) * TS - 0.01; Game.snapCamera(); }
       G.run(60 * 10, m);
     }
     G.release();

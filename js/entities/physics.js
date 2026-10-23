@@ -73,5 +73,5 @@ function moveBody(b, dt, opts = {}) {
   if (bodySolidAt(b, b.x, b.y)) {
     for (let k = 1; k < 40; k++) if (!bodySolidAt(b, b.x, b.y - k * 4)) { b.y -= k * 4; break; }
   }
-  b.x = clamp(b.x, TS + b.w / 2, (WORLD_W - 1) * TS - b.w / 2);
+  b.x = clamp(b.x, TS + b.w / 2, ((World.limitW || WORLD_W) - 1) * TS - b.w / 2);
 }
