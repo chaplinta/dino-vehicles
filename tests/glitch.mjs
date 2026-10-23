@@ -34,6 +34,7 @@ async function install() {
         const t0 = performance.now();
         Game.update(dt); Input.endFrame();
         ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx);
+        ctx.getImageData(0, 0, 1, 1);   // make the canvas really draw this frame, like a screen would
         this.times.push(performance.now() - t0);
         this.check(dt);
       },
@@ -217,6 +218,7 @@ for (const where of [['in a vehicle', 1], ['underground', 2], ['high up', 3]]) {
     if (k === 3) { Player.body.x = 470 * TS; Player.body.y = (World.surfaceAt(470) - 1) * TS; G.run(30); }
     Save.write();
   }, where[1]);
+  const keep = await page.evaluate(() => ({ issues: G.issues, times: G.times }));
   await page.reload(); await page.waitForTimeout(300);
   const saveIssues = await page.evaluate(() => {
     const out = [];
@@ -227,9 +229,8 @@ for (const where of [['in a vehicle', 1], ['underground', 2], ['high up', 3]]) {
     if (Player.body.y > WORLD_H * TS) out.push('fell out of the world after reload');
     return out;
   });
-  const keepIssues = await page.evaluate(() => (window.G ? G.issues : []));
   await install();
-  await page.evaluate(([prev, si, w]) => { G.issues = prev.concat(si.map(kind => ({ scene: 'reload: ' + w, kind }))); }, [keepIssues, saveIssues, where[0]]);
+  await page.evaluate(([prev, si, w]) => { G.times = prev.times; G.issues = prev.issues.concat(si.map(kind => ({ scene: 'reload: ' + w, kind }))); }, [keep, saveIssues, where[0]]);
   console.log(`  reload: ${where[0]} -> ${saveIssues.length ? saveIssues.join(', ') : 'ok'}`);
 }
 

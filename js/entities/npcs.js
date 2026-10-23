@@ -94,7 +94,11 @@ const NPCs = {
     this.list = [];
     Vehicles.list = Vehicles.list.filter(v => !v.def.noSave && !v.npcOwned);
     const g = tx => World.groundBelow(tx, World.genSurf[tx] - 3) * TS - 0.01;
-    const walker = (tx, extra = {}) => this.list.push(makeNPC(Object.assign({ x: tx * TS + 16, y: g(tx) }, extra)));
+    const walker = (tx, extra = {}) => {
+      const n = makeNPC(Object.assign({ x: tx * TS + 16, y: g(tx) }, extra));
+      for (let i = 0; i < 12 && bodySolidAt(n.body, n.body.x, n.body.y); i++) n.body.y -= TS;   // never start inside the ground
+      this.list.push(n);
+    };
     // Wanderers.
     // Wanderers all over: farm, town, building site, beach, mountains, launch pad.
     walker(8, { type: 'tri' }); walker(40, { type: 'stego', baby: true }); walker(52, { type: 'iguano' }); walker(72, {});
