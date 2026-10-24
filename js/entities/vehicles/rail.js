@@ -6,7 +6,7 @@ defVehicle('train', {
     const b = v.body;
     b.vx = lerp(b.vx, dir * this.speed, Math.min(1, dt * (dir ? 0.8 : 1.5)));
     if (dir) v.facing = dir;
-    b.x = clamp(b.x + b.vx * dt, 6 * TS, (WORLD_W - 6) * TS);
+    b.x = clamp(b.x + b.vx * dt, 6 * TS, ((World.limitW || WORLD_W) - 6) * TS);
     b.y = TRACK_Y - 6;
     v.wheel += b.vx * dt / 14;
     if (Math.abs(b.vx) > 40 && Math.random() < Math.abs(b.vx) / 2000) {

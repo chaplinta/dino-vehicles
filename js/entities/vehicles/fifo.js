@@ -9,8 +9,14 @@ defVehicle('jet', {
   canExit(v) { return v.s.state === 'idle'; },
   onEnter(v) {
     if (v.driver !== Player) return;
+    if (!Game.away) { JetPick.open(v); return; }   // at home: pick where to fly first
+    v.s.dest = 'home';
+    this.board(v);
+  },
+  board(v) {
     v.s.state = 'board'; v.s.t = 0;
-    setTimeout(() => Sound.say(Game.away === 'pilbara' ? 'All aboard! Flying home.' : 'All aboard! Next stop, the Pilbara.'), 1600);
+    const where = { home: 'Flying home.', pilbara: 'Next stop, the Pilbara.', melbourne: 'Next stop, Melbourne.' }[v.s.dest];
+    setTimeout(() => Sound.say('All aboard! ' + where), 1600);
   },
   // Glide down onto column tx from the side the jet faces away from.
   landAt(v, tx) {
@@ -54,6 +60,7 @@ defVehicle('jet', {
         Sound.land(); Sound.noise(0.6, 0.1, 'lowpass', 600);
         if (v.driver === Player) Vehicles.exit(Player);   // everybody off
         if (Game.away === 'pilbara') Pilbara.landed();
+        else if (Game.away === 'melbourne') Melbourne.landed();
         else Game.celebrate('Home!', 'Home again! That was a long swing. Time to rest.');
       }
     }
@@ -110,19 +117,22 @@ const AUS = [[113.6, -22], [114.2, -21.8], [116.7, -20.6], [118.6, -20.3], [121,
   [136.2, -34.6], [135.9, -34.8], [134.2, -32.7], [131.2, -31.5], [128.9, -31.7], [126, -32.3], [124, -33], [123.6, -33.9], [121.9, -33.8], [119.9, -34], [117.9, -35.1],
   [116.6, -35], [115.1, -34.3], [115.7, -33.3], [115.7, -31.9], [115, -30], [114.9, -29], [114, -27.5], [113.4, -26.3], [113.6, -24.5]];
 const TAS = [[144.6, -40.7], [148.3, -40.9], [148, -43.2], [146, -43.6], [144.7, -41.5]];
-const PERTH = [115.86, -31.95], PILBARA = [119.2, -22.3];
+const PERTH = [115.86, -31.95], PILBARA = [119.2, -22.3], MELBOURNE = [144.96, -37.81];
 
 const Flight = {
   jet: null,
   start(jet) {
     this.jet = jet;
     this.t = 0;
-    this.toPilbara = Game.away !== 'pilbara';
+    this.from = Game.away;   // null (home), 'pilbara' or 'melbourne'
+    this.dest = Game.away ? 'home' : (jet.s.dest && jet.s.dest !== 'home' ? jet.s.dest : 'pilbara');
+    this.toPilbara = this.dest === 'pilbara';
     Game.overlay = this;
     UI.configure({ dirs: 'none', action: null, roar: false, home: false });
-    Sound.say(this.toPilbara
-      ? 'Fly in, fly out! Miners fly from Perth up to the Pilbara. They work for two weeks, then fly home again.'
-      : 'Flying home to Perth. Fly in, fly out!');
+    Sound.say({
+      pilbara: 'Fly in, fly out! Miners fly from Perth up to the Pilbara. They work for two weeks, then fly home again.',
+      melbourne: 'Off to Melbourne, all the way across Australia! Melbourne has the biggest tram network in the world.',
+    }[this.dest] || 'Flying home to Perth.');
   },
   update(dt) {
     this.t += dt;
@@ -133,7 +143,9 @@ const Flight = {
   finish() {
     if (Game.overlay !== this) return;
     Game.overlay = null;
-    if (this.toPilbara) Pilbara.enter(this.jet);
+    if (this.dest === 'pilbara') Pilbara.enter(this.jet);
+    else if (this.dest === 'melbourne') Melbourne.enter(this.jet);
+    else if (this.from === 'melbourne') Melbourne.leave(this.jet);
     else Pilbara.leave(this.jet);
   },
   draw(c) {
@@ -141,19 +153,25 @@ const Flight = {
     // Gentle waves.
     c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 3;
     for (let i = 0; i < 14; i++) { const y = (i * 47 + this.t * 10) % H; c.beginPath(); c.moveTo((i * 97) % W, y); c.quadraticCurveTo((i * 97) % W + 20, y - 8, (i * 97) % W + 40, y); c.stroke(); }
-    const k = Math.min(W / 50, H / 30) * 1.25;
-    const map = ([lo, la]) => [W / 2 + (lo - 124) * k, H / 2 + (-la - 25) * k];
+    // The Pilbara trip shows WA up close; Melbourne needs the whole country.
+    const melb = this.dest === 'melbourne' || this.from === 'melbourne';
+    const k = melb ? Math.min(W / 46, H / 38) : Math.min(W / 50, H / 30) * 1.25;
+    const [clo, cla] = melb ? [134, 27] : [124, 25];
+    const map = ([lo, la]) => [W / 2 + (lo - clo) * k, H / 2 + (-la - cla) * k];
     const shape = (pts, fill) => { c.beginPath(); pts.forEach((p, i) => { const [x, y] = map(p); if (i) c.lineTo(x, y); else c.moveTo(x, y); }); c.closePath(); fillStroke(c, fill, 4); };
     shape(AUS, '#f4c27a'); shape(TAS, '#f4c27a');
     // The Pilbara's red country.
     const [px, py] = map(PILBARA);
-    ell(c, px, py, 70, 44, '#d9653b', 0);
+    ell(c, px, py, 70 * k / 22.5, 44 * k / 22.5, '#d9653b', 0);
     const lab = (txt, [x, y], dy) => { c.font = `800 20px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT; c.fillText(txt, x, y + dy); };
     const pe = map(PERTH);
     ell(c, pe[0], pe[1], 7, 7, '#e8262b', 3); lab('Perth', pe, 22);
     ell(c, px, py, 7, 7, '#e8262b', 3); lab('Pilbara', [px, py], -24);
+    const me = map(MELBOURNE);
+    if (melb) { ell(c, me[0], me[1], 7, 7, '#e8262b', 3); lab('Melbourne', me, 22); }
     // Dotted path and the jet along it.
-    const [a, b] = this.toPilbara ? [pe, [px, py]] : [[px, py], pe];
+    const there = melb ? me : [px, py];
+    const [a, b] = this.dest === 'home' ? [there, pe] : [pe, there];
     c.setLineDash([8, 10]); c.strokeStyle = '#fff'; c.lineWidth = 4;
     c.beginPath(); c.moveTo(a[0], a[1]); c.quadraticCurveTo((a[0] + b[0]) / 2 - 90, (a[1] + b[1]) / 2, b[0], b[1]); c.stroke(); c.setLineDash([]);
     const u = Math.min(1, this.t / 9), mx = (a[0] + b[0]) / 2 - 90, my = (a[1] + b[1]) / 2;
@@ -164,8 +182,47 @@ const Flight = {
     if (Math.atan2(dy, dx) > Math.PI / 2 || Math.atan2(dy, dx) < -Math.PI / 2) c.scale(1, -1);
     VEHICLE_DEFS.jet.draw(c, { s: { pitch: 0, gear: 0 }, wheel: 0, t: this.t, driver: Player, drawDriver: Vehicle.prototype.drawDriver });
     c.restore();
-    bigText(c, this.toPilbara ? 'Off to the mine!' : 'Going home!', W / 2, 60, 40, '#fff');
+    bigText(c, { pilbara: 'Off to the mine!', melbourne: 'Off to Melbourne!' }[this.dest] || 'Going home!', W / 2, 60, 40, '#fff');
     if (this.t > 2) bigText(c, 'tap to land', W / 2, H - 40, 24, 'rgba(255,255,255,0.85)');
+  },
+};
+
+// Boarding the jet at home: two big pictures to pick where to fly.
+const JetPick = {
+  jet: null, sel: 0, t: 0,
+  DESTS: [{ key: 'pilbara', icon: '⛏️', word: 'MINE', col: '#d9653b' }, { key: 'melbourne', icon: '🚋', word: 'CITY', col: '#2b8a3e' }],
+  open(jet) { this.jet = jet; this.t = 0; this.sel = 0; this.ui = false; Game.overlay = this; },
+  cells() { return this.DESTS.map((d, i) => ({ d, x: W / 2 - 300 + i * 320, y: H / 2 - 130, w: 280, h: 260 })); },
+  update(dt) {
+    this.t += dt;
+    if (!this.ui) { this.ui = true; UI.configure({ dirs: 'lr', action: '✅', roar: false, home: true, enter: false, whistle: false, palette: false }); }
+    if (Input.pressed.left || Input.pressed.right) { this.sel = 1 - this.sel; Sound.click(); }
+    if ((Input.pressed.action || Input.pressed.enter) && this.t > 0.2) this.pick(this.DESTS[this.sel].key);
+  },
+  tap(x, y) {
+    const cell = this.cells().find(c => x > c.x && x < c.x + c.w && y > c.y && y < c.y + c.h);
+    if (cell) this.pick(cell.d.key);
+    return true;
+  },
+  pick(key) {
+    Game.overlay = null;
+    this.jet.s.dest = key;
+    VEHICLE_DEFS.jet.board(this.jet);
+    Game.configurePlay();
+    Sound.collect();
+  },
+  // Changed your mind: get off the plane.
+  close() { Game.overlay = null; if (Player.vehicle === this.jet) Vehicles.exit(Player); Game.configurePlay(); },
+  draw(c) {
+    c.fillStyle = 'rgba(20,30,50,0.7)'; c.fillRect(0, 0, W, H);
+    bigText(c, '✈️ Where to?', W / 2, 70, 40, '#fff');
+    this.cells().forEach((cell, i) => {
+      const on = i === this.sel, bob = on ? Math.sin(this.t * 5) * 4 : 0;
+      rbox(c, cell.x, cell.y + bob, cell.w, cell.h, 24, on ? '#fff3bf' : '#fff', on ? 7 : 4);
+      rbox(c, cell.x + 20, cell.y + 20 + bob, cell.w - 40, 150, 18, cell.d.col, 3);
+      c.font = `96px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(cell.d.icon, cell.x + cell.w / 2, cell.y + 96 + bob);
+      bigText(c, cell.d.word, cell.x + cell.w / 2, cell.y + 214 + bob, 46, '#ffd43b');
+    });
   },
 };
 

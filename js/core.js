@@ -1,11 +1,11 @@
 // Core constants, maths helpers, seeded RNG, noise and particles.
 // Shown on the title screen. Bump both with each release.
-const GAME_VERSION = '2.3';
-const RELEASE_DATE = '23 Oct 2026';
+const GAME_VERSION = '2.4';
+const RELEASE_DATE = '24 Oct 2026';
 let W = 960;               // widens on wide screens (phones), see resize()
 const H = 540;
 const TS = 32;                 // tile size in px
-const WORLD_W = 600, WORLD_H = 80;
+const WORLD_W = 760, WORLD_H = 80;
 const GRAVITY = 1800;
 const TAU = Math.PI * 2;
 const OUT = '#2b2233';         // cartoon outline colour

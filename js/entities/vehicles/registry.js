@@ -3,6 +3,7 @@ const VEHICLE_ORDER = [
   'digger', 'dumptruck', 'firetruck', 'tractor', 'train', 'bulldozer',
   'crane', 'ambulance', 'police', 'tugboat', 'helicopter', 'harvester',
   'wrecker', 'garbage', 'drill', 'fishboat', 'submarine', 'plane', 'rocket', 'goldtruck',
+  'motorbike', 'sportscar', 'racecar',
 ];
 // How you get each vehicle: eight to start with, more as you earn stars, and some you have to find.
 const UNLOCKS = {
@@ -11,8 +12,11 @@ const UNLOCKS = {
 };
 const FINDS = {
   crane: 'at the building site', tugboat: 'in the sea', fishboat: 'in the sea',
-  plane: 'at the airport', helicopter: 'up in the mountains', submarine: 'in the sea', rocket: 'at the launch pad', pirateship: 'in the sea',
+  plane: 'at the airport', helicopter: 'up in the mountains', submarine: 'in the sea', rocket: 'at the launch pad, right at the end of the world', pirateship: 'out in the sea',
+  motorbike: 'at the bike park', sportscar: 'at the speedway', racecar: 'in the pit garage',
 };
+// The best ones only turn up somewhere once you have enough stars, and you still have to go and find them.
+const FIND_STARS = { motorbike: 30, jet: 50, pirateship: 70, sportscar: 90, rocket: 110, racecar: 140 };
 for (const k in UNLOCKS) if (VEHICLE_DEFS[k]) VEHICLE_DEFS[k].unlock = UNLOCKS[k];
 for (const k in FINDS) if (VEHICLE_DEFS[k]) { VEHICLE_DEFS[k].find = FINDS[k]; VEHICLE_DEFS[k].unlock = 0; }
 // Can the whistle call it?
@@ -22,14 +26,21 @@ function vehicleUnlocked(kind) {
   return d.find || d.special ? !!(Game.found && Game.found[kind]) : Game.stars >= d.unlock;
 }
 // Is it parked out in the world? Ones to find always are; earned ones once earned.
-function vehicleParked(kind) { const d = VEHICLE_DEFS[kind]; return !!d && (d.special ? !!(Game.found && Game.found[kind]) : !!d.find || Game.stars >= d.unlock); }
+function vehicleParked(kind) {
+  const d = VEHICLE_DEFS[kind], found = !!(Game.found && Game.found[kind]);
+  if (!d) return false;
+  if (FIND_STARS[kind] && !found && Game.stars < FIND_STARS[kind]) return false;
+  return d.special ? found : !!d.find || Game.stars >= d.unlock;
+}
+// Did these stars just make something appear out in the world?
+function newlyParked(before, after) { return Object.keys(FIND_STARS).some(k => FIND_STARS[k] > before && FIND_STARS[k] <= after); }
 
 // A short word for each vehicle, shown big when you get in, to read along with.
 const VEHICLE_WORDS = {
   digger: 'DIG', dumptruck: 'DUMP', firetruck: 'FIRE', tractor: 'FARM', train: 'RAIL', bulldozer: 'PUSH', crane: 'LIFT',
   ambulance: 'HELP', police: 'COP', tugboat: 'TUG', helicopter: 'FLY', harvester: 'CORN', wrecker: 'BALL', garbage: 'BIN',
   drill: 'HOLE', fishboat: 'FISH', submarine: 'SUB', plane: 'WING', rocket: 'ZOOM', moonbuggy: 'MOON', pirateship: 'SHIP',
-  jet: 'JET', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD', chargetruck: 'BANG', goldtruck: 'GOLD',
+  jet: 'JET', motorbike: 'BIKE', sportscar: 'FAST', racecar: 'RACE', citybike: 'RIDE', tram: 'TRAM', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD', chargetruck: 'BANG', goldtruck: 'GOLD',
 };
 
 const DEFAULT_VEHICLES = [
@@ -37,5 +48,6 @@ const DEFAULT_VEHICLES = [
   ['firetruck', 134, 1], ['ambulance', 164, 1], ['police', 194, 1], ['garbage', 178, -1],
   ['bulldozer', 219, 1], ['digger', 228, 1], ['dumptruck', 234, 1], ['crane', 275, -1], ['wrecker', 280, 1], ['drill', 297, -1],
   ['tugboat', 340, 1], ['fishboat', 360, -1], ['submarine', 380, 1],
-  ['helicopter', 440, 1], ['rocket', 578, 1], ['train', 30, 1], ['pirateship', 386, -1], ['goldtruck', 242, 1],
+  ['helicopter', 440, 1], ['rocket', ROCKET_X, 1], ['train', 30, 1], ['pirateship', 389, -1], ['goldtruck', 242, 1],
+  ['motorbike', 714, -1], ['sportscar', 612, 1], ['racecar', SPEEDWAY.GARAGE + 6, 1],
 ];

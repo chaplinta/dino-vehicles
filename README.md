@@ -35,15 +35,17 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 
 ## The world
 
-From left to right: farm and airport, town (fire station, hospital, police), building site, beach and sea, mountains, then the rocket launch pad. A train line runs the whole way, through tunnels and over a bridge.
+From left to right: farm and airport, town (fire station, hospital, police), building site, beach and sea, mountains, the speedway, then the rocket launch pad right at the far end. A train line runs the whole way, through tunnels and over a bridge.
 
 Everything except the bedrock at the bottom can be dug. Sparkly stars float around the world to catch (some up high for flyers, some underwater) and come back after a minute. Vehicles bounce over walls they can't drive up, and dinos climb walls by walking into them, so nobody gets stuck. Bones, eggs, gems and fossils are hidden underground and earn stars.
 
 **Asteroid:** a 10-minute clock (top right) counts down to an asteroid hitting Earth. When it hits it's game over; tap ▶ for a new world (stars are kept). Be on the Moon when it hits and you escape with bonus stars.
 
-**Chess:** a Triceratops plays chess at a table by the road into town. Walk up and press ♟️ (or tap the table) to play a real game from your own seat, with dino hands moving the pieces. He's very bad at it. Captured pieces line up in trays beside the board. Checkmate him for 10 stars.
+**Chess:** a Triceratops plays chess at a picnic table up on a mountain lookout (look for the PLAY sign). Walk up and press ♟️ (or tap the table) to play a real game from your own seat, with dino hands moving the pieces. He's very bad at it. Captured pieces line up in trays beside the board. Checkmate him for 10 stars.
 
 **Reading signs:** one short word on signs around every place (FARM, CORN, FIRE, DIG, MOON, ROCK, CAVE...), all 3 or 4 letters. Walk up to one, or tap it, and the word lights up to read along with. Getting in a vehicle pops up its word too (DIG, DUMP, FIRE, COP, SHIP, ZOOM...). There's no voice-over: the game only makes sound effects.
+
+**Speedway:** a drag strip with a start gantry, a grandstand full of dinos, a pit garage and a dirt bike park with jump ramps. Stop just behind the gantry in any vehicle and wait: three red lights, then green. Floor it to the chequered finish for a time and a star, and 3 more for a new record. Any wheeled vehicle flies off a ramp; a long jump is BIG AIR and a star. There's a little skate ramp at the end of town too.
 
 ## Dinosaurs
 
@@ -66,7 +68,8 @@ The other dino tumbles away and runs off yelping. Half the grown-ups are tough a
 You start with eight: digger, dump truck, tractor, fire truck, train, bulldozer, ambulance and police car. The whistle menu brings any of yours to you.
 
 - **Earn with stars:** garbage truck 10, harvester 20, drill 30, wrecking ball 45. Each one turns up at its parking spot when earned.
-- **Find them:** the crane (building site), plane (airport), helicopter (up in the mountains), tugboat, fishing boat, submarine and pirate ship (in the sea) and rocket (launch pad) are out in the world. Get in one to find it; then the whistle can call it too.
+- **Find them:** the crane (building site), plane (airport), helicopter (up in the mountains), tugboat, fishing boat and submarine (in the sea) are out in the world. Get in one to find it; then the whistle can call it too.
+- **Hard to find:** the best ones only turn up once you have enough stars, quietly, and you still have to go and find them: motorbike 30 (bike park), FIFO jet 50 (airport), pirate ship 70 (far side of the sea), sports car 90 (speedway), rocket 110 (launch pad, far end of the world), race car 140 (pit garage).
 
 | Vehicle | Button does |
 |---|---|
@@ -87,6 +90,8 @@ You start with eight: digger, dump truck, tractor, fire truck, train, bulldozer,
 | Fishing boat | drop and lift the net |
 | Submarine | light. Find treasure chests on the sea floor |
 | Plane | water the crops while flying (up to take off) |
+| Motorbike | jump; press again in the air to flip (land it for a star) |
+| Sports car, Race car | turbo with flames |
 | Pirate ship | fire the cannon. Up hoists the sails and sails off to Skull Island; down drops the anchor |
 | Rocket | countdown, blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
 
@@ -95,7 +100,7 @@ On the Moon everyone wears a space suit and helmet. There's also a **moon buggy*
 
 ## The Pilbara
 
-Walk up to the big FIFO jet at the airport and hop aboard: the pilot flies you to an iron ore mine in the Pilbara, no driving needed. On site everyone wears hi-vis and a hard hat. Icons top left show the seven steps, and an arrow points to what's next:
+Hop aboard the big FIFO jet at the airport and pick ⛏️ MINE: the pilot flies you to an iron ore mine in the Pilbara, no driving needed. On site everyone wears hi-vis and a hard hat. Icons top left show the seven steps, and an arrow points to what's next:
 
 1. **Drill:** drive the blast hole drill into the pit and hold the button to drill holes in the rock.
 2. **Charge:** drive the explosives truck to each hole and hold the button to pump explosives in (red caps and wires).
@@ -106,6 +111,16 @@ Walk up to the big FIFO jet at the airport and hop aboard: the pilot flies you t
 7. **Ship:** the ship loader pours ore into the ship's three holds. Full ship sails for 10 stars. Your first full ship makes you **Mine Boss**: a gold medal by your stars, 20 bonus stars, and a golden haul truck waiting at home.
 
 Board the jet at the camp to fly home. The mine isn't saved; Earth is left as it was.
+
+## Melbourne
+
+Pick 🚋 CITY on the jet and it flies right across Australia to Melbourne. Everyone wears a footy jumper and beanie. Along the street:
+- **Trams:** drive the green and gold tram (the button rings the bell). Dinos wait at the stops with a bubble showing where they want to go; stop next to them, then stop at their stop: 2 stars each.
+- **Bikes:** two bike-share bikes at the rack. Ride the path by the Yarra and jump the ramps.
+- **Coffee cart:** walk up and press ☕ for a flat white and five seconds of zooming about.
+- Flinders Street Station, a laneway full of street art, Princes Bridge over the Yarra, Eureka Tower and the MCG. And four seasons in one day: every so often it rains.
+
+Board the jet again to fly home. Melbourne isn't saved.
 
 ## Pirate Island
 
@@ -148,12 +163,12 @@ There is no failing and no dying.
 
 Plain JavaScript and canvas, no build step and no dependencies at runtime.
 
-- `js/world/` holds the tile world. That's the generator, the chunk-cached renderer, falling sand, flowing water and growing crops, plus fire and water spray. `away.js` swaps Earth out for trips to the Moon (`moon.js`) and the Pilbara (`pilbara.js`, which also runs the mine steps).
+- `js/world/` holds the tile world. That's the generator, the chunk-cached renderer, falling sand, flowing water and growing crops, plus fire and water spray. `away.js` swaps Earth out for trips to the Moon (`moon.js`), the Pilbara (`pilbara.js`, which also runs the mine steps), Pirate Island (`pirate.js`) and Melbourne (`melbourne.js`). `ramps.js` is the jump ramps.
 - `js/entities/` holds the dinos, the player, NPCs and the vehicle base class. Each vehicle is in `vehicles/*.js`. To add one, call `defVehicle(...)` and list it in `registry.js`.
 - `js/jobs.js` holds the job system. `js/asteroid.js` is the 10-minute clock, `js/chess.js` the chess game.
 - The title screen shows `GAME_VERSION` and `RELEASE_DATE` from `js/core.js`. Bump them with each release.
 - `js/ui/` holds the menus and HUD.
-- `js/save.js` saves to localStorage. It stores the world seed plus only the tiles that changed.
+- `js/save.js` saves to localStorage. It stores the world seed plus only the tiles that changed. Changing the world's size or layout needs a new `Save.V`, so old saves start fresh instead of loading into the wrong places.
 
 ## Tests
 

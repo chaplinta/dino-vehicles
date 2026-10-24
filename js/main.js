@@ -59,6 +59,7 @@ function drawTropicSky(c, camX, camY, t, zoom) {
 function drawBackdrop(c, camX, camY, t, zoom = 1) {
   if (Game.onMoon) { drawMoonSky(c, camX, camY, t); return; }
   if (Game.away === 'pirate') { drawTropicSky(c, camX, camY, t, zoom); return; }
+  if (Game.away === 'melbourne') { drawCitySky(c, camX, camY, t, zoom); return; }
   const pil = Game.away === 'pilbara';
   const g = c.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, pil ? '#4fb3f0' : '#6cc6ff'); g.addColorStop(1, pil ? '#ffe3bf' : '#d4f1ff');
@@ -87,7 +88,7 @@ function drawBackdrop(c, camX, camY, t, zoom = 1) {
 // Background train track. Drawn behind tiles, so mountains become tunnels.
 const TRACK_Y = SURF * TS;
 function drawTrack(c, camX, camY) {
-  if (Game.away) { if (Game.away === 'pilbara') drawOreTrack(c, camX, camY); return; }
+  if (Game.away) { if (Game.away === 'pilbara') drawOreTrack(c, camX, camY); if (Game.away === 'melbourne') drawTramLine(c, camX, camY); return; }
   const y = TRACK_Y - camY;
   if (y < -40 || y > Game.viewH + 300) return;
   const x0 = Math.floor(camX / 24) * 24;
@@ -110,8 +111,8 @@ function drawProps(c, camX, camY) {
     if (p.type === 'sign') {
       const sy = p.y * TS - camY;
       if (sx < -100 || sx > Game.viewW + 100) continue;
-      const icon = { fire: '🚒', hospital: '🏥', police: '🚓', barn: '🐄', site: '🚧', airport: '✈️' }[p.kind] || '⭐';
-      const col = { fire: '#e8262b', hospital: '#ffffff', police: '#3b5bdb', barn: '#c0392b', site: '#ffd43b', airport: '#a5d8ff' }[p.kind];
+      const icon = { fire: '🚒', hospital: '🏥', police: '🚓', barn: '🐄', site: '🚧', airport: '✈️', garage: '🏁' }[p.kind] || '⭐';
+      const col = { fire: '#e8262b', hospital: '#ffffff', police: '#3b5bdb', barn: '#c0392b', site: '#ffd43b', airport: '#a5d8ff', garage: '#fff' }[p.kind];
       if (p.kind === 'site') { limb(c, [sx, sy, sx, sy - 70], 6, '#777'); }
       rbox(c, sx - 34, sy - (p.kind === 'site' ? 110 : 64), 68, 52, 12, col, 4);
       c.font = `34px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -187,12 +188,21 @@ function drawProps(c, camX, camY) {
       rbox(c, sx + 50, sy - 22, 26, 6, 2, '#8a5a2b', 2); limb(c, [sx + 63, sy - 16, sx + 63, sy], 4, '#8a5a2b');
       drawDinoSeated(c, sx + 62, sy - 28, 0.55, Chess.opp, { t: Game.t, flip: true });
       if (Math.floor(Game.t / 3) % 2 === 0) bubble(c, sx + 50, sy - 90, '♟️', Game.t);
+    } else if (p.type === 'ramp') {
+      if (sx < -200 || sx > Game.viewW + 200) continue;
+      Ramps.draw(c, p, sx, (p.y || SURF) * TS - camY);
+    } else if (SPEEDWAY_PROPS.has(p.type)) {
+      if (sx < -600 || sx > Game.viewW + 600) continue;
+      drawSpeedwayProp(c, p, sx, p.y * TS - camY);
     } else if (p.type === 'label') {
       if (sx < -200 || sx > Game.viewW + 200) continue;
       Reading.draw(c, p, sx, p.y * TS - camY);
     } else if (PIRATE_PROPS.has(p.type)) {
       if (sx < -300 || sx > Game.viewW + 300) continue;
       drawPirateProp(c, p, sx, p.y * TS - camY);
+    } else if (MELBOURNE_PROPS.has(p.type)) {
+      if (sx < -800 || sx > Game.viewW + 800) continue;
+      drawMelbProp(c, p, sx, p.y * TS - camY);
     } else if (PILBARA_PROPS.has(p.type)) {
       if (sx < -700 || sx > Game.viewW + 700) continue;
       drawPilbaraProp(c, p, sx, p.y * TS - camY);
@@ -215,15 +225,15 @@ const Game = {
   mode: 'title', t: 0, stars: 0, worldReady: false,
   cam: { x: 0, y: 0 },
   drove: {},   // vehicles driven at least once (first drive earns a star)
-  away: null,   // 'moon' or 'pilbara' while on a trip
+  away: null,   // 'moon', 'pilbara', 'pirate' or 'melbourne' while on a trip
   get onMoon() { return this.away === 'moon'; },
   moonVisits: 0,
   found: {},   // vehicles found out in the world (the whistle can call them)
-  saveExtra() { return { drove: this.drove, found: this.found, moonVisits: this.moonVisits, eggs: Eggs.save(), doom: Asteroid.save() }; },
+  saveExtra() { return { drove: this.drove, found: this.found, moonVisits: this.moonVisits, eggs: Eggs.save(), doom: Asteroid.save(), drag: DragRace.best }; },
   loadExtra(e) {
     this.drove = (e && e.drove) || {}; this.found = (e && e.found) || {};
     for (const k in this.drove) if (FINDS[k]) this.found[k] = true;   // older saves: driven means found
-    this.moonVisits = (e && e.moonVisits) || 0; Eggs.load(e && e.eggs); Asteroid.load(e && e.doom);
+    this.moonVisits = (e && e.moonVisits) || 0; Eggs.load(e && e.eggs); Asteroid.load(e && e.doom); DragRace.best = (e && e.drag) || 0;
   },
   zoom: 1,
   get viewW() { return W / this.zoom; },
@@ -236,7 +246,7 @@ const Game = {
     Install.init();
     this.modes = { title: Title, pick: Picker };
     const save = Save.read();
-    if (save && save.v === 1) this.loadWorld(save);
+    if (save && save.v === Save.V) this.loadWorld(save);   // older saves are for a smaller world: start fresh
     else this.newWorld();
     this.setMode('title');
     requestAnimationFrame(ts => this.loop(ts));
@@ -335,6 +345,7 @@ const Game = {
     const before = this.stars;
     this.stars += n;
     Hud.starBump = 1;
+    if (!this.away && newlyParked(before, this.stars)) Vehicles.spawnMissing();   // something new turns up somewhere, quietly
     for (const k of VEHICLE_ORDER) {
       const def = VEHICLE_DEFS[k];
       if (def && !def.find && def.unlock > before && def.unlock <= this.stars) {
@@ -362,12 +373,14 @@ const Game = {
     if (Jobs.tap(x, y)) return;
     if (this.away === 'pilbara' && Mine.tap(x, y)) return;
     if (this.away === 'pirate' && Pirate.tap(x, y)) return;
+    if (this.away === 'melbourne' && Melbourne.tap(x, y)) return;
     if (!this.onMoon && this.sunAt && dist(x, y, this.sunAt.x, this.sunAt.y) < 55) { Eggs.tapSun(); return; }
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
     if (Reading.tapWorld(wx, wy)) return;
     if (this.onMoon && Eggs.tapSaucer(wx, wy)) return;
     if (this.away === 'pilbara' && Mine.tapWorld(wx, wy)) return;
     if (this.away === 'pirate' && Pirate.tapWorld(wx, wy)) return;
+    if (this.away === 'melbourne' && Melbourne.tapWorld(wx, wy)) return;
     if (Jobs.tapWorld(wx, wy)) return;
     if (!Player.vehicle && !this.away) {
       const table = World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - wx) < 90 && wy > t.y * TS - 120 && wy < t.y * TS + 10);
@@ -435,8 +448,10 @@ const Game = {
     Swarm.update(dt);
     Reading.update(dt);
     if (!this.overlay && !this.away) Jobs.update(dt);
+    if (!this.overlay) DragRace.update(dt);
     if (this.away === 'pilbara') Mine.update(dt);
     if (this.away === 'pirate') Pirate.update(dt);
+    if (this.away === 'melbourne') Melbourne.update(dt);
     Fire.update(dt);
     Fish.update(dt);
     Falling.update(dt);
@@ -481,6 +496,7 @@ const Game = {
     if (!this.away) Jobs.drawHud(c);
     if (this.away === 'pilbara') Mine.drawHud(c);
     if (this.away === 'pirate') Pirate.drawHud(c);
+    DragRace.drawHud(c);
     Asteroid.drawHud(c);
     Swarm.drawHud(c);
     Reading.drawHud(c);

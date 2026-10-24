@@ -42,6 +42,7 @@ class Vehicle {
       if (dir && !this.s.lockFacing) this.facing = dir;
       moveBody(b, dt, { step: d.step });
       vehicleHop(this, dir, dt);
+      Ramps.ride(this, dt);
       this.wheel += b.vx * dt / 16;
     }
     if (d.act) d.act(this, dt, inp);
@@ -212,8 +213,10 @@ const Vehicles = {
     } else {
       const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver);
       const table = !near && !Game.away && World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - p.body.x) < 110 && Math.abs(t.y * TS - p.body.y) < 80);
-      UI.setEnter(!!near || !!table, table ? '♟️' : '🚪');
+      const cafe = !near && Game.away === 'melbourne' && Melbourne.nearCafe();
+      UI.setEnter(!!near || !!table || cafe, table ? '♟️' : cafe ? '☕' : '🚪');
       if (table && Input.pressed.enter) { Chess.open(); return; }
+      if (cafe && Input.pressed.enter) { Melbourne.coffee(); return; }
       if (near && !this.doorHint) { this.doorHint = true; Sound.say('Press the door button to get in!'); }
       if (near && Input.pressed.enter) this.enter(p, near);
       else if (Input.pressed.whistle && !Game.away) Whistle.open();
@@ -300,10 +303,11 @@ const Whistle = {
     Sound.tone(1400, 0.15, 'sine', 0.15, 1800); Sound.tone(1800, 0.25, 'sine', 0.12, 1400, 0.15);
     Sound.say('Which vehicle?');
   },
+  COLS: 8,
   kinds() { return VEHICLE_ORDER.filter(k => vehicleUnlocked(k)); },
   cells() {
     const ks = VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k]);
-    const cols = 7, cw = 132, ch = 124;
+    const cols = this.COLS, cw = 116, ch = 124;
     const rows = Math.ceil(ks.length / cols);
     const x0 = W / 2 - (cols * cw) / 2 + 5, y0 = H / 2 - (rows * ch) / 2 + 30;
     return ks.map((k, i) => ({ k, x: x0 + (i % cols) * cw, y: y0 + Math.floor(i / cols) * ch, w: cw - 10, h: ch - 10 }));
@@ -313,8 +317,8 @@ const Whistle = {
     const n = this.cells().length;
     if (Input.pressed.left) this.sel = (this.sel + n - 1) % n;
     if (Input.pressed.right) this.sel = (this.sel + 1) % n;
-    if (Input.pressed.up) this.sel = (this.sel + n - 7) % n;
-    if (Input.pressed.down) this.sel = (this.sel + 7) % n;
+    if (Input.pressed.up) this.sel = (this.sel + n - this.COLS) % n;
+    if (Input.pressed.down) this.sel = (this.sel + this.COLS) % n;
     if (Input.pressed.action || Input.pressed.enter) this.pick(this.cells()[this.sel].k);
     if (Input.pressed.whistle) this.close();
   },
@@ -370,7 +374,7 @@ function callVehicle(kind) {
   let tx = 0;
   for (let k = 0; k < 24; k++) {
     const sd = k % 2 ? -side : side;
-    const cand = clamp(Math.floor((p.body.x + sd * (100 + def.w / 2 + Math.floor(k / 2) * 64)) / TS), 4, WORLD_W - 5);
+    const cand = clamp(Math.floor((p.body.x + sd * (100 + def.w / 2 + Math.floor(k / 2) * 64)) / TS), 4, (World.limitW || WORLD_W) - 5);
     const cx = cand * TS + TS / 2;
     if (!Vehicles.list.some(o => o !== v && !o.def.back && Math.abs(o.body.x - cx) < (o.body.w + def.w) / 2 + 8 && Math.abs(o.body.y - p.body.y) < 200)) { tx = cand; break; }
     if (k === 23) tx = cand;

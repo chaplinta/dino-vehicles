@@ -1,6 +1,7 @@
 // Auto-save to localStorage: world seed + changed tiles + player + stars + vehicles.
 const SAVE_KEY = 'dinoVehicles.save.v1';
 const Save = {
+  V: 2,   // 2: the bigger world with the speedway
   timer: 0,
   exists() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } },
   wipe() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} },
@@ -10,7 +11,7 @@ const Save = {
   write() {
     if (!Game.worldReady || Game.away) return;   // trips away aren't saved; Earth's save stays as it was
     const data = {
-      v: 1, seed: World.seed, diff: World.serializeDiff(), stars: Game.stars,
+      v: this.V, seed: World.seed, diff: World.serializeDiff(), stars: Game.stars,
       player: { type: Player.type, x: Player.cx, y: Player.vehicle ? Player.vehicle.body.y : Player.body.y },
       vehicles: typeof Vehicles !== 'undefined' ? Vehicles.serialize() : null,
       extra: Game.saveExtra ? Game.saveExtra() : null,

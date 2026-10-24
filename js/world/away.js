@@ -40,7 +40,7 @@ const Away = {
     Water.drops = []; Falling.list = []; Fx.list = [];
     this.earth = null;
     Game.away = null;
-    if (typeof Player !== 'undefined') Player.carry = false;
+    if (typeof Player !== 'undefined') { Player.carry = false; Player.zoomT = 0; }
     Render.clear();
   },
 

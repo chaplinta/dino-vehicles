@@ -1,5 +1,5 @@
 // Optional jobs: a voice prompt, a bubble in the world, an arrow at the screen edge, stars when done.
-const STATION_ICON = { farm: '🌽', town: '🏠', site: '🚧', mount: '⛰️', pad: '🚀' };
+const STATION_ICON = { farm: '🌽', town: '🏠', site: '🚧', mount: '⛰️', speedway: '🏁', pad: '🚀' };
 const HOSPITAL_X = 155.5 * TS, TOWN_X = 160 * TS;
 
 const JOB_TYPES = {
@@ -89,7 +89,7 @@ const JOB_TYPES = {
   fossil: {
     icon: '🦴', vehicle: 'digger', weight: 2,
     start(job) {
-      const tx = pick([randi(222, 236), randi(300, 326), randi(560, 594), randi(70, 96)]);
+      const tx = pick([randi(222, 236), randi(300, 326), randi(PAD_X0, PAD_X0 + 34), randi(SPEEDWAY.BIKES[0], SPEEDWAY.BIKES[1] - 4), randi(70, 96)]);
       const top = World.surfaceAt(tx);
       job.tx = tx; job.ty = top + randi(3, 5);
       World.set(job.tx, job.ty, pick([T.FOSSIL, T.GEM]), true);
@@ -102,7 +102,7 @@ const JOB_TYPES = {
   build: {
     icon: '🏗️', vehicle: 'crane', weight: 1,
     start(job) {
-      const tx = randi(560, 586);
+      const tx = randi(PAD_X0 + 2, PAD_X0 + 26);
       const g = World.surfaceAt(tx);
       if (World.surfaceAt(tx + 5) !== g) return false;
       job.tiles = [];

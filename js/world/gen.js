@@ -1,4 +1,4 @@
-// World generator. Biomes left to right: farm, town, building site, beach and sea, mountains, launch pad.
+// World generator. Biomes left to right: farm, town, building site, beach and sea, mountains, speedway, launch pad.
 const SURF = 40;                  // normal ground row
 const SEA_LEVEL = SURF + 1;       // first water row
 const BIOMES = [
@@ -7,8 +7,13 @@ const BIOMES = [
   { key: 'site', x0: 215, x1: 300 },
   { key: 'beach', x0: 300, x1: 420 },
   { key: 'mount', x0: 420, x1: 560 },
-  { key: 'pad', x0: 560, x1: WORLD_W },
+  { key: 'speed', x0: 560, x1: 720 },
+  { key: 'pad', x0: 720, x1: WORLD_W },
 ];
+// Speedway: drag strip with a start gantry and finish line, pit garage, then a dirt bike park.
+const SPEEDWAY = { X0: 560, START: 572, FINISH: 668, STAND: [598, 628], GARAGE: 640, BIKES: [680, 718] };
+const PAD_X0 = 720, ROCKET_X = 738;   // launch pad, right at the far end
+const CHESS_X = 490.5;                // chess table on a mountain lookout
 const SEA_X0 = 330, SEA_X1 = 395;
 function biomeAt(tx) {
   for (const b of BIOMES) if (tx >= b.x0 && tx < b.x1) return b.key;
@@ -137,8 +142,16 @@ function generateWorld(world, seed) {
   for (let x = 278; x < 296; x++) for (let y = SURF; y < SURF + 4; y++) if (x > 280 && x < 294) put(x, y, y === SURF + 3 ? T.DIRT : T.AIR);
   props.push({ type: 'sign', x: 216, y: SURF, kind: 'site' });
 
-  // A dino playing chess at a table by the road into town.
-  props.push({ type: 'chess', x: 102.5, y: SURF });
+  // A dino playing chess at a picnic table on a mountain lookout (flattened for it).
+  {
+    const cx = Math.floor(CHESS_X), h = surf[cx];
+    for (let x = cx - 4; x <= cx + 4; x++) {
+      for (let y = 0; y < h; y++) if (get(x, y) !== T.BEDROCK) put(x, y, T.AIR);
+      for (let y = h; y <= Math.max(h, surf[x]) + 1; y++) put(x, y, y === h ? T.GRASS : T.STONE);
+      surf[x] = h;
+    }
+    props.push({ type: 'chess', x: CHESS_X, y: h });
+  }
 
   // Secrets: a golden egg at the very bottom under the farm, Nessie asleep on the sea floor.
   put(52, Ht - 3, T.GOLDEGG);
@@ -152,9 +165,23 @@ function generateWorld(world, seed) {
   flowers(420, 556, 0.06);
   flowers(300, 330, 0.0);
 
+  // Speedway: flat ground, an asphalt drag strip, grandstand, pit garage and a bike park with jumps.
+  for (let x = SPEEDWAY.X0; x < PAD_X0; x++) { surf[x] = SURF; for (let y = SURF - 12; y < SURF; y++) put(x, y, T.AIR); put(x, SURF, x < SPEEDWAY.BIKES[0] - 2 ? T.ROAD : T.GRASS); }
+  props.push({ type: 'gantry', x: SPEEDWAY.START, y: SURF });
+  props.push({ type: 'finish', x: SPEEDWAY.FINISH, y: SURF });
+  props.push({ type: 'stand', x: (SPEEDWAY.STAND[0] + SPEEDWAY.STAND[1]) / 2, w: SPEEDWAY.STAND[1] - SPEEDWAY.STAND[0], y: SURF });
+  building(world, SPEEDWAY.GARAGE, SURF, 12, 5, { wall: T.CONCRETE, roof: T.CONCRETE, sign: 'garage', door: 4 });
+  for (let x = SPEEDWAY.GARAGE; x < SPEEDWAY.GARAGE + 12; x++) put(x, SURF, T.ROAD);
+  for (let x = SPEEDWAY.BIKES[0]; x < SPEEDWAY.BIKES[1]; x++) put(x, SURF, T.DIRT);
+  props.push({ type: 'ramp', x: 684, w: 4, h: 2, dir: 1 });   // jump...
+  props.push({ type: 'ramp', x: 693, w: 5, h: 2, dir: -1 });  // ...land on the far side
+  props.push({ type: 'ramp', x: 702, w: 4, h: 3, dir: 1 });   // the big kicker
+  // A little skate ramp at the end of town.
+  props.push({ type: 'ramp', x: 208, w: 3, h: 1, dir: 1 });
+
   // Launch pad.
-  for (let x = 560; x < WORLD_W; x++) { surf[x] = SURF; for (let y = SURF - 12; y < SURF; y++) put(x, y, T.AIR); put(x, SURF, x >= 566 && x < 590 ? T.CONCRETE : T.GRASS); }
-  props.push({ type: 'tower', x: 588, y: SURF });
+  for (let x = PAD_X0; x < WORLD_W; x++) { surf[x] = SURF; for (let y = SURF - 12; y < SURF; y++) put(x, y, T.AIR); put(x, SURF, x >= PAD_X0 + 6 && x < PAD_X0 + 30 ? T.CONCRETE : T.GRASS); }
+  props.push({ type: 'tower', x: PAD_X0 + 28, y: SURF });
 
   // Edges: tall walls so nobody walks off the world.
   for (let y = 0; y < Ht; y++) { put(0, y, T.BEDROCK); put(Wt - 1, y, T.BEDROCK); }
@@ -164,14 +191,16 @@ function generateWorld(world, seed) {
   props.push({ type: 'station', x: 140, name: 'town' });
   props.push({ type: 'station', x: 256, name: 'site' });
   props.push({ type: 'station', x: 470, name: 'mount' });
-  props.push({ type: 'station', x: 564, name: 'pad' });
+  props.push({ type: 'station', x: 620, name: 'speedway' });
+  props.push({ type: 'station', x: PAD_X0 + 4, name: 'pad' });
 
   // Record generated surface for underground backdrop.
   world.genSurf = Int16Array.from(surf);
 
   // Reading signs: three and four word labels to read along with.
-  for (const [x, text] of [[8, 'FARM'], [26, 'CORN'], [58, 'BARN'], [84, 'FLY'], [109, 'PLAY'], [117, 'FIRE'], [145, 'SICK'], [180, 'COP'],
-    [224, 'DIG'], [306, 'SAND'], [325, 'FISH'], [399, 'LOOK'], [430, 'HILL'], [562, 'SKY'], [594, 'END']]) addLabel(world, x, text);
+  for (const [x, text] of [[8, 'FARM'], [26, 'CORN'], [58, 'BARN'], [84, 'FLY'], [109, 'ROAD'], [117, 'FIRE'], [145, 'SICK'], [180, 'COP'],
+    [224, 'DIG'], [306, 'SAND'], [325, 'FISH'], [399, 'LOOK'], [430, 'HILL'], [Math.floor(CHESS_X) - 6, 'PLAY'], [566, 'RACE'], [664, 'ZOOM'], [684, 'BIKE'],
+    [PAD_X0 + 2, 'SKY'], [WORLD_W - 6, 'END']]) addLabel(world, x, text);
 
   function building(world, x0, base, w, h, o) {
     const top = base - h;

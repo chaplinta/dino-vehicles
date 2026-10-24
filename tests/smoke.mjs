@@ -61,7 +61,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 2. Every vehicle: get in, drive, use its action, get out.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 99; Vehicles.spawnMissing(); Jobs.t = 1e9; });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 200; Vehicles.spawnMissing(); Jobs.t = 1e9; });
   const kinds = await page.evaluate(() => VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k] && k !== 'rocket' && vehicleParked(k)));
   for (const k of kinds) {
     await page.evaluate(k => {
@@ -82,7 +82,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 3. Rocket to space and back.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 99; Vehicles.spawnMissing(); const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v); });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 200; Vehicles.spawnMissing(); const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v); });
   await page.keyboard.press('Space');
   await page.waitForTimeout(6500);
   check(await page.evaluate(() => Game.overlay === Space), 'rocket reaches space');
@@ -258,7 +258,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 12. Awkward places a 5-year-old will find.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 99; Vehicles.spawnMissing(); });
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing(); });
 
   // Deep hole: dig 20 down, then climb out by holding up against the wall.
   await page.evaluate(() => {
@@ -341,7 +341,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     ['firetruck', 10, 300], ['firetruck', 300, 10], ['digger', 215, 360], ['bulldozer', 300, 150], ['tractor', 420, 250], ['ambulance', 215, 420]];
   for (const [kind, from, to] of runs) {
     const r = await page.evaluate(([kind, from, to]) => {
-      Math.random = mulberry32(3); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 99; Vehicles.spawnMissing();
+      Math.random = mulberry32(3); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing();
       for (const pt of BLUEPRINT) World.set(pt.col, pt.row, pt.id);   // builder's house finished: worst case
       let b = Player.body;
       const y = World.groundBelow(from, World.genSurf[from] - 3) * TS - 0.01;
@@ -400,7 +400,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   }, [n, keys]);
   await page.evaluate(() => {
     Game.loop = () => {}; Sound.say = () => {};
-    localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; Vehicles.spawnMissing();
+    localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing();
     World.set(100, 30, T.BRICK); Save.write(); window.__save = localStorage.getItem(SAVE_KEY);
     const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v);
     Input.set('action', true); Input.set('action', false);
@@ -443,7 +443,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     for (let i = 0; i < n; i++) { for (const k of ['left', 'right', 'up', 'down', 'action']) Input.held[k] = !!keys[k]; Game.update(1 / 60); Input.endFrame(); }
     for (const k of ['left', 'right', 'up', 'down', 'action']) Input.held[k] = false;
   }, [n, keys]);
-  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; Vehicles.spawnMissing(); });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing(); });
   // Roar 5 times fast: shooting stars.
   await page.evaluate(() => { for (let i = 0; i < 5; i++) { Game.t += 0.3; Player.roar(); } });
   check(await page.evaluate(() => Pickups.list.filter(p => p.temp).length >= 10), 'roaring 5 times brings shooting stars');
@@ -496,7 +496,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 {
   const page = await open({ width: 960, height: 540 });
   const run = n => page.evaluate(n => { for (let i = 0; i < n; i++) { Game.update(1 / 60); Input.endFrame(); } ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); }, n);
-  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 20; Vehicles.spawnMissing(); });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing(); });
   check(await page.evaluate(() => Math.abs(Asteroid.left - 600) < 2), 'asteroid due in 10 minutes');
   await page.evaluate(() => { Asteroid.left = 100; World.set(20, 30, T.BRICK); });
   await run(60);
@@ -579,13 +579,13 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   const page = await open({ width: 960, height: 540 });
   check(await page.evaluate(() => typeof GAME_VERSION === 'string' && /\d{4}/.test(RELEASE_DATE)), 'title shows a version and release date');
   await page.evaluate(() => {
-    Game.loop = () => {}; window.said = []; Sound.say = t => said.push(t); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
+    Game.loop = () => {}; window.said = []; Sound.say = t => said.push(t); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing();
     window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0 && !Input.held[k]) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); };
     window.drive = (v, x, max = 1200) => { for (let i = 0; i < max && Math.abs(v.body.x - x) > 40; i++) run(1, v.body.x < x ? { right: 1 } : { left: 1 }); run(30); };
     window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
     World.set(20, 30, T.BRICK); Save.write();
   });
-  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(60); });
+  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); JetPick.pick('pilbara'); run(60); });
   check(await page.evaluate(() => { const b = document.querySelector('[data-key=action]'); return Player.vehicle.s.state === 'board' && (b.classList.contains('hidden') || getComputedStyle(b).display === 'none'); }), 'board the FIFO jet as a passenger: no controls');
   await page.evaluate(() => run(60 * 8));
   check(await page.evaluate(() => Game.overlay === Flight), 'the FIFO jet takes off by itself and flies to the Pilbara');
@@ -633,7 +633,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 20. Wrecking ball: smashes any material and brings a building down.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 40; Vehicles.spawnMissing(); });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing(); });
   const r = await page.evaluate(() => {
     const run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
     // The house at x 106-113 in town.
@@ -706,7 +706,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
 // 22. Pirate Island: sail there, read the map, dig at the X, fend off pirates, carry the treasure home.
 {
   const page = await open({ width: 960, height: 540 });
-  await page.evaluate(() => { Game.loop = () => {}; window.said = []; Sound.say = t => said.push(t); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
+  await page.evaluate(() => { Game.loop = () => {}; window.said = []; Sound.say = t => said.push(t); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing();
     window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0 && !Input.held[k]) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); };
     window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
     World.set(20, 30, T.BRICK); Save.write(); });
@@ -742,7 +742,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   const page = await open({ width: 960, height: 540 });
   await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; });
   check(await page.evaluate(() => JSON.stringify(Whistle.kinds()) === JSON.stringify(['digger', 'dumptruck', 'firetruck', 'tractor', 'train', 'bulldozer', 'ambulance', 'police'])), 'start with eight vehicles to call');
-  check(await page.evaluate(() => !Vehicles.list.some(v => v.kind === 'garbage' && !v.npcOwned) && Vehicles.list.some(v => v.kind === 'crane') && Vehicles.list.some(v => v.kind === 'rocket') && !Whistle.kinds().includes('crane')), 'earned ones not parked yet; ones to find are out in the world');
+  check(await page.evaluate(() => !Vehicles.list.some(v => v.kind === 'garbage' && !v.npcOwned) && Vehicles.list.some(v => v.kind === 'crane') && !Vehicles.list.some(v => v.kind === 'rocket') && !Whistle.kinds().includes('crane')), 'earned ones not parked yet; ones to find are out in the world; the rocket waits for 110 stars');
   await page.evaluate(() => { Game.addStars(10); });
   await page.waitForTimeout(3000);
   check(await page.evaluate(() => Whistle.kinds().includes('garbage') && Vehicles.list.some(v => v.kind === 'garbage' && !v.npcOwned)), '10 stars: the garbage truck turns up');
@@ -757,7 +757,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(await page.evaluate(() => { const d = Vehicles.list.find(v => v.kind === 'digger' && !v.npcOwned); Player.body.x = d.body.x; Player.body.y = d.body.y - 10; Vehicles.enter(Player, d); const ok = Reading.card && Reading.card.word === 'DIG'; Vehicles.exit(Player); return ok; }), 'get in the digger: the word DIG pops up');
   check(await page.evaluate(() => { Game.configurePlay(); const b = document.querySelector('[data-key=attack]'); return !b.classList.contains('hidden') && b.textContent === ATTACK_ICON[DINO_TYPES[Player.type].attack]; }), 'attack button shows on foot with your dino\'s move');
   check(await page.evaluate(() => { Player.attackCool = 0; Player.attackT = 0; Input.pressed.attack = true; Game.update(1 / 60); Input.endFrame(); return Player.attackT > 0; }), 'attack button swings even with nobody in reach');
-  check(await page.evaluate(() => { Game.loop = () => {}; Game.startPlay('rex'); const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r); const a = outfit(); Moon.leave(r, true); return a === 'space'; }), 'space suit on the Moon');
+  check(await page.evaluate(() => { Game.loop = () => {}; Game.startPlay('rex'); Game.stars = 200; Vehicles.spawnMissing(); const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r); const a = outfit(); Moon.leave(r, true); return a === 'space'; }), 'space suit on the Moon');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }
@@ -782,6 +782,54 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(await page.evaluate(() => window.spoke === 0), 'no voice-over: nothing is spoken');
   check(r.lit && r.card, 'signs and word cards still light up');
   check(r.infoHidden, 'no fact button in vehicles');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 25. Bigger world: speedway, bikes and ramps, fast cars, hidden finds, and the jet to Melbourne.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => {
+    Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
+    window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0 && !Input.held[k]) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
+    window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
+    window.has = k => Vehicles.list.some(v => v.kind === k && !v.npcOwned);
+  });
+  check(await page.evaluate(() => WORLD_W === 760 && World.props.some(p => p.type === 'gantry') && World.props.filter(p => p.type === 'ramp').length >= 4), 'bigger world with a speedway and jump ramps');
+  check(await page.evaluate(() => World.props.find(p => p.type === 'chess').x > 450 && World.props.find(p => p.type === 'tower').x > 720), 'chess up on a mountain, launch pad at the far end');
+  check(await page.evaluate(() => !['motorbike', 'jet', 'pirateship', 'sportscar', 'rocket', 'racecar'].some(has)), 'best vehicles are hidden at the start');
+  await page.evaluate(() => { Game.addStars(35); run(10); });
+  check(await page.evaluate(() => has('motorbike') && !has('jet') && !vehicleUnlocked('motorbike')), '30 stars: the motorbike turns up at the bike park, still to be found');
+  await page.evaluate(() => { Game.addStars(200); run(10); });
+  check(await page.evaluate(() => ['jet', 'pirateship', 'sportscar', 'rocket', 'racecar'].every(has)), 'more stars: jet, pirate ship, sports car, rocket and race car turn up');
+  check(await page.evaluate(() => { const m = Vehicles.list.find(v => v.kind === 'motorbike'); into(m); run(20); const y0 = m.body.y; let up = 0; run(1, { action: 1 }); for (let i = 0; i < 40; i++) { run(1); up = Math.max(up, y0 - m.body.y); } run(60); return Game.found.motorbike && up > 100; }), 'get on the motorbike: found, and the button jumps');
+  check(await page.evaluate(() => { const m = Player.vehicle; window.__pows = []; const add = Pow.add.bind(Pow); Pow.add = (x, y, t) => { __pows.push(t); add(x, y, t); }; m.s.flipCool = 0; run(1, { action: 1 }); run(6); run(1, { action: 1 }); run(80); Pow.add = add; return __pows.includes('FLIP!'); }), 'jump and press again in the air: a flip, landed for a star');
+  check(await page.evaluate(() => { const m = Player.vehicle; m.body.x = 676 * TS; m.body.y = SURF * TS - 0.01; m.facing = 1; let air = 0, peak = 0; for (let i = 0; i < 90; i++) { run(1, { right: 1 }); if (!m.body.onGround) air++; peak = Math.max(peak, SURF * TS - m.body.y); } return air > 25 && peak > 70; }), 'ride up a ramp and fly off the end');
+  check(await page.evaluate(() => { const c = Vehicles.list.find(v => v.kind === 'sportscar'); into(c); c.body.x = 575 * TS; c.body.y = SURF * TS - 0.01; c.facing = 1; run(1); for (let i = 0; i < 100; i++) run(1, { right: 1 }); return Math.abs(c.body.vx) > 450; }), 'sports car goes really fast');
+  await page.evaluate(() => { const c = Vehicles.list.find(v => v.kind === 'racecar'); into(c); c.body.x = (SPEEDWAY.START - 3) * TS; c.body.y = SURF * TS - 0.01; c.facing = 1; c.body.vx = 0; run(60); window.__lights = DragRace.phase; run(150); window.__stars = Game.stars; });
+  check(await page.evaluate(() => window.__lights === 'lights' && DragRace.phase === 'run'), 'stop at the start gantry: the lights count down, then go');
+  check(await page.evaluate(() => { for (let i = 0; i < 600 && DragRace.phase; i++) run(1, { right: 1 }); return DragRace.best > 2 && Game.stars >= window.__stars + 4; }), 'race car crosses the finish: a time, a record and stars');
+  check(await page.evaluate(() => { const c = Player.vehicle; c.s.turboCool = 0; run(1, { action: 1 }); return c.s.turbo > 0 && c.s.slow > 1; }), 'race car turbo button');
+  // The jet asks where to go.
+  await page.evaluate(() => { Save.write(); window.__save = localStorage.getItem('dinoVehicles.save.v1'); const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(20); });
+  check(await page.evaluate(() => Game.overlay === JetPick), 'get on the jet: pick the mine or the city');
+  await page.evaluate(() => { run(1, { right: 1 }); run(1, { action: 1 }); run(60 * 9); });
+  check(await page.evaluate(() => Game.overlay === Flight && Flight.dest === 'melbourne'), 'city picked: flying across Australia to Melbourne');
+  await page.evaluate(() => { run(60 * 2); Flight.finish(); run(60 * 6); });
+  check(await page.evaluate(() => Game.away === 'melbourne' && outfit() === 'footy' && !Player.vehicle && Melbourne.visits === 1), 'lands in Melbourne: footy jumper and beanie on');
+  await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/melbourne.png' : '/dev/null' }).catch(() => {});
+  check(await page.evaluate(() => { const tram = Vehicles.list.find(v => v.kind === 'tram'); into(tram); const n = NPCs.list.find(n => n.need); tram.body.x = n.body.x; run(30); const on = !!n.ride; const s = Game.stars; tram.body.x = n.need.destX; run(30); return on && !n.ride && Game.stars >= s + 2; }), 'drive the tram: a dino gets on at one stop and off at theirs');
+  check(await page.evaluate(() => { Vehicles.exit(Player); Player.body.x = MEL.CAFE * TS + 20; Player.body.y = SURF * TS - 0.01; run(5); run(1, { enter: 1 }); return Player.zoomT > 4; }), 'coffee cart: a flat white and a burst of speed');
+  check(await page.evaluate(() => { const b = Vehicles.list.find(v => v.kind === 'citybike'); into(b); b.body.x = 200 * TS; b.body.y = SURF * TS - 0.01; b.facing = 1; let air = 0; for (let i = 0; i < 120; i++) { run(1, { right: 1 }); if (!b.body.onGround) air++; } return air > 10; }), 'city bike jumps the ramps by the Yarra');
+  await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); run(20); });
+  check(await page.evaluate(() => Game.overlay !== JetPick && Player.vehicle.s.state === 'board'), 'jet in Melbourne just flies home');
+  await page.evaluate(() => { run(60 * 9); if (Game.overlay === Flight) Flight.finish(); run(60 * 6); });
+  check(await page.evaluate(() => !Game.away && World.limitW === WORLD_W && Vehicles.list.filter(v => v.kind === 'jet').length === 1 && !Vehicles.list.some(v => v.kind === 'tram')), 'home again, Earth as it was');
+  check(await page.evaluate(() => localStorage.getItem('dinoVehicles.save.v1') === window.__save || !Game.away), 'Melbourne is not saved');
+  // A save from the smaller world starts fresh.
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('dinoVehicles.save.v1')); s.v = 1; s.stars = 77; localStorage.setItem('dinoVehicles.save.v1', JSON.stringify(s)); });
+  await page.reload(); await page.waitForTimeout(300);
+  check(await page.evaluate(() => Game.stars === 0), 'an old save from the smaller world starts a fresh game');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

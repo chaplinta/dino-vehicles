@@ -103,7 +103,7 @@ const Moon = {
     Away.home();
     if (rocket) {
       if (!Vehicles.list.includes(rocket)) Vehicles.list.push(rocket);
-      rocket.body.x = 578 * TS + rand(-200, 200);
+      rocket.body.x = ROCKET_X * TS + rand(-200, 200);
       rocket.body.y = (SURF - 30) * TS;
       rocket.body.vx = 0; rocket.body.vy = 100;
       rocket.s.state = 'chute';

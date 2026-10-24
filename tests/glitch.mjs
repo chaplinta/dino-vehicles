@@ -118,8 +118,8 @@ for (const type of await page.evaluate(() => DINO_KEYS)) {
     const rng = mulberry32(type.length * 31);
     const m = G.masher(rng, { up: type === 'ptero' ? 0.3 : 0.08, enter: 0.004, whistle: 0.002 });
     for (let leg = 0; leg < 4; leg++) {
-      // Drop in somewhere new each leg: farm, town, sea, mountains, launch pad.
-      const tx = [12, 150, 360, 470, 575][(leg + type.length) % 5];
+      // Drop in somewhere new each leg: farm, town, sea, mountains, speedway, bike park, launch pad.
+      const tx = [12, 150, 360, 470, 600, 690, 740][(leg * 2 + type.length) % 7];
       if (!Player.vehicle && !Game.away) { Player.body.x = tx * TS + 16; Player.body.y = World.surfaceAt(tx) * TS - 0.01; Game.snapCamera(); }
       G.run(60 * 10, m);
     }
@@ -129,7 +129,7 @@ for (const type of await page.evaluate(() => DINO_KEYS)) {
 
 // 2. Every vehicle: get in, drive and mash every button, spam in and out.
 await scene('every vehicle', () => {
-  G.fresh('rex', 4242); Game.stars = 99; Vehicles.spawnMissing();
+  G.fresh('rex', 4242); Game.stars = 200; Vehicles.spawnMissing();
   const rng = mulberry32(99);
   const kinds = VEHICLE_ORDER.filter(k => VEHICLE_DEFS[k]).concat(['pirateship']);
   for (const k of kinds) {
@@ -161,10 +161,25 @@ await scene('button spam', () => {
 // 4. Leaving mid-trip: new world or game over in the middle of flights, voyages and blasts.
 await scene('trips interrupted', () => {
   const into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
-  G.fresh('rex', 31337);
-  // FIFO jet: new world mid-climb, then mid-flight.
-  into(Vehicles.list.find(v => v.kind === 'jet')); G.run(60 * 6); Game.resetWorld(); G.run(60);
-  into(Vehicles.list.find(v => v.kind === 'jet')); G.run(60 * 9); Game.resetWorld(); G.run(60);
+  G.fresh('rex', 31337); Game.stars = 200; Vehicles.spawnMissing();
+  const jet = dest => { into(Vehicles.list.find(v => v.kind === 'jet')); if (Game.overlay === JetPick) JetPick.pick(dest); };
+  // FIFO jet: new world while picking, mid-climb, then mid-flight.
+  into(Vehicles.list.find(v => v.kind === 'jet')); G.run(30); Game.resetWorld(); G.run(60);
+  if (Game.overlay || Player.vehicle) G.issue('jet picker still up after a new world');
+  jet('pilbara'); G.run(60 * 6); Game.resetWorld(); G.run(60);
+  jet('melbourne'); G.run(60 * 9); Game.resetWorld(); G.run(60);
+  // Melbourne: mash about on the tram and bikes, then new world mid-tram with a passenger aboard.
+  jet('melbourne'); Flight.start(Player.vehicle); Flight.finish(); G.run(60 * 6);
+  if (Game.away !== 'melbourne') G.issue('did not get to Melbourne');
+  for (const k of ['tram', 'citybike']) {
+    const v = Vehicles.list.find(v => v.kind === k); if (!v) { G.issue('missing in Melbourne', { k }); continue; }
+    into(v); G.run(60 * 10, G.masher(mulberry32(k.length), { action: 0.2 })); G.release();
+  }
+  if (Game.away === 'melbourne') {
+    const tram = Vehicles.list.find(v => v.kind === 'tram'), n = NPCs.list.find(n => n.need);
+    into(tram); if (n) { tram.body.x = n.body.x; G.run(30); } Game.resetWorld(); G.run(60);
+    if (Vehicles.list.some(v => v.kind === 'tram') || NPCs.list.some(n => n.ride)) G.issue('Melbourne left behind after a new world');
+  }
   // Rocket: new world during the space trip, then on the Moon.
   let r = Vehicles.list.find(v => v.kind === 'rocket'); into(r); Input.set('action', true); G.frame(); Input.set('action', false); G.run(60 * 7); Game.resetWorld(); G.run(60);
   r = Vehicles.list.find(v => v.kind === 'rocket'); into(r); Moon.enter(r); G.run(60 * 3); Game.resetWorld(); G.run(60);
@@ -173,7 +188,7 @@ await scene('trips interrupted', () => {
   s = Vehicles.list.find(v => v.kind === 'pirateship'); into(s); Voyage.start(s); Voyage.finish(); G.run(60); Vehicles.exit(Player); Player.carry = true; G.run(30); Game.resetWorld(); G.run(60);
   if (Player.carry) G.issue('still carrying treasure after a new world');
   // Mine: asteroid hits during the blast countdown.
-  const j = Vehicles.list.find(v => v.kind === 'jet'); into(j); Flight.start(j); Flight.finish(); G.run(60 * 5);
+  jet('pilbara'); const j = Player.vehicle; Flight.start(j); Flight.finish(); G.run(60 * 5);
   Mine.holes.push({ x: 80, y: PIL.FLOOR, charged: true }); Vehicles.exit(Player); Player.body.x = PIL.DET * TS; Player.body.y = SURF * TS - 0.01; Mine.blast(); G.run(60);
   Asteroid.left = 0.5; G.run(60 * 3);
   if (Game.overlay !== Doom) G.issue('asteroid did not end the game at the mine');
@@ -199,7 +214,7 @@ await scene('fights and swarm', () => {
 
 // 6. Building and smashing: towers, digging under yourself, the wrecking ball on everything.
 await scene('build and smash', () => {
-  G.fresh('rex', 555); Game.stars = 99; Vehicles.spawnMissing();
+  G.fresh('rex', 555); Game.stars = 200; Vehicles.spawnMissing();
   const tx = 150; Player.body.x = tx * TS + 16; Player.body.y = World.surfaceAt(tx) * TS - 0.01;
   for (let i = 0; i < 12; i++) { placeBlock(tx + 1, World.surfaceAt(tx + 1) - 1, BUILD_BLOCKS[i % 6]); }
   for (let i = 0; i < 12; i++) G.run(30, () => { G.key('down', true); G.key('action', true); });

@@ -37,10 +37,11 @@ function drawMouth(c, x, y, roar, w = 8) {
 
 // On a mine site everyone wears hi-vis and a hard hat.
 function onSite() { return outfit() === 'hivis'; }
-// What everyone wears where: hi-vis at the mine, pirate gear on the island, space suits on the Moon.
+// What everyone wears where: hi-vis at the mine, pirate gear on the island, space suits on the Moon,
+// a footy jumper and beanie in Melbourne.
 function outfit() {
   if (typeof Game === 'undefined') return null;
-  return { pilbara: 'hivis', pirate: 'pirate', moon: 'space' }[Game.away] || null;
+  return { pilbara: 'hivis', pirate: 'pirate', moon: 'space', melbourne: 'footy' }[Game.away] || null;
 }
 function pickOutfit(o, type) {
   if (type === 'alien') return null;   // Moon dinos live there
@@ -60,6 +61,14 @@ function drawSuit(c, fit, x, y, rx, ry, rot, bands) {
   if (fit === 'hivis') drawVest(c, x, y, rx, ry, rot, bands);
   else if (fit === 'space') { drawVest(c, x, y, rx, ry, rot, bands, '#f1f3f5', '#adb5bd'); ell(c, x + rx * 0.35, y - ry * 0.3, 5, 4, '#4dabf7', 2); }
   else if (fit === 'pirate') drawVest(c, x, y, rx, ry, rot, [bands[0] - 6, bands[0] + 4, bands[1] + 4], '#f8f9fa', '#e03131');
+  else if (fit === 'footy') drawVest(c, x, y, rx, ry, rot, [bands[0] - 2, bands[1] + 2], '#1c3f8f', '#e03131');
+}
+// Woolly beanie with a pom-pom, in footy colours.
+function drawBeanie(c, cx, top) {
+  c.beginPath(); c.moveTo(cx - 20, top + 6); c.quadraticCurveTo(cx - 20, top - 20, cx, top - 20); c.quadraticCurveTo(cx + 20, top - 20, cx + 20, top + 6); c.closePath();
+  fillStroke(c, '#1c3f8f', 3);
+  rbox(c, cx - 22, top, 44, 9, 4, '#e03131', 3);
+  ell(c, cx, top - 22, 7, 7, '#fff', 3);
 }
 function drawTricorn(c, cx, top, captain) {
   if (captain) poly(c, [cx - 4, top - 10, cx - 20, top - 34, cx - 8, top - 12], '#e03131', 2);   // feather
@@ -222,9 +231,10 @@ function drawDinoHead(c, type, hx, hy, d, o) {
   }
   if (o.lick > 0) { const m = TONGUE_AT[type] || [22, 6]; drawTongue(c, hx + m[0], hy + m[1], o.lick, o.t || 0); }
   const fit = o.outfit;
-  if (fit === 'hivis' || fit === 'pirate') {
+  if (fit === 'hivis' || fit === 'pirate' || fit === 'footy') {
     const at = { pachy: [-2, -27], rex: [2, -20], megalo: [2, -20], allo: [2, -20], carno: [10, -20], raptor: [4, -13], tri: [4, -16], styraco: [4, -16], ptero: [0, -12], bary: [-2, -15], iguano: [0, -17] }[type] || [4, -13];
     if (fit === 'hivis') drawHardHat(c, hx + at[0], hy + at[1] - 2);
+    else if (fit === 'footy') drawBeanie(c, hx + at[0], hy + at[1] + 2);
     else {
       // Eye patch over the eye, strap round the head, tricorn on top.
       const e = EYE_AT[type] || [1, -4];

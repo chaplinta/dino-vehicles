@@ -103,7 +103,7 @@ const NPCs = {
     walker(236, { type: 'ankylo' }); walker(262, { type: 'pachy' }); walker(286, {});
     walker(308, { type: 'raptor', baby: true }); walker(318, { type: 'bary' }); walker(404, { baby: true });
     walker(448, {}); walker(480, { type: 'ptero' }); walker(520, { type: 'ptero', baby: true });
-    walker(572, { type: 'megalo' });
+    walker(572, { type: 'megalo' }); walker(604, { type: 'carno' }); walker(658, {}); walker(696, { type: 'raptor', baby: true }); walker(732, { type: 'allo' });
     // Half the grown-ups fight back, chosen at random.
     const adults = this.list.filter(n => !n.baby);
     for (const n of adults) n.fighter = false;

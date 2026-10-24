@@ -95,6 +95,29 @@ const VEHICLE_FACTS = {
     'Rockets have to go really fast, more than ten times faster than a jet plane, to get to space.',
     'Astronauts first walked on the Moon in 1969.',
   ],
+  motorbike: [
+    'Dirt bikes have knobbly tyres that dig into mud and dirt.',
+    'Motocross riders stand up on the pegs to soak up the bumps with their legs.',
+    'Some riders can do a backflip on a motorbike, spinning all the way round in the air.',
+  ],
+  sportscar: [
+    'Sports cars sit low to the ground so the wind slides over them.',
+    'A spoiler on the back pushes the car down onto the road at high speed.',
+  ],
+  racecar: [
+    'Formula One cars can go faster than 350 kilometres an hour.',
+    'Race car tyres are smooth, called slicks, so more rubber touches the track.',
+    'At top speed a race car\'s wings push it down so hard it could drive upside down on a ceiling.',
+  ],
+  tram: [
+    'Melbourne has the biggest tram network in the world, with about 250 kilometres of track.',
+    'Trams get their power from a wire overhead, through the pole on the roof.',
+    'The green and gold W-class trams have been running in Melbourne for about a hundred years.',
+  ],
+  citybike: [
+    'Riding a bike is one of the best ways to get around a city.',
+    'Always wear a helmet when you ride a bike.',
+  ],
   jet: [
     'FIFO means fly in, fly out. Miners fly to the mine, work for a couple of weeks, then fly home.',
     'A jet\'s wings are shaped to push air down, and that lifts the plane up into the sky.',
