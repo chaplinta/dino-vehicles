@@ -8,7 +8,8 @@ function makeNPC(o) {
     fighter: !o.baby && Math.random() < 0.5, hits: 0, angry: 0, atk: null, atkCool: 0,   // about half fight back
     vehicle: null, ride: null, need: null, input: null, script: null, heartT: 0,
   }, o);
-  n.body = makeBody(o.x, o.y, baby ? 20 : 28, baby ? 34 : 52);
+  const box = dinoBox(n.type, baby);
+  n.body = makeBody(o.x, o.y, box.w, box.h);
   return n;
 }
 function bubble(c, x, y, icon, t) {
@@ -320,7 +321,7 @@ const NPCs = {
       if (n.vehicle || n.ride) continue;
       const b = n.body;
       if (b.x < cam.x - 120 || b.x > cam.x + Game.viewW + 120 || b.y < cam.y - 100 || b.y > cam.y + Game.viewH + 200) continue;
-      const s = n.baby ? 0.36 : 0.52;
+      const s = dinoScale(n.type, n.baby);
       const shake = n.grabbedT > 0 ? Math.sin(n.t * 70) * 5 : 0;
       if (n.scaredT > 0 && Math.abs(b.vx) > 200) {
         c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 4; c.lineCap = 'round';
@@ -333,7 +334,7 @@ const NPCs = {
       drawDino(c, 0, 0, s, n.type, { t: n.t, walk: ap && ap.pose ? 0 : n.walk, flip: (n.facing < 0) !== !!(ap && ap.flip), roar: ap && ap.roar !== null ? ap.roar : n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0, pose: ap ? ap.pose : null, captain: n.captain, cutlass: n.crew && !n.captain });
       c.restore();
       if (n.tumble) c.restore();
-      const top = b.y - (n.type === 'brachio' ? (n.baby ? 50 : 72) : n.baby ? 38 : 56);
+      const top = b.y - dinoTop(n.type, s) + 4;
       if (n.grabbedT > 0) bubble(c, b.x, top, '😫', n.t);
       else if (n.angry > 0) bubble(c, b.x, top, '😡', n.t);
       else if (n.scaredT > 0) bubble(c, b.x, top, '😱', n.t);

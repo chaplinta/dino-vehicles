@@ -315,6 +315,9 @@ const Game = {
   startPlay(type) {
     if (Player.vehicle && Player.vehicle.exit) Player.vehicle.exit(true);
     Player.type = type;
+    // Each dino has its own size: resize the body and make sure it isn't left inside the ground.
+    const box = dinoBox(type);
+    Player.body.w = box.w; Player.body.h = box.h; liftOut(Player.body);
     this.setMode('play');
     this.snapCamera();
     Save.write();

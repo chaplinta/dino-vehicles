@@ -49,7 +49,9 @@ Everything except the bedrock at the bottom can be dug. Sparkly stars float arou
 
 ## Dinosaurs
 
-Fourteen to pick from, each with its own real-ish play-fight move (the yellow button changes when a dino is in reach):
+Fourteen to pick from. Out in the world each is drawn at its real relative size, squashed a bit so everyone stays playable: Brachiosaurus towers over the rest, then T-Rex, down to the little Deinonychus. The big meat-eaters are each built like their species: T-Rex has the huge deep head and tiny two-fingered arms, Allosaurus a long low head with little horns and long clawed arms, Megalosaurus a long curved head and strong arms, Carnotaurus a short blunt face, bull horns and arms that are just stubs.
+
+Each has its own real-ish play-fight move (the yellow button changes when a dino is in reach):
 
 | Dino | Move |
 |---|---|

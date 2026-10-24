@@ -93,7 +93,7 @@ const Eggs = {
     const p = this.pet;
     if (!p || p.hidden) return;
     const b = p.body;
-    drawDino(c, b.x, b.y + 1, 0.34, p.type, { t: p.t, walk: p.walk, flip: p.facing < 0, roar: Player.roarT > 0.3 ? 1 : 0 });
+    drawDino(c, b.x, b.y + 1, dinoScale(p.type, true), p.type, { t: p.t, walk: p.walk, flip: p.facing < 0, roar: Player.roarT > 0.3 ? 1 : 0 });
     if (p.heartT > 0) bubble(c, b.x, b.y - 36, '❤️', p.t);
   },
 

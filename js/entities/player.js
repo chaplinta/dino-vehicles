@@ -65,7 +65,8 @@ const Player = {
 
   init(type, x, y) {
     this.type = type;
-    this.body = makeBody(x, y, 28, 56);
+    const box = dinoBox(type);
+    this.body = makeBody(x, y, box.w, box.h);
     this.vehicle = null;
   },
   get cx() { return this.vehicle ? this.vehicle.body.x : this.body.x; },
@@ -273,10 +274,11 @@ const Player = {
     if (this.hurtT > 0) { rot += this.hurtSpin; if (Math.floor(this.hurtT * 20) % 2) c.globalAlpha = 0.55; }
     c.save(); c.translate(x, y); c.rotate(rot);
     const lick = this.lickT > 0 ? 1 - this.lickT / LICK_TIME : 0;
-    drawDino(c, 0, 0, 0.56, this.type, { t: this.t, walk: pose ? 0 : walk, flip, roar, flap: this.flap, lick, pose });
+    const sc = dinoScale(this.type);
+    drawDino(c, 0, 0, sc, this.type, { t: this.t, walk: pose ? 0 : walk, flip, roar, flap: this.flap, lick, pose });
     c.restore();
     c.globalAlpha = 1;
-    const top = y - (this.type === 'brachio' ? 92 : 64);
+    const top = y - dinoTop(this.type, sc);   // top of the head
     if (outfit() === 'pirate') {
       // A parrot riding along on your back.
       const px = x - this.facing * 8, py = top + 6 + Math.sin(this.t * 4) * 2;

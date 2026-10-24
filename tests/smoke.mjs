@@ -834,6 +834,24 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 26. Every dino at its own size, in the right order; the carnivores each built like their species.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; });
+  check(await page.evaluate(() => { const o = ['brachio', 'rex', 'allo', 'tri', 'megalo', 'carno', 'ankylo', 'styraco', 'pachy', 'ptero', 'raptor']; return o.every((k, i) => !i || dinoScale(o[i - 1]) >= dinoScale(k)) && dinoScale('brachio') > dinoScale('raptor') * 2.5; }), 'dinos drawn at their relative sizes, biggest to smallest');
+  check(await page.evaluate(() => { Game.startPlay('raptor'); const small = Player.body.h; Game.startPlay('brachio'); const big = Player.body.h; return small < big && big < 64 && NPCs.list.every(n => n.body.h < 64); }), 'body size changes with the dino, always fits a 2-tile tunnel');
+  check(await page.evaluate(() => {
+    // Dig a 2-tile tunnel, stand in it small, then switch to the biggest dino: not stuck in the rock.
+    const tx = 60, y = SURF + 4; for (let x = tx - 3; x <= tx + 3; x++) for (const yy of [y - 1, y - 2]) World.set(x, yy, T.AIR);
+    Game.startPlay('raptor'); Player.body.x = tx * TS + 16; Player.body.y = y * TS - 0.01;
+    Game.startPlay('brachio'); for (let i = 0; i < 30; i++) { Game.update(1 / 60); Input.endFrame(); }
+    return !bodySolidAt(Player.body, Player.body.x, Player.body.y);
+  }), 'switching to a bigger dino in a tunnel never leaves you stuck');
+  check(await page.evaluate(() => ['rex', 'allo', 'megalo', 'carno'].every(k => THEROPOD[k]) && THEROPOD.rex.h > THEROPOD.allo.h && THEROPOD.carno.arm[0] < THEROPOD.rex.arm[0] && THEROPOD.allo.arm[0] > THEROPOD.rex.arm[0] * 2), 'T-Rex has the big head, Allosaurus long arms, Carnotaurus tiny stubs');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');
