@@ -38,21 +38,20 @@ defVehicle('firetruck', {
     if (inp.up) s.aim = Math.min(1.5, s.aim + dt * 1.4);
     if (inp.down) s.aim = Math.max(-0.1, s.aim - dt * 1.4);
     if (!inp.up && !inp.down) {
-      // Auto-aim at the nearest fire in front, so little hands only need the spray button.
-      // Turns to face a fire behind it while spraying (if not being steered).
-      let best = null, bd = 700;
+      // Auto-aim at the closest fire the hose can actually reach, so little hands only need the spray button
+      // (one right overhead can't be hit, so it goes for the next). Turns to face a fire behind it while spraying.
+      let pick = null;
       for (const f of Fire.cells.values()) {
         const ad = Math.abs(f.x * TS + 16 - v.body.x);
-        if (ad < bd) { bd = ad; best = f; }
-      }
-      if (best) {
-        const tx = best.x * TS + 16, ty = best.y * TS + 16;
-        let pick = null;
+        if (ad > 700) continue;
         for (const face of [v.facing, -v.facing]) {
           if (face !== v.facing && (!inp.action || inp.left || inp.right)) continue;
-          const sol = fireAim(v.body.x, v.body.y, face, tx, ty);
-          if (!pick || sol.err < pick.err - 8) pick = Object.assign(sol, { face });
+          const sol = fireAim(v.body.x, v.body.y, face, f.x * TS + 16, f.y * TS + 16);
+          const score = sol.err + ad * 0.05 + (face !== v.facing ? 8 : 0);
+          if (!pick || score < pick.score) pick = Object.assign(sol, { face, score });
         }
+      }
+      if (pick && pick.err < Infinity) {
         if (pick.face !== v.facing) v.facing = pick.face;
         s.aim = lerp(s.aim, pick.aim, Math.min(1, dt * 5));
       }
