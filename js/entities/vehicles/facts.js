@@ -134,6 +134,30 @@ const VEHICLE_FACTS = {
     'Delivery vans bring parcels right to your front door.',
     'A delivery driver might drop off more than a hundred parcels in one day.',
   ],
+  icecream: [
+    'Ice cream vans play a tune so everyone knows they are coming.',
+    'The ice cream is kept cold in a freezer inside the van.',
+  ],
+  mixer: [
+    'The drum on a cement mixer keeps turning so the concrete doesn\'t set hard on the way.',
+    'Concrete is made of cement, sand, little stones and water.',
+  ],
+  roller: [
+    'A road roller is so heavy it squashes the ground flat and hard, ready for a road.',
+    'Some rollers shake their drum to pack the ground down even more.',
+  ],
+  forklift: [
+    'Forklifts lift heavy loads with two long forks that slide under them.',
+    'The heavy weight on the back of a forklift stops it tipping over when it lifts.',
+  ],
+  monster: [
+    'Monster truck wheels can be taller than a grown-up.',
+    'Monster trucks can jump over a row of cars and land on their springy shocks.',
+  ],
+  jetski: [
+    'A jet ski has no propeller outside: it pushes a jet of water out the back.',
+    'Always wear a life jacket on a jet ski.',
+  ],
   jet: [
     'FIFO means fly in, fly out. Miners fly to the mine, work for a couple of weeks, then fly home.',
     'A jet\'s wings are shaped to push air down, and that lifts the plane up into the sky.',

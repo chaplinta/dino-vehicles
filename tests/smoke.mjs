@@ -869,6 +869,20 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     Input.set('action', true); Game.update(1 / 60); Input.endFrame(); Input.set('action', false); for (let i = 0; i < 20; i++) { Game.update(1 / 60); Input.endFrame(); }
     return !!n.ride; }), 'bus button opens the doors and a dino hops on');
   check(await page.evaluate(() => JSON.stringify(Whistle.kinds()) === JSON.stringify(['digger', 'dumptruck', 'firetruck', 'tractor', 'train', 'bulldozer', 'ambulance', 'police'])), 'whistle menu unchanged');
+  // More to hop in: ice cream van, cement mixer, road roller, forklift, monster truck, jet ski.
+  await page.evaluate(() => {
+    window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
+    window.into = k => { const v = Vehicles.list.find(v => v.kind === k && !v.npcOwned); if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); run(5); return v; };
+  });
+  check(await page.evaluate(() => ['icecream', 'mixer', 'roller', 'forklift', 'monster', 'jetski'].every(k => Vehicles.list.some(v => v.kind === k && !v.npcOwned))), 'ice cream van, cement mixer, road roller, forklift, monster truck and jet ski parked from the start');
+  check(await page.evaluate(() => { const m = into('mixer'); const tx = Math.floor((m.body.x - m.facing * (m.body.w / 2 + 34)) / TS); let n = 0; run(1, { action: 1 }); run(30); for (let y = SURF - 5; y < SURF; y++) if (World.get(tx, y) === T.CONCRETE) n++; return n >= 1; }), 'cement mixer pours concrete');
+  check(await page.evaluate(() => { const f = into('forklift'); const tx = Math.floor(f.frontX(14) / TS), ty = f.feetRow(); World.set(tx, ty, T.BRICK); run(1, { action: 1 }); const up = f.s.load === T.BRICK; run(40, { right: 1 }); run(1, { action: 1 }); return up && !f.s.load; }), 'forklift picks up a block and puts it down');
+  check(await page.evaluate(() => { const r = into('roller'); r.facing = 1; const bx = Math.floor(r.body.x / TS) + 3, by = r.feetRow(); World.set(bx, by, T.DIRT); run(120, { right: 1 }); return World.get(bx, by) === T.AIR; }), 'road roller squashes a bump flat');
+  check(await page.evaluate(() => { const m = into('monster'); const y0 = m.body.y; let up = 0; run(1, { action: 1 }); for (let i = 0; i < 40; i++) { run(1); up = Math.max(up, y0 - m.body.y); } return up > 120; }), 'monster truck does a giant bounce');
+  check(await page.evaluate(() => { const j = into('jetski'); run(30); let top = 0; for (let i = 0; i < 90; i++) { run(1, { right: 1 }); top = Math.max(top, Math.abs(j.body.vx)); } return j.floating && top > 300; }), 'jet ski zooms along the water');
+  await page.evaluate(() => { const ic = into('icecream'); for (let i = 0; i < 3; i++) NPCs.add({ x: ic.body.x + 80 + i * 40, y: ic.body.y, type: 'tri', fighter: false }); window.__s = Game.stars; run(1, { action: 1 }); });
+  await page.waitForTimeout(2500);
+  check(await page.evaluate(() => Game.stars >= window.__s + 3), 'ice cream van tune: dinos come running for a star each');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

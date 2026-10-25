@@ -40,7 +40,7 @@ const VEHICLE_WORDS = {
   digger: 'DIG', dumptruck: 'DUMP', firetruck: 'FIRE', tractor: 'FARM', train: 'RAIL', bulldozer: 'PUSH', crane: 'LIFT',
   ambulance: 'HELP', police: 'COP', tugboat: 'TUG', helicopter: 'FLY', harvester: 'CORN', wrecker: 'BALL', garbage: 'BIN',
   drill: 'HOLE', fishboat: 'FISH', submarine: 'SUB', plane: 'WING', rocket: 'ZOOM', moonbuggy: 'MOON', pirateship: 'SHIP',
-  jet: 'JET', motorbike: 'BIKE', sportscar: 'FAST', racecar: 'RACE', citybike: 'RIDE', tram: 'TRAM', car: 'CAR', ute: 'UTE', bus: 'BUS', van: 'VAN', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD', chargetruck: 'BANG', goldtruck: 'GOLD',
+  jet: 'JET', motorbike: 'BIKE', sportscar: 'FAST', racecar: 'RACE', citybike: 'RIDE', tram: 'TRAM', car: 'CAR', ute: 'UTE', bus: 'BUS', van: 'VAN', icecream: 'YUM', mixer: 'MIX', roller: 'ROLL', forklift: 'FORK', monster: 'BIG', jetski: 'SKI', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD', chargetruck: 'BANG', goldtruck: 'GOLD',
 };
 
 const DEFAULT_VEHICLES = [
@@ -50,5 +50,6 @@ const DEFAULT_VEHICLES = [
   ['tugboat', 340, 1], ['fishboat', 360, -1], ['submarine', 380, 1],
   ['helicopter', 440, 1], ['rocket', ROCKET_X, 1], ['train', 30, 1], ['pirateship', 389, -1], ['goldtruck', 242, 1],
   ['ute', 66, 1], ['car', 116, 1], ['van', 214, -1], ['citybike', 304, 1], ['bus', 588, 1],
+  ['icecream', 312, 1], ['jetski', 350, 1], ['mixer', 255, 1], ['roller', 134, 1], ['forklift', 656, -1], ['monster', 676, 1],
   ['motorbike', 714, -1], ['sportscar', 612, 1], ['racecar', SPEEDWAY.GARAGE + 6, 1],
 ];
