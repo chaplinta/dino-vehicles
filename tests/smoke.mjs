@@ -878,7 +878,14 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
     window.into = k => { const v = Vehicles.list.find(v => v.kind === k && !v.npcOwned); if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); run(5); return v; };
   });
-  check(await page.evaluate(() => ['icecream', 'mixer', 'roller', 'forklift', 'monster', 'jetski'].every(k => Vehicles.list.some(v => v.kind === k && !v.npcOwned))), 'ice cream van, cement mixer, road roller, forklift, monster truck and jet ski parked from the start');
+  const has = "k => Vehicles.list.some(v => v.kind === k && !v.npcOwned)";
+  check(await page.evaluate(h => { const has = eval(h); localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9;
+    return ['car', 'ute', 'van', 'citybike', 'bus', 'icecream'].every(has) && !['mixer', 'roller', 'forklift', 'jetski', 'monster'].some(has); }, has), 'six to hop in from the start; the others are locked or hidden');
+  await page.evaluate(() => Game.addStars(15));
+  await page.waitForTimeout(3000);
+  check(await page.evaluate(h => { const has = eval(h); return has('mixer') && !has('roller') && !has('jetski'); }, has), '15 stars: the cement mixer turns up at the building site');
+  check(await page.evaluate(h => { const has = eval(h); Game.addStars(45); Vehicles.update(0); return has('jetski') && has('monster') && !Game.found.monster; }, has), '60 stars: jet ski and monster truck quietly turn up to be found');
+  await page.evaluate(() => { Game.stars = 200; Vehicles.spawnMissing(); });
   check(await page.evaluate(() => { const m = into('mixer'); const tx = Math.floor((m.body.x - m.facing * (m.body.w / 2 + 34)) / TS); let n = 0; run(1, { action: 1 }); run(30); for (let y = SURF - 5; y < SURF; y++) if (World.get(tx, y) === T.CONCRETE) n++; return n >= 1; }), 'cement mixer pours concrete');
   check(await page.evaluate(() => { const f = into('forklift'); const tx = Math.floor(f.frontX(14) / TS), ty = f.feetRow(); World.set(tx, ty, T.BRICK); run(1, { action: 1 }); const up = f.s.load === T.BRICK; run(20); run(1, { action: 1 }); return up && !f.s.load && World.get(tx, ty) === T.BRICK; }), 'forklift picks up a block and puts it down');
   check(await page.evaluate(() => { const r = into('roller'); r.facing = 1; const bx = Math.floor(r.body.x / TS) + 3, by = r.feetRow(); World.set(bx, by, T.DIRT); run(120, { right: 1 }); return World.get(bx, by) === T.AIR; }), 'road roller squashes a bump flat');

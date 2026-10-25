@@ -52,7 +52,7 @@ defVehicle('tram', {
 
 // ---------- City bike ----------
 defVehicle('citybike', {
-  name: 'Bike', say: 'Bike ride! Pedal pedal!', icon: '⤴️', w: 60, h: 52, speed: 270, accel: 3, look: 200, noSave: true,
+  name: 'Bike', say: 'Bike ride! Pedal pedal!', icon: '⤴️', w: 60, h: 52, speed: 270, accel: 3, look: 200,
   act(v, dt, inp) {
     const b = v.body;
     if (inp.actionP && b.onGround) { b.vy = -560; Sound.jump(); }

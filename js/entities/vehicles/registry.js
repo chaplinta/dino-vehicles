@@ -9,14 +9,16 @@ const VEHICLE_ORDER = [
 const UNLOCKS = {
   digger: 0, dumptruck: 0, tractor: 0, firetruck: 0, train: 0, bulldozer: 0, police: 0, ambulance: 0,
   garbage: 10, harvester: 20, drill: 30, wrecker: 45,
+  mixer: 15, roller: 25, forklift: 35,   // not in the whistle menu: they turn up parked where they work
 };
+const PARKED_AT = { mixer: 'at the building site', roller: 'in town', forklift: 'by the pit garage' };
 const FINDS = {
   crane: 'at the building site', tugboat: 'in the sea', fishboat: 'in the sea',
   plane: 'at the airport', helicopter: 'up in the mountains', submarine: 'in the sea', rocket: 'at the launch pad, right at the end of the world', pirateship: 'out in the sea',
   motorbike: 'at the bike park', sportscar: 'at the speedway', racecar: 'in the pit garage',
 };
 // The best ones only turn up somewhere once you have enough stars, and you still have to go and find them.
-const FIND_STARS = { motorbike: 30, jet: 50, pirateship: 70, sportscar: 90, rocket: 110, racecar: 140 };
+const FIND_STARS = { motorbike: 30, jetski: 45, jet: 50, monster: 60, pirateship: 70, sportscar: 90, rocket: 110, racecar: 140 };
 for (const k in UNLOCKS) if (VEHICLE_DEFS[k]) VEHICLE_DEFS[k].unlock = UNLOCKS[k];
 for (const k in FINDS) if (VEHICLE_DEFS[k]) { VEHICLE_DEFS[k].find = FINDS[k]; VEHICLE_DEFS[k].unlock = 0; }
 // Can the whistle call it?

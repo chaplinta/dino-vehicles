@@ -349,13 +349,13 @@ const Game = {
     this.stars += n;
     Hud.starBump = 1;
     if (!this.away && newlyParked(before, this.stars)) Vehicles.spawnMissing();   // something new turns up somewhere, quietly
-    for (const k of VEHICLE_ORDER) {
+    for (const k of Object.keys(UNLOCKS)) {
       const def = VEHICLE_DEFS[k];
       if (def && !def.find && def.unlock > before && def.unlock <= this.stars) {
         setTimeout(() => {
           if (!this.away) Vehicles.spawnMissing();   // it turns up at its parking spot
           Hud.celebrate('New: ' + def.name + '!');
-          Sound.say(`You earned the ${def.name}! Press the whistle to call it.`);
+          Sound.say(PARKED_AT[k] ? `You earned the ${def.name}! It's parked ${PARKED_AT[k]}.` : `You earned the ${def.name}! Press the whistle to call it.`);
         }, 2600);
       }
     }
