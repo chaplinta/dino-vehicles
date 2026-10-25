@@ -44,10 +44,14 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(dug >= 3, `dino digs (${dug} tiles changed)`);
   const placed = await page.evaluate(() => {
     const px = Math.floor(Player.body.x / TS), py = Math.floor(Player.body.y / TS);
-    let spot = null;
-    for (let dy = -4; dy <= 0 && !spot; dy++) for (let dx = 2; dx <= 4 && !spot; dx++) if (World.get(px + dx, py + dy) === T.AIR) spot = [px + dx, py + dy];
-    if (!spot) return null;
-    Player.block = 1; Player.tapTile(spot[0], spot[1]); return World.get(spot[0], spot[1]) === T.BRICK ? spot : null;
+    // Try a few empty spots nearby (one might have a passing car in it).
+    Player.block = 1;
+    for (let dy = -4; dy <= 0; dy++) for (const dx of [2, 3, 4, -2, -3, -4]) {
+      if (World.get(px + dx, py + dy) !== T.AIR) continue;
+      Player.placeCool = 0; Player.tapTile(px + dx, py + dy);
+      if (World.get(px + dx, py + dy) === T.BRICK) return [px + dx, py + dy];
+    }
+    return null;
   });
   check(!!placed, 'tap places a brick');
   await page.evaluate(() => Save.write());
@@ -868,7 +872,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     const n = NPCs.add({ x: b.body.x + 60, y: b.body.y, type: 'tri', fighter: false }); n.greeted = true;
     Input.set('action', true); Game.update(1 / 60); Input.endFrame(); Input.set('action', false); for (let i = 0; i < 20; i++) { Game.update(1 / 60); Input.endFrame(); }
     return !!n.ride; }), 'bus button opens the doors and a dino hops on');
-  check(await page.evaluate(() => JSON.stringify(Whistle.kinds()) === JSON.stringify(['digger', 'dumptruck', 'firetruck', 'tractor', 'train', 'bulldozer', 'ambulance', 'police'])), 'whistle menu unchanged');
+  check(await page.evaluate(() => !Whistle.cells().some(c => ['car', 'ute', 'bus', 'van', 'icecream', 'mixer', 'roller', 'forklift', 'monster', 'jetski', 'citybike'].includes(c.k))), 'whistle menu unchanged (everyday vehicles are parked about instead)');
   // More to hop in: ice cream van, cement mixer, road roller, forklift, monster truck, jet ski.
   await page.evaluate(() => {
     window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
