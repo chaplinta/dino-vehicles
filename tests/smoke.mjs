@@ -866,7 +866,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
     for (let i = 0; i < 60 * 20; i++) { Player.body.x = (20 + (i % 600) * 1.2) * TS; Player.body.y = World.surfaceAt(Math.floor(Player.body.x / TS)) * TS - 0.01; Game.update(1 / 60); Input.endFrame(); }
     return drv.filter((v, i) => Math.abs(v.body.x - x0[i]) > 64).length >= 10 && drv.every(v => v.body.x > 0 && v.body.x < WORLD_W * TS && Number.isFinite(v.body.y));
   }), 'the traffic gets about and stays in the world');
-  check(await page.evaluate(() => ['car', 'ute', 'van', 'bus'].every(k => Vehicles.list.some(v => v.kind === k && !v.npcOwned && !v.driver)) && !Vehicles.serialize().some(e => e[0] === 'citybike')), 'a car, ute, van and bus parked to hop in from the start');
+  check(await page.evaluate(() => ['car', 'ute', 'van', 'bus'].every(k => Vehicles.list.some(v => v.kind === k && !v.npcOwned && !v.driver)) && Vehicles.serialize().filter(e => e[0] === 'citybike').length === 1), 'a car, ute, van, bus and bike parked to hop in from the start (the bike saved, the cyclist not)');
   check(await page.evaluate(() => Vehicles.serialize().filter(e => ['car', 'ute', 'van', 'bus'].includes(e[0])).length === 4), 'only the parked ones are saved, not the traffic');
   check(await page.evaluate(() => { const b = Vehicles.list.find(v => v.kind === 'bus' && !v.npcOwned); Player.body.x = b.body.x; Player.body.y = b.body.y - 10; Vehicles.enter(Player, b);
     const n = NPCs.add({ x: b.body.x + 60, y: b.body.y, type: 'tri', fighter: false }); n.greeted = true;
