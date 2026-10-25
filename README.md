@@ -37,6 +37,8 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 
 From left to right: farm and airport, town (fire station, hospital, police), building site, beach and sea, mountains, the speedway, then the rocket launch pad right at the far end. A train line runs the whole way, through tunnels and over a bridge.
 
+Dinos drive about too: cars, utes, delivery vans, a town bus that stops to let passengers on, and dinos on bikes, plus the farmer, builder, digger driver, police, fisher and crop duster at work. They stop and toot if you're in the way. A ute (in the barn, with its dog), a car (in town), a van (end of town), a bike (at the beach) and the bus (speedway) are parked for you to hop in straight away. The bus button opens the doors: a dino waiting nearby gets on, and gets off a bit further along for a star. Melbourne and the Pilbara have traffic too.
+
 Everything except the bedrock at the bottom can be dug. Sparkly stars float around the world to catch (some up high for flyers, some underwater) and come back after a minute. Vehicles bounce over walls they can't drive up, and dinos climb walls by walking into them, so nobody gets stuck. Bones, eggs, gems and fossils are hidden underground and earn stars.
 
 **Asteroid:** a 10-minute clock (top right) counts down to an asteroid hitting Earth. When it hits it's game over; tap ▶ for a new world (stars are kept). Be on the Moon when it hits and you escape with bonus stars.

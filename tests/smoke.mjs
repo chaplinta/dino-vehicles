@@ -852,6 +852,27 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
+// 27. Traffic: dinos driving cars, utes, vans, the bus and bikes about; and some parked to hop in.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => { Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; });
+  check(await page.evaluate(() => Vehicles.list.filter(v => v.npcOwned && v.driver).length >= 14), 'plenty of dinos driving vehicles about');
+  check(await page.evaluate(() => {
+    const drv = Vehicles.list.filter(v => v.npcOwned), x0 = drv.map(v => v.body.x);
+    for (let i = 0; i < 60 * 20; i++) { Player.body.x = (20 + (i % 600) * 1.2) * TS; Player.body.y = World.surfaceAt(Math.floor(Player.body.x / TS)) * TS - 0.01; Game.update(1 / 60); Input.endFrame(); }
+    return drv.filter((v, i) => Math.abs(v.body.x - x0[i]) > 64).length >= 10 && drv.every(v => v.body.x > 0 && v.body.x < WORLD_W * TS && Number.isFinite(v.body.y));
+  }), 'the traffic gets about and stays in the world');
+  check(await page.evaluate(() => ['car', 'ute', 'van', 'bus'].every(k => Vehicles.list.some(v => v.kind === k && !v.npcOwned && !v.driver)) && !Vehicles.serialize().some(e => e[0] === 'citybike')), 'a car, ute, van and bus parked to hop in from the start');
+  check(await page.evaluate(() => Vehicles.serialize().filter(e => ['car', 'ute', 'van', 'bus'].includes(e[0])).length === 4), 'only the parked ones are saved, not the traffic');
+  check(await page.evaluate(() => { const b = Vehicles.list.find(v => v.kind === 'bus' && !v.npcOwned); Player.body.x = b.body.x; Player.body.y = b.body.y - 10; Vehicles.enter(Player, b);
+    const n = NPCs.add({ x: b.body.x + 60, y: b.body.y, type: 'tri', fighter: false }); n.greeted = true;
+    Input.set('action', true); Game.update(1 / 60); Input.endFrame(); Input.set('action', false); for (let i = 0; i < 20; i++) { Game.update(1 / 60); Input.endFrame(); }
+    return !!n.ride; }), 'bus button opens the doors and a dino hops on');
+  check(await page.evaluate(() => JSON.stringify(Whistle.kinds()) === JSON.stringify(['digger', 'dumptruck', 'firetruck', 'tractor', 'train', 'bulldozer', 'ambulance', 'police'])), 'whistle menu unchanged');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

@@ -118,6 +118,22 @@ const VEHICLE_FACTS = {
     'Riding a bike is one of the best ways to get around a city.',
     'Always wear a helmet when you ride a bike.',
   ],
+  car: [
+    'A car has four wheels and an engine that turns them round.',
+    'Headlights help you see at night and help others see you coming.',
+  ],
+  ute: [
+    'The ute was invented in Australia, for a farmer\'s wife who wanted a car for church that could also carry the pigs to market.',
+    'Lots of farm dogs ride in the back of the ute to help round up the sheep.',
+  ],
+  bus: [
+    'One bus can carry as many people as forty cars.',
+    'Bus doors open at the bus stop so people can hop on and off.',
+  ],
+  van: [
+    'Delivery vans bring parcels right to your front door.',
+    'A delivery driver might drop off more than a hundred parcels in one day.',
+  ],
   jet: [
     'FIFO means fly in, fly out. Miners fly to the mine, work for a couple of weeks, then fly home.',
     'A jet\'s wings are shaped to push air down, and that lifts the plane up into the sky.',

@@ -117,6 +117,7 @@ const NPCs = {
     this.worker('police', 120, 'raptor', patrolScript(104, 212));
     this.worker('fishboat', 372, 'ptero', fisherScript);
     this.worker('plane', 30, 'ptero', dusterScript);
+    for (const [kind, stops, pause] of TRAFFIC) this.worker(kind, stops[0], pick(DINO_KEYS.filter(k => k !== 'brachio')), routeScript(stops, pause), stops[1] > stops[0] ? 1 : -1);
   },
   worker(kind, tx, type, script, facing = 1) {
     if (!VEHICLE_DEFS[kind]) return;
@@ -367,6 +368,37 @@ function patrolScript(x0, x1) {
     v.s.lights = v.kind === 'police' && Math.floor(n.t / 6) % 3 === 0;
   };
 }
+// Traffic: drive from stop to stop along a route and back, pausing at each one. Gives way to you.
+function routeScript(stops, pause = [1, 4]) {
+  return function (n, v, dt) {
+    const m = n.mem;
+    if (m.i === undefined) { m.i = 1; m.dir = 1; }
+    m.pause = (m.pause || 0) - dt;
+    n.input.actionP = false;
+    if (m.pause > 0) { n.input.left = n.input.right = false; return; }
+    const goal = stops[m.i] * TS + 16, pb = Player.vehicle ? null : Player.body;
+    const ahead = pb ? Math.sign(goal - v.body.x) * (pb.x - v.body.x) : -1;
+    if (ahead > 0 && ahead < v.body.w / 2 + 60 && Math.abs(pb.y - v.body.y) < 70) {
+      n.input.left = n.input.right = false;
+      if (!m.tooted) { m.tooted = true; v.hornSound(); }
+      return;
+    }
+    m.tooted = false;
+    if (steerTo(n, v, goal, 30)) {
+      m.pause = rand(pause[0], pause[1]);
+      if (v.kind === 'bus') n.input.actionP = true;   // doors open at the stop
+      else if (Math.random() < 0.3 && dist(v.body.x, v.body.y, Player.cx, Player.cy) < 500) v.hornSound();
+      if (m.i + m.dir < 0 || m.i + m.dir >= stops.length) m.dir = -m.dir;
+      m.i += m.dir;
+    }
+  };
+}
+// Dinos out and about in cars, utes, vans, the bus and on bikes: [kind, route of tile x stops, pause range].
+const TRAFFIC = [
+  ['ute', [8, 60, 95]], ['van', [20, 90]],
+  ['car', [102, 212]], ['car', [212, 150, 102]], ['bus', [104, 140, 156, 200, 212], [3, 3]], ['citybike', [110, 205]],
+  ['ute', [218, 276]], ['car', [300, 328]], ['car', [575, 668], [1, 2]], ['van', [722, 754]],
+];
 function topSolidRow(tx, y0) { return World.groundBelow(tx, y0); }
 function diggerScript(n, v, dt) {
   const m = n.mem;

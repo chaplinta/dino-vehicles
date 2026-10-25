@@ -181,6 +181,8 @@ const Melbourne = {
     const g = tx => World.groundBelow(tx, SURF - 3) * TS - 0.01;
     for (const [tx, type] of [[40, 'raptor'], [90, 'stego'], [140, 'tri'], [200, 'pachy'], [250, 'brachio'], [300, 'iguano']]) NPCs.add({ x: tx * TS + 16, y: g(tx), type, range: 5 * TS, fighter: false });
     for (let i = 0; i < 3; i++) this.addPassenger();
+    // City traffic.
+    for (const [kind, stops] of [['car', [44, 140]], ['car', [300, 190]], ['citybike', [100, 240]], ['van', [36, 120]]]) NPCs.worker(kind, stops[0], pick(DINO_KEYS.filter(k => k !== 'brachio')), routeScript(stops), stops[1] > stops[0] ? 1 : -1);
     this.rain = 0; this.rainT = rand(25, 40);
     jet.facing = 1;
     VEHICLE_DEFS.jet.landAt(jet, 18);

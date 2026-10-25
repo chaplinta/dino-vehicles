@@ -99,6 +99,7 @@ const Pilbara = {
     NPCs.list = [];
     const g = tx => World.groundBelow(tx, World.genSurf[tx] - 3) * TS - 0.01;
     for (const [tx, type] of [[20, 'tri'], [60, 'iguano'], [126, 'stego'], [150, 'raptor'], [220, 'carno'], [294, 'ankylo']]) NPCs.add({ x: tx * TS + 16, y: g(tx), type, range: 4 * TS });
+    NPCs.worker('ute', 36, 'tri', routeScript([36, 150]));   // site ute along the plain
     // Land on the camp strip.
     jet.facing = 1;
     VEHICLE_DEFS.jet.landAt(jet, 18);
