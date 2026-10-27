@@ -37,7 +37,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 
 From left to right: farm and airport, town (fire station, hospital, police), building site, beach and sea, mountains, the speedway, then the rocket launch pad right at the far end. A train line runs the whole way, through tunnels and over a bridge.
 
-Dinos drive about too: cars, utes, delivery vans, a town bus that stops to let passengers on, and dinos on bikes, plus the farmer, builder, digger driver, police, fisher and crop duster at work. They stop and toot if you're in the way. A ute (in the barn, with its dog), a car (in town), a van (end of town), a bike (at the beach), the bus (speedway) and an ice cream van (on the beach) are parked for you to hop in straight away. The bus button opens the doors: a dino waiting nearby gets on, and gets off a bit further along for a star. The ice cream van's tune brings dinos running for a cone, a star each. More turn up as you earn stars: a cement mixer at the building site at 15 (pours concrete blocks), a road roller in town at 25 (squashes bumps flat), a forklift by the pit garage at 35 (picks up a block and puts it down somewhere else). Two are hidden and turn up quietly, so you have to go looking: a jet ski in the sea at 45 and a monster truck by the bike park at 60 (giant bounce, CRUNCH landings). Melbourne and the Pilbara have traffic too.
+Dinos drive about too: cars, utes, delivery vans, a town bus that stops to let passengers on, and dinos on bikes, plus the farmer, builder, digger driver, police, fisher and crop duster at work. They stop and toot if you're in the way, and if one stops next to you, press the door button: the dino hops out and lets you drive (that's how you drive the town bus). A ute (in the barn, with its dog), a car (in town), a van (end of town), a bike (at the beach), the bus (speedway) and an ice cream van (on the beach) are parked for you to hop in straight away. The bus button opens the doors: a dino waiting nearby gets on, and gets off a bit further along for a star. The ice cream van's tune brings dinos running for a cone, a star each. More turn up as you earn stars: a cement mixer at the building site at 15 (pours concrete blocks), a road roller in town at 25 (squashes bumps flat), a forklift by the pit garage at 35 (picks up a block and puts it down somewhere else). Two are hidden and turn up quietly, so you have to go looking: a jet ski in the sea at 45 and a monster truck by the bike park at 60 (giant bounce, CRUNCH landings). Melbourne and the Pilbara have traffic too.
 
 Everything except the bedrock at the bottom can be dug. Sparkly stars float around the world to catch (some up high for flyers, some underwater) and come back after a minute. Vehicles bounce over walls they can't drive up, and dinos climb walls by walking into them, so nobody gets stuck. Bones, eggs, gems and fossils are hidden underground and earn stars.
 
@@ -48,6 +48,8 @@ Everything except the bedrock at the bottom can be dug. Sparkly stars float arou
 **Reading signs:** one short word on signs around every place (FARM, CORN, FIRE, DIG, MOON, ROCK, CAVE...), all 3 or 4 letters. Walk up to one, or tap it, and the word lights up to read along with. Getting in a vehicle pops up its word too (DIG, DUMP, FIRE, COP, SHIP, ZOOM...). There's no voice-over: the game only makes sound effects.
 
 **Speedway:** a drag strip with a start gantry, a grandstand full of dinos, a pit garage and a dirt bike park with jump ramps. Stop just behind the gantry in any vehicle and wait: three red lights, then green. Floor it to the chequered finish for a time and a star, and 3 more for a new record. Any wheeled vehicle flies off a ramp; a long jump is BIG AIR and a star. There's a little skate ramp at the end of town too.
+
+**Ride a Brachiosaurus:** walk up to a grown-up Brachiosaurus and press 🦕. It carries you about, and its button munches the treetops (a star every five mouthfuls) or stomps so the dinos jump.
 
 ## Dinosaurs
 
@@ -99,7 +101,7 @@ You start with eight: digger, dump truck, tractor, fire truck, train, bulldozer,
 | Pirate ship | fire the cannon. Up hoists the sails and sails off to Skull Island; down drops the anchor |
 | Rocket | countdown, blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
 
-On the Moon everyone wears a space suit and helmet. There's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
+On the Moon everyone wears a space suit and helmet. There's a flying saucer parked there too: hop in and fly it anywhere, and its tractor beam pulls blocks up out of the ground. There's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
 
 
 ## The Pilbara
@@ -135,6 +137,8 @@ Hoist the pirate ship's sails and it sails to Skull Island. Everyone there wears
 3. **Pirates!** The crew come running with cutlasses. Fight them off (three hits each) or just run.
 4. **Carry** the chest back to the ship (or the jetty): 10 stars, and a new map.
 
+The island has lots of open sea to the west: floating barrels to smash with the cannon, bell buoys to ring, and a rival pirate ship with red sails that fires back (it can't hurt you). Three hits sink it for 5 stars, and it sails back later. There are barrels and a buoy at home in the sea too.
+
 Also on the island: coconuts to knock out of the palm trees, a message in a bottle, a plank to walk off the jetty, Skull Cave with a torch, a hidden chest and a friendly ghost, a shipwreck with treasure on the sea floor, a sandcastle fort to knock down with the cannon, and the Kraken, who throws you stars if you splash a cannonball near it. Hoist the sails again to go home. The island isn't saved.
 
 ## Secrets (spoilers for grown-ups)
@@ -143,8 +147,9 @@ Also on the island: coconuts to knock out of the palm trees, a message in a bott
 - **Cool sun:** tap the sun 3 times and it puts on sunglasses.
 - **Golden egg:** dig all the way to the bottom of the world under the farm. It hatches a baby dino that follows you everywhere, even to the Moon.
 - **Nessie:** swim, or take the submarine, along the sea floor near the far side of the sea. A friendly sea monster wakes up and waves.
+- **Volcano:** dig really deep (anywhere but under the farm) and you hit glowing hot rock. It rumbles, then a volcano blasts you straight up and out of the ground, lava fills the hole and spills into a little cone, and it cools back to rock and dirt a bit later. Lava is hot to stand on, so you hop off it.
 - **Moon cheese core:** dig deep down in the middle of the Moon. It really is made of cheese.
-- **Flying saucer:** tap the parked saucer on the Moon. It takes off, does a loop and drops stars.
+- **Flying saucer:** hop in the saucer parked on the Moon (2 stars the first time) and fly it about.
 
 ## Jobs
 

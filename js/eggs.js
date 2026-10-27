@@ -1,7 +1,7 @@
 // Hidden surprises (Easter eggs). Not explained in the game; they're for finding.
 //  Earth: roar 5 times fast for shooting stars; tap the sun 3 times; a golden egg at the very
 //         bottom under the farm hatches a pet; Nessie sleeps on the sea floor.
-//  Moon:  dig deep to find the cheese core; tap the flying saucer.
+//  Moon:  dig deep to find the cheese core; find the flying saucer (it's a vehicle, see ufo.js).
 const Eggs = {
   found: {},          // saved: which one-off rewards are claimed
   roars: [], showerT: 0, sunTaps: 0, sunCool: false,
@@ -64,8 +64,7 @@ const Eggs = {
   update(dt) {
     this.showerT = Math.max(0, this.showerT - dt);
     this.updatePet(dt);
-    if (Game.onMoon) this.updateSaucer(dt);
-    else this.updateNessie(dt);
+    if (!Game.onMoon) this.updateNessie(dt);
   },
 
   // The pet follows the player; while the player drives it rides along out of sight.
@@ -110,24 +109,5 @@ const Eggs = {
     }
     n.awakeT = Math.max(0, (n.awakeT || 0) - dt);
     n.rise = lerp(n.rise || 0, n.awakeT > 0 ? 1 : 0, Math.min(1, dt * 1.5));
-  },
-  // Tap the parked saucer: it takes off, loops, sprinkles stars, and lands again.
-  tapSaucer(wx, wy) {
-    const s = World.props.find(p => p.type === 'saucer');
-    if (!s || s.flyT > 0 || Math.abs(wx - s.x * TS) > 90 || Math.abs(wy - (s.y * TS - 30)) > 70) return false;
-    s.flyT = 8; s.dropped = false;
-    Sound.squeak(); Sound.tone(300, 1.5, 'sine', 0.08, 1200);
-    Sound.say('Whee! The flying saucer!');
-    return true;
-  },
-  updateSaucer(dt) {
-    const s = World.props.find(p => p.type === 'saucer');
-    if (!s || !(s.flyT > 0)) { if (s) { s.fx = 0; s.fy = 0; } return; }
-    s.flyT -= dt;
-    const k = 8 - s.flyT;   // seconds into the flight
-    const up = Math.min(1, k / 1.5) * Math.min(1, Math.max(0, s.flyT) / 1.5);
-    s.fy = -up * 150 + Math.sin(k * 3) * 20 * up;
-    s.fx = Math.sin(k * 1.4) * 200 * up;
-    if (k > 3 && !s.dropped) { s.dropped = true; Pickups.shower(s.x * TS + s.fx, s.y * TS + s.fy, 6); this.reward('saucer', 2, 'The aliens left you stars!', 'Wow!'); }
   },
 };

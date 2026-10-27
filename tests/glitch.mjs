@@ -225,6 +225,41 @@ await scene('build and smash', () => {
   G.release();
 });
 
+// 6b. Volcanoes, riding a Brachiosaurus, flying the saucer on the Moon.
+await scene('volcano', () => {
+  G.fresh('raptor', 8080);
+  const tx = 470;
+  for (let y = World.surfaceAt(tx) - 1; y < WORLD_H - 8; y++) World.set(tx, y, T.AIR);
+  Player.body.x = tx * TS + 16; Player.body.y = (WORLD_H - 8) * TS - 0.01; G.run(10);
+  G.run(60 * 2, () => { G.key('down', true); G.key('action', true); });   // dig into the hot rock
+  G.release();
+  if (!Volcano.active) G.issue('digging into hot rock did nothing');
+  G.run(60 * 16, G.masher(mulberry32(4), {}));
+  if (Volcano.active) G.issue('volcano never cooled');
+  G.release();
+});
+await scene('brachio ride', () => {
+  G.fresh('rex', 6161);
+  const n = NPCs.list.find(n => n.type === 'brachio' && !n.baby);
+  Player.body.x = n.body.x - 40; Player.body.y = n.body.y; G.run(2);
+  Input.set('enter', true); G.frame(); Input.set('enter', false);
+  if (!Player.vehicle || Player.vehicle.kind !== 'brachioride') { G.issue('could not climb on the Brachiosaurus'); return; }
+  G.run(60 * 12, G.masher(mulberry32(12), { action: 0.15, enter: 0.01 }));
+  G.release();
+  if (Player.vehicle) Vehicles.exit(Player);
+  G.run(30);
+  if (Vehicles.list.some(v => v.kind === 'brachioride' && !v.driver)) G.issue('empty Brachiosaurus ride left behind');
+});
+await scene('flying saucer', () => {
+  G.fresh('ptero', 7171); Game.stars = 200; Vehicles.spawnMissing();
+  const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r); G.run(60 * 6);
+  if (Player.vehicle) Vehicles.exit(Player);
+  const u = Vehicles.list.find(v => v.kind === 'ufo');
+  Player.body.x = u.body.x; Player.body.y = u.body.y - 5; Vehicles.enter(Player, u);
+  G.run(60 * 12, G.masher(mulberry32(21), { up: 0.3, down: 0.2, action: 0.1 }));
+  G.release(); Game.resetWorld(); G.run(60);
+});
+
 // 7. Save and reload mid-game, several times, in awkward places.
 for (const where of [['in a vehicle', 1], ['underground', 2], ['high up', 3]]) {
   await scene(`reload: ${where[0]}`, k => {

@@ -44,6 +44,7 @@ defVehicle('pirateship', {
     for (const ball of s.balls) {
       ball.t += dt; ball.vy += 900 * dt; ball.x += ball.vx * dt; ball.y += ball.vy * dt;
       const tx = Math.floor(ball.x / TS), ty = Math.floor(ball.y / TS), id = World.get(tx, ty);
+      if (SeaTargets.hit(ball)) { ball.done = true; continue; }
       if (id === T.WATER) {
         ball.done = true;
         Fx.burst(ball.x, ball.y, 20, { speed: 220, up: 240, g: 700, life: 0.9, r: 8, color: ['#a5d8ff', '#e7f5ff', '#74c0fc'], shape: 'grow' });

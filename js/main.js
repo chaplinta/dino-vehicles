@@ -168,15 +168,6 @@ function drawProps(c, camX, camY) {
       } else if (Math.floor(Game.t * 0.7) % 2 === 0) {
         c.font = `22px ${FONT}`; c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,0.8)'; c.fillText('z', hx + 30, hy - 30 - (Game.t * 20) % 20);
       }
-    } else if (p.type === 'saucer') {
-      const sy = p.y * TS - camY + (p.fy || 0), ux = sx + (p.fx || 0);
-      if (ux < -120 || ux > Game.viewW + 120) continue;
-      if (p.flyT > 0) { c.fillStyle = 'rgba(255,240,150,0.25)'; poly(c, [ux - 20, sy - 10, ux + 20, sy - 10, ux + 50, sy + 120, ux - 50, sy + 120], 'rgba(255,240,150,0.25)', 0); }
-      ell(c, ux, sy - 40, 30, 26, 'rgba(190,240,255,0.8)', 3);
-      drawDinoSeated(c, ux - 4, sy - 22, 0.28, 'alien', { t: Game.t });
-      ell(c, ux, sy - 22, 70, 18, '#69db7c', 4);
-      for (let i = 0; i < 5; i++) ell(c, ux - 48 + i * 24, sy - 20, 5, 5, Math.floor(Game.t * 5 + i) % 2 ? '#ffd43b' : '#fff', 2);
-      if (!(p.flyT > 0)) { limb(c, [ux - 34, sy - 10, ux - 44, sy], 4, '#868e96'); limb(c, [ux + 34, sy - 10, ux + 44, sy], 4, '#868e96'); }
     } else if (p.type === 'chess') {
       // Table with a chess board and a dino deep in thought.
       const sy = p.y * TS - camY;
@@ -252,6 +243,7 @@ const Game = {
     requestAnimationFrame(ts => this.loop(ts));
   },
   newWorld() {
+    Volcano.reset();
     World.generate((Math.random() * 1e9) | 0);
     Render.clear();
     this.stars = 0;
@@ -294,6 +286,7 @@ const Game = {
   loadWorld(s) {
     World.generate(s.seed);
     World.applyDiff(s.diff || []);
+    Volcano.coolSaved();   // any lava in the save has set hard
     Render.clear();
     this.stars = s.stars || 0;
     const p = s.player || {};
@@ -380,7 +373,6 @@ const Game = {
     if (!this.onMoon && this.sunAt && dist(x, y, this.sunAt.x, this.sunAt.y) < 55) { Eggs.tapSun(); return; }
     const wx = x / this.zoom + this.cam.x, wy = y / this.zoom + this.cam.y;
     if (Reading.tapWorld(wx, wy)) return;
-    if (this.onMoon && Eggs.tapSaucer(wx, wy)) return;
     if (this.away === 'pilbara' && Mine.tapWorld(wx, wy)) return;
     if (this.away === 'pirate' && Pirate.tapWorld(wx, wy)) return;
     if (this.away === 'melbourne' && Melbourne.tapWorld(wx, wy)) return;
@@ -396,7 +388,7 @@ const Game = {
         Player.facing = dino.body.x < pb.x ? -1 : 1; Player.attack(); return;
       }
       const v = Vehicles.at(wx, wy);
-      if (v && !v.driver && dist(v.body.x, v.body.y, Player.body.x, Player.body.y) < 220) { Vehicles.enter(Player, v); return; }
+      if (v && (!v.driver || Vehicles.takeable(v)) && dist(v.body.x, v.body.y, Player.body.x, Player.body.y) < 220) { Vehicles.enter(Player, v); return; }
     }
     Player.tapTile(Math.floor(wx / TS), Math.floor(wy / TS));
   },
@@ -408,7 +400,7 @@ const Game = {
     const facing = v ? v.facing : Player.facing;
     // Zoom out when flying high, so the ground stays in view.
     let target = 1, ground = null;
-    const flying = v ? (v.kind === 'plane' && v.s.flying) || v.kind === 'helicopter'
+    const flying = v ? (v.kind === 'plane' && v.s.flying) || v.kind === 'helicopter' || v.kind === 'ufo'
       : DINO_TYPES[Player.type].flies && !Player.body.onGround;
     if (flying) {
       const y = v ? v.body.y : Player.body.y;
@@ -462,6 +454,8 @@ const Game = {
     Eggs.update(dt);
     for (const p of World.props) if (p.type === 'bin' && !p.full && (p.refill -= dt) <= 0) p.full = true;
     Sim.update(dt, this.cam.x, this.cam.y);
+    if (!this.away) Volcano.update(dt);
+    SeaTargets.update(dt);
     Fx.update(dt);
     this.updateCamera(dt);
     Save.update(dt);
@@ -471,7 +465,8 @@ const Game = {
     const cx = Math.round(this.cam.x), cy = Math.round(this.cam.y);
     drawBackdrop(c, cx, cy, this.t, this.zoom);
     c.save();
-    if (this.away === 'pilbara' && Mine.shake > 0) c.translate(rand(-1, 1) * Mine.shake * 14, rand(-1, 1) * Mine.shake * 10);
+    const shake = this.away === 'pilbara' ? Mine.shake : this.away ? 0 : Volcano.shake;
+    if (shake > 0) c.translate(rand(-1, 1) * shake * 14, rand(-1, 1) * shake * 10);
     c.scale(this.zoom, this.zoom);   // world layer; zooms out when flying high
     drawTrack(c, cx, cy);
     c.save(); c.translate(-cx, -cy); Vehicles.drawBack(c); c.restore();
@@ -489,6 +484,7 @@ const Game = {
     if (!this.away) Jobs.drawWorld(c);
     if (this.away === 'pilbara') Mine.drawWorld(c);
     if (this.away === 'pirate') Pirate.drawWorld(c);
+    if (!this.away) Volcano.drawWorld(c);
     Fx.draw(c);
     Pow.draw(c);
     this.drawDigHint(c);

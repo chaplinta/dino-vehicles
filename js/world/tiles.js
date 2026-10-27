@@ -5,6 +5,7 @@ const T = {
   CROP: 18, ROOF: 19, CONCRETE: 20, FLOWER: 21,
   MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25, GOLDEGG: 26,
   REDDIRT: 27, IRONORE: 28, BROKENORE: 29, WASTE: 30, SPINIFEX: 31, TREASURE: 32,
+  MAGMA: 33, LAVA: 34,
 };
 
 // Per-tile hash so textures look varied but stable.
@@ -227,6 +228,23 @@ defTile(T.TREASURE, { name: 'treasure chest', treasure: true, draw: treasureTile
 
 // Blocks the player can build with.
 const BUILD_BLOCKS = [T.DIRT, T.BRICK, T.WOOD, T.GLASS, T.STONE, T.ROAD];
+
+// Deep down: hot rock with glowing cracks. Dig into it and the volcano goes off.
+defTile(T.MAGMA, { name: 'hot rock', hard: 2, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#3b2a2a'; c.fillRect(x, y, TS, TS);
+  speckle(c, x, y, tx, ty, '#5a3b34', 4, 5);
+  c.strokeStyle = '#ff922b'; c.lineWidth = 2; c.beginPath();
+  const a = tileHash(tx, ty), b = tileHash(ty, tx);
+  c.moveTo(x + 4, y + 6 + a * 18); c.lineTo(x + 14, y + 12 + b * 10); c.lineTo(x + 28, y + 4 + a * 20);
+  c.moveTo(x + 10, y + 28); c.lineTo(x + 16, y + 20 + b * 6);
+  c.stroke();
+} });
+// Molten lava: you can stand on it, but it's HOT. Cools back into rock.
+defTile(T.LAVA, { name: 'lava', dig: false, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#f76707'; c.fillRect(x, y, TS, TS);
+  speckle(c, x, y, tx, ty, '#ffd43b', 5, 6);
+  speckle(c, x, y, tx + 9, ty, '#e03131', 3, 5);
+} });
 
 function drawTileIcon(c, id) {
   c.clearRect(0, 0, TS, TS);

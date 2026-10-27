@@ -158,6 +158,14 @@ const VEHICLE_FACTS = {
     'A jet ski has no propeller outside: it pushes a jet of water out the back.',
     'Always wear a life jacket on a jet ski.',
   ],
+  ufo: [
+    'UFO stands for unidentified flying object: something in the sky nobody can name.',
+    'In stories, flying saucers lift things up with a beam of light called a tractor beam.',
+  ],
+  brachioride: [
+    'Brachiosaurus was as tall as a four storey building.',
+    'Brachiosaurus ate the leaves at the very tops of the trees, where other dinosaurs couldn\'t reach.',
+  ],
   jet: [
     'FIFO means fly in, fly out. Miners fly to the mine, work for a couple of weeks, then fly home.',
     'A jet\'s wings are shaped to push air down, and that lifts the plane up into the sky.',

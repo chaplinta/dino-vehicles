@@ -42,7 +42,6 @@ function generateMoon(world, seed) {
   }
   world.genSurf = Int16Array.from(surf);
   for (const [x, text] of [[14, 'MOON'], [36, 'JUMP'], [62, 'DIG'], [96, 'WAVE']]) addLabel(world, x, text);
-  world.props.push({ type: 'saucer', x: 110, y: surf[110] });
 }
 
 const Moon = {
@@ -57,6 +56,7 @@ const Moon = {
     rocket.s.state = 'chute';
     Vehicles.list = [rocket];
     Vehicles.spawn('moonbuggy', 38 * TS, World.surfaceAt(38) * TS - 0.01, 1);
+    Vehicles.spawn('ufo', 110 * TS, World.surfaceAt(110) * TS - 0.01, -1);   // a flying saucer, parked
     // Friendly Moon dinos.
     NPCs.list = [];
     for (const tx of [52, 80, 116]) {

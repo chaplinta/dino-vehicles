@@ -1,20 +1,26 @@
 // Skull Island: sail the pirate ship here, read the treasure map, dig where X marks the spot,
 // fend off the pirate crew and carry the chest back to the ship.
+// The island sits PO columns in, with open sea to the west for sailing about and cannon practice.
+const PO = 140;
 const PR = {
-  W: 258,                 // open columns; past that is a wall
-  SEABED: SURF + 10,      // sea floor row on the left
-  JETTY: [46, 58],        // wooden jetty out over the water
-  DOCK: 38,               // where the ship ties up
-  KRAKEN: 14,
-  WRECK: 24,
-  FORT: [104, 112],
-  CAVE: [158, 192],       // inside Skull Cave
-  CAMP: 226,
-  SPOTS: [88, 117, 131, 145, 222],   // places X can mark (not on loose sand, it slides back in)
-  PALMS: [66, 84, 96, 124, 138, 214],
+  W: PO + 258,            // open columns; past that is a wall
+  SEABED: SURF + 10,      // sea floor row
+  JETTY: [PO + 46, PO + 58],   // wooden jetty out over the water
+  DOCK: PO + 38,          // where the ship ties up
+  KRAKEN: 70,             // out in the open sea
+  WRECK: 110,
+  FORT: [PO + 104, PO + 112],
+  CAVE: [PO + 158, PO + 192],  // inside Skull Cave
+  CAMP: PO + 226,
+  SPOTS: [88, 117, 131, 145, 222].map(x => PO + x),   // places X can mark (not on loose sand, it slides back in)
+  PALMS: [66, 84, 96, 124, 138, 214].map(x => PO + x),
+  BARRELS: [22, 46, 84, 100, 128],   // floating barrels to shoot at
+  BUOYS: [34, 118],                  // bell buoys
+  RIVAL: [12, PO - 4],               // where the rival ship patrols
 };
 
 function pirateHeight(x) {
+  x -= PO;   // island coordinates
   if (x < 50) return PR.SEABED;
   if (x < 58) return Math.round(PR.SEABED - (x - 50) * 1.25);
   if (x >= 150 && x < 200) {
@@ -36,19 +42,19 @@ function generatePirate(world, seed) {
     for (let y = 0; y < Ht; y++) {
       let id = T.AIR;
       if (x === 0 || x >= PR.W || y >= Ht - 2) id = T.BEDROCK;
-      else if (x < 58 && y >= SEA_LEVEL && y < h) id = T.WATER;
+      else if (x < PO + 58 && y >= SEA_LEVEL && y < h) id = T.WATER;
       else if (y >= h) {
-        const sandy = x < 82 || (x >= 200 && x < 214);
-        if (y === h) id = sandy || x < 150 ? (sandy ? T.SAND : T.GRASS) : T.GRASS;
-        else if (y < h + 4) id = sandy ? T.SAND : (x >= 150 && x < 200 ? T.STONE : T.DIRT);
+        const u = x - PO, sandy = u < 82 || (u >= 200 && u < 214);
+        if (y === h) id = sandy || u < 150 ? (sandy ? T.SAND : T.GRASS) : T.GRASS;
+        else if (y < h + 4) id = sandy ? T.SAND : (u >= 150 && u < 200 ? T.STONE : T.DIRT);
         else id = T.STONE;
-        if (x >= 150 && x < 200 && y > h) id = T.STONE;
+        if (u >= 150 && u < 200 && y > h) id = T.STONE;
       }
       put(x, y, id);
     }
   }
   // Skull Cave: a tunnel into the hill and a room inside.
-  for (let x = 152; x < PR.CAVE[1]; x++) for (let y = SURF - (x < PR.CAVE[0] ? 4 : 6); y < SURF; y++) put(x, y, T.AIR);
+  for (let x = PO + 152; x < PR.CAVE[1]; x++) for (let y = SURF - (x < PR.CAVE[0] ? 4 : 6); y < SURF; y++) put(x, y, T.AIR);
   // Jetty out over the water, on posts.
   for (let x = PR.JETTY[0]; x < PR.JETTY[1]; x++) {
     put(x, SURF, T.WOOD);
@@ -66,18 +72,21 @@ function generatePirate(world, seed) {
   put(PR.WRECK + 2, PR.SEABED - 1, T.TREASURE);
   put(PR.CAVE[1] - 2, SURF - 1, T.TREASURE);
   world.genSurf = Int16Array.from(surf);
-  for (const [x, text] of [[52, 'DIVE'], [70, 'LAND'], [101, 'NUTS'], [149, 'CAVE'], [201, 'CAMP']]) addLabel(world, x, text);
+  for (const [x, text] of [[52, 'DIVE'], [70, 'LAND'], [101, 'NUTS'], [149, 'CAVE'], [201, 'CAMP']]) addLabel(world, PO + x, text);
   const P = world.props;
   for (const x of PR.PALMS) P.push({ type: 'palm', x: x + 0.5, y: SURF, coco: 2, lean: (rng() - 0.5) * 0.5 });
   P.push({ type: 'plank', x: PR.JETTY[0], y: SURF });
-  P.push({ type: 'bottle', x: 62.5, y: SURF, got: false });
+  P.push({ type: 'bottle', x: PO + 62.5, y: SURF, got: false });
   P.push({ type: 'wreck', x: PR.WRECK, y: PR.SEABED });
   P.push({ type: 'kraken', x: PR.KRAKEN, y: SEA_LEVEL });
-  P.push({ type: 'skullrock', x: 155, y: SURF - 4 });
-  P.push({ type: 'torch', x: 172, y: SURF - 4 });
-  P.push({ type: 'ghost', x: 182.5, y: SURF - 1, boo: 0 });
-  P.push({ type: 'jolly', x: 236, y: SURF });
-  for (const x of [210, 216, 246]) P.push({ type: 'barrel', x: x + 0.5, y: SURF });
+  P.push({ type: 'skullrock', x: PO + 155, y: SURF - 4 });
+  P.push({ type: 'torch', x: PO + 172, y: SURF - 4 });
+  P.push({ type: 'ghost', x: PO + 182.5, y: SURF - 1, boo: 0 });
+  P.push({ type: 'jolly', x: PO + 236, y: SURF });
+  for (const x of [210, 216, 246]) P.push({ type: 'barrel', x: PO + x + 0.5, y: SURF });
+  // Out at sea: things to fire the cannon at.
+  for (const x of PR.BARRELS) P.push({ type: 'seabarrel', x: x + 0.5, y: SEA_LEVEL });
+  for (const x of PR.BUOYS) P.push({ type: 'buoy', x: x + 0.5, y: SEA_LEVEL });
   P.push({ type: 'fortflag', x: f0 + 1, y: SURF - 7 });
   P.push({ type: 'xmark', x: 0, y: 0, hidden: true });
 }
@@ -94,9 +103,10 @@ const Pirate = {
     const g = tx => World.surfaceAt(tx) * TS - 0.01;
     NPCs.add({ x: PR.CAMP * TS + 16, y: g(PR.CAMP), type: 'rex', captain: true, crew: true, fighter: false, range: 3 * TS });
     const crew = ['raptor', 'allo', 'megalo', 'iguano', 'carno', 'bary'];
-    [208, 220, 244].forEach((tx, i) => NPCs.add({ x: tx * TS + 16, y: g(tx), type: pick(crew), crew: true, attackKind: 'cutlass', fighter: i !== 1, range: 4 * TS }));
+    [208, 220, 244].map(x => PO + x).forEach((tx, i) => NPCs.add({ x: tx * TS + 16, y: g(tx), type: pick(crew), crew: true, attackKind: 'cutlass', fighter: i !== 1, range: 4 * TS }));
     Hunt.reset();
     Kraken.reset();
+    SeaTargets.reset();
     Game.overlay = null;
     Game.snapCamera();
     Game.configurePlay();
@@ -111,7 +121,7 @@ const Pirate = {
     if (ship) {
       if (!Vehicles.list.includes(ship)) Vehicles.list.push(ship);
       Vehicles.list = Vehicles.list.filter(v => v === ship || v.kind !== 'pirateship');
-      ship.body.x = 386 * TS + 16; ship.body.y = SEA_LEVEL * TS + ship.def.draft; ship.body.vx = 0; ship.body.vy = 0;
+      ship.body.x = 389 * TS + 16; ship.body.y = SEA_LEVEL * TS + ship.def.draft; ship.body.vx = 0; ship.body.vy = 0;
       ship.facing = -1; ship.s.hoist = false; ship.s.sail = 0.3;
     }
     Game.overlay = null;
@@ -165,6 +175,7 @@ const Pirate = {
   },
   inCave(x, y) { return x > (PR.CAVE[0] - 2) * TS && x < PR.CAVE[1] * TS && y > (SURF - 7) * TS && y <= SURF * TS + 4; },
   drawWorld(c) {
+    SeaTargets.drawWorld(c);
     // Skull Cave is dark; a torch and your own glow light it up.
     const x0 = (PR.CAVE[0] - 6) * TS, x1 = PR.CAVE[1] * TS, y0 = (SURF - 7) * TS, y1 = SURF * TS;
     const inside = this.inCave(Player.cx, Player.body.y);
@@ -172,7 +183,7 @@ const Pirate = {
     c.fillStyle = 'rgba(10,5,25,0.4)'; c.fillRect(x0, y0 + 2 * TS, 6 * TS, y1 - y0 - 2 * TS);
     c.save(); c.globalCompositeOperation = 'lighter';
     const glow = (gx, gy, r, a) => { const g = c.createRadialGradient(gx, gy, 0, gx, gy, r); g.addColorStop(0, `rgba(255,170,70,${a})`); g.addColorStop(1, 'rgba(255,170,70,0)'); c.fillStyle = g; c.fillRect(gx - r, gy - r, r * 2, r * 2); };
-    glow(172 * TS, (SURF - 4) * TS, 150 + Math.sin(Game.t * 9) * 8, 0.35);
+    glow((PO + 172) * TS, (SURF - 4) * TS, 150 + Math.sin(Game.t * 9) * 8, 0.35);
     if (inside) glow(Player.cx, Player.cy, 110, 0.25);
     c.restore();
     Kraken.draw(c);
@@ -231,7 +242,7 @@ const Hunt = {
     const pb = Player.body;
     this.crew = [];
     for (let i = 0; i < 3; i++) {
-      const tx = clamp(Math.floor(pb.x / TS) + 18 + i * 3, 60, PR.W - 3);
+      const tx = clamp(Math.floor(pb.x / TS) + 18 + i * 3, PO + 60, PR.W - 3);
       const n = NPCs.add({ x: tx * TS + 16, y: World.groundBelow(tx, SURF - 12) * TS - 0.01, type: pick(crew), baby: false });
       Object.assign(n, { crew: true, attackKind: 'cutlass', fighter: true, angry: 40, atkCool: 0.8 + i * 0.5, facing: -1, greeted: true });
       this.crew.push(n);
@@ -416,7 +427,7 @@ const Kraken = {
 };
 
 // ---------- Island scenery ----------
-const PIRATE_PROPS = new Set(['palm', 'plank', 'bottle', 'wreck', 'kraken', 'skullrock', 'torch', 'ghost', 'jolly', 'barrel', 'fortflag', 'xmark']);
+const PIRATE_PROPS = new Set(['palm', 'plank', 'bottle', 'wreck', 'kraken', 'skullrock', 'torch', 'ghost', 'jolly', 'barrel', 'fortflag', 'xmark', 'seabarrel', 'buoy']);
 function drawPirateProp(c, p, sx, sy) {
   const t = Game.t;
   if (p.type === 'palm') {
@@ -479,9 +490,128 @@ function drawPirateProp(c, p, sx, sy) {
   } else if (p.type === 'barrel') {
     rbox(c, sx - 18, sy - 44, 36, 44, 10, '#a86d35', 3);
     c.fillStyle = '#495057'; c.fillRect(sx - 18, sy - 36, 36, 4); c.fillRect(sx - 18, sy - 12, 36, 4);
+  } else if (p.type === 'seabarrel') {
+    if (p.gone > 0) return;
+    const bob = Math.sin(t * 2 + p.x) * 4, ry = sy + 6 + bob;
+    c.save(); c.translate(sx, ry); c.rotate(Math.sin(t * 1.5 + p.x) * 0.15);
+    rbox(c, -18, -30, 36, 36, 10, '#a86d35', 3);
+    c.fillStyle = '#495057'; c.fillRect(-18, -24, 36, 4); c.fillRect(-18, -4, 36, 4);
+    c.restore();
+  } else if (p.type === 'buoy') {
+    // A red and white bell buoy, swinging its bell when hit.
+    const bob = Math.sin(t * 1.7 + p.x) * 5, sw = p.ring > 0 ? Math.sin(t * 20) * 0.4 * p.ring : 0;
+    c.save(); c.translate(sx, sy + 8 + bob);
+    poly(c, [-22, 0, 22, 0, 14, -30, -14, -30], '#e03131', 3);
+    c.fillStyle = '#fff'; c.fillRect(-17, -20, 34, 8);
+    limb(c, [-10, -30, 0, -70, 10, -30], 4, '#495057');
+    c.save(); c.translate(0, -66); c.rotate(sw); poly(c, [-9, 0, 9, 0, 6, 16, -6, 16], '#fcc419', 3); c.restore();
+    c.restore();
   } else if (p.type === 'xmark') {
     if (p.hidden) return;
     c.strokeStyle = '#e03131'; c.lineWidth = 8; c.lineCap = 'round';
     c.beginPath(); c.moveTo(sx - 16, sy - 6); c.lineTo(sx + 16, sy + 6); c.moveTo(sx + 16, sy - 6); c.lineTo(sx - 16, sy + 6); c.stroke();
   }
 }
+
+// Things to shoot with the ship's cannon: floating barrels, bell buoys, and on Skull Island's open sea,
+// a rival pirate ship that fires back (harmlessly). Works on whatever sea the world has.
+const SeaTargets = {
+  rival: null,
+  reset() { this.rival = Game.away === 'pirate' ? { x: 30 * TS, dir: 1, hits: 0, sink: 0, gone: 0, cool: 4, rock: 0, balls: [] } : null; },
+  updateProps(dt) {
+    for (const p of World.props) {
+      if (p.type === 'seabarrel' && p.gone > 0) p.gone -= dt;
+      if (p.type === 'buoy') { p.ring = Math.max(0, (p.ring || 0) - dt * 0.6); p.cool = Math.max(0, (p.cool || 0) - dt); }
+    }
+  },
+  update(dt) {
+    this.updateProps(dt);
+    if (Game.away !== 'pirate') this.rival = null;
+    const r = this.rival;
+    if (!r) return;
+    r.rock = Math.max(0, r.rock - dt * 1.5);
+    if (r.gone > 0) { r.gone -= dt; if (r.gone <= 0) Object.assign(r, { x: PR.RIVAL[0] * TS, dir: 1, hits: 0, sink: 0, cool: 4 }); return; }
+    if (r.sink > 0) { r.sink += dt; if (r.sink > 3) r.gone = 40; return; }
+    // Patrol the open sea.
+    r.x += r.dir * 70 * dt;
+    if (r.x > PR.RIVAL[1] * TS) r.dir = -1; else if (r.x < PR.RIVAL[0] * TS) r.dir = 1;
+    // Fire at your ship when it's in range: a lob that mostly splashes nearby.
+    const ship = Player.vehicle && Player.vehicle.kind === 'pirateship' ? Player.vehicle : null;
+    r.cool -= dt;
+    if (ship && r.cool <= 0 && Math.abs(ship.body.x - r.x) < 700) {
+      r.cool = rand(2.5, 4);
+      const dx = ship.body.x + rand(-160, 160) - r.x, T1 = 1.3;
+      r.balls.push({ x: r.x + Math.sign(dx) * 80, y: SEA_LEVEL * TS - 60, vx: dx / T1, vy: -0.5 * 900 * T1, t: 0 });
+      Sound.noise(0.4, 0.2, 'lowpass', 300);
+      Fx.burst(r.x + Math.sign(dx) * 80, SEA_LEVEL * TS - 60, 8, { speed: 120, life: 0.6, r: 10, color: 'rgba(220,220,220,0.8)', shape: 'grow' });
+    }
+    for (const ball of r.balls) {
+      ball.t += dt; ball.vy += 900 * dt; ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+      if (ship && Math.abs(ball.x - ship.body.x) < 100 && ball.y > ship.body.y - 120 && ball.y < ship.body.y) {
+        ball.done = true;
+        Pow.add(ball.x, ball.y - 20, 'POW!'); ship.body.vx += Math.sign(ball.vx) * 120;
+        Sound.noise(0.3, 0.3, 'lowpass', 400);
+      } else if (ball.y > SEA_LEVEL * TS) {
+        ball.done = true;
+        Fx.burst(ball.x, SEA_LEVEL * TS, 16, { speed: 200, up: 220, g: 700, life: 0.8, r: 7, color: ['#a5d8ff', '#e7f5ff'], shape: 'grow' });
+        Sound.noise(0.3, 0.15, 'lowpass', 800);
+      }
+    }
+    r.balls = r.balls.filter(b => !b.done);
+  },
+  // A cannonball from your ship: did it hit anything out on the water?
+  hit(ball) {
+    for (const p of World.props) {
+      if (p.type === 'seabarrel' && !(p.gone > 0) && dist(ball.x, ball.y, p.x * TS, SEA_LEVEL * TS - 10) < 36) {
+        p.gone = 20;
+        Pow.add(ball.x, ball.y - 30, 'SMASH!');
+        Fx.burst(ball.x, ball.y, 14, { speed: 260, up: 200, g: 700, life: 1, r: 6, color: ['#a86d35', '#8a5524', '#ffd43b'], shape: 'rect' });
+        Sound.noise(0.3, 0.3, 'bandpass', 900);
+        Game.addStars(1); Game.popupStar(ball.x, ball.y - 80);
+        return true;
+      }
+      if (p.type === 'buoy' && Math.abs(ball.x - p.x * TS) < 34 && ball.y > SEA_LEVEL * TS - 80 && ball.y < SEA_LEVEL * TS + 10) {
+        p.ring = 1;
+        [1568, 1319, 1568].forEach((f, i) => Sound.tone(f, 0.5, 'sine', 0.1, null, i * 0.25));
+        if (!p.cool) { p.cool = 3; Game.addStars(1); Game.popupStar(ball.x, ball.y - 90); }
+        return true;
+      }
+    }
+    const r = this.rival;
+    if (r && !r.sink && !(r.gone > 0) && Math.abs(ball.x - r.x) < 110 && ball.y > SEA_LEVEL * TS - 180 && ball.y < SEA_LEVEL * TS + 10) {
+      r.hits++; r.rock = 1;
+      Pow.add(ball.x, ball.y - 30, r.hits >= 3 ? 'SUNK!' : 'BOOM!');
+      Fx.burst(ball.x, ball.y, 16, { speed: 260, up: 160, g: 500, life: 0.9, r: 10, color: ['#ffa94d', '#ffe066', 'rgba(120,120,120,0.8)'], shape: 'grow' });
+      Sound.noise(0.6, 0.45, 'lowpass', 400);
+      if (r.hits >= 3) {
+        r.sink = 0.01;
+        Game.addStars(5); Game.popupStar(r.x, SEA_LEVEL * TS - 200);
+        Hud.celebrate('You sank them! Arrr!');
+      }
+      return true;
+    }
+    return false;
+  },
+  // The rival ship: smaller, red sails, a black flag. Tilts and sinks when beaten.
+  drawWorld(c) {
+    const r = this.rival;
+    if (!r) return;
+    for (const b of r.balls) ell(c, b.x, b.y, 8, 8, '#212529', 2);
+    if (r.gone > 0) return;
+    const y = SEA_LEVEL * TS + 18 + r.sink * 40, t = Game.t;
+    c.save(); c.translate(r.x, y); c.rotate(Math.sin(t * 1.3) * 0.04 + r.rock * Math.sin(t * 25) * 0.08 + r.sink * 0.25);
+    if (r.dir < 0) c.scale(-1, 1);
+    c.scale(0.8, 0.8);
+    limb(c, [0, -50, 0, -220], 7, '#5c3d1e');
+    c.beginPath(); c.moveTo(-56, -200); c.lineTo(56, -200); c.quadraticCurveTo(64, -150, 52, -84); c.lineTo(-52, -84); c.quadraticCurveTo(-60, -150, -56, -200); c.closePath();
+    fillStroke(c, '#e03131', 4);
+    ell(c, 0, -146, 14, 13, '#212529', 0);
+    poly(c, [2, -220, 34, -216, 34, -200, 2, -204], '#212529', 3);
+    c.beginPath(); c.moveTo(-104, -90); c.lineTo(-92, -8); c.quadraticCurveTo(0, 12, 86, -8); c.lineTo(104, -56); c.lineTo(-104, -90); c.closePath();
+    fillStroke(c, '#5c3d1e', 5);
+    for (const cx of [-30, 10, 50]) ell(c, cx, -30, 7, 7, '#212529', 2);
+    for (let i = 0; i < 3 - r.hits; i++) drawStar(c, -40 + i * 30, -110, 9, 0, '#fff', 2);   // hits left
+    drawDinoSeated(c, -50, -76, 0.36, 'carno', { t, outfit: 'pirate' });
+    c.restore();
+  },
+};

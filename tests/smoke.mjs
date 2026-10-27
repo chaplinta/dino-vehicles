@@ -484,12 +484,11 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(await page.evaluate(() => World.get(76, 64) === T.CHEESE), 'the Moon has a cheese core');
   await page.evaluate(() => { for (let y = World.surfaceAt(76) - 1; y < 63; y++) World.set(76, y, T.AIR); Player.body.x = 76 * TS + 16; Player.body.y = 63 * TS - 0.01; Player.tapTile(76, 63); });
   check(await page.evaluate(() => Eggs.found.cheese), 'digging into the core: the Moon is made of cheese');
-  await page.evaluate(() => { const s = World.props.find(p => p.type === 'saucer'); Player.body.x = s.x * TS - 100; Player.body.y = World.surfaceAt(s.x - 3) * TS - 0.01; Game.snapCamera(); Eggs.tapSaucer(s.x * TS, s.y * TS - 30); });
-  check(await page.evaluate(() => World.props.find(p => p.type === 'saucer').flyT > 0), 'tapping the saucer makes it fly');
-  await run(60 * 5);
-  check(await page.evaluate(() => Eggs.found.saucer && Pickups.list.some(p => p.temp)), 'the saucer drops stars');
-  await run(60 * 5);
-  check(await page.evaluate(() => !(World.props.find(p => p.type === 'saucer').flyT > 0)), 'the saucer lands again');
+  check(await page.evaluate(() => { const u = Vehicles.list.find(v => v.kind === 'ufo'); if (Player.vehicle) Vehicles.exit(Player); Player.body.x = u.body.x; Player.body.y = u.body.y - 5; Vehicles.enter(Player, u); return Player.vehicle === u && Eggs.found.saucer; }), 'hop in the flying saucer');
+  check(await page.evaluate(() => { const u = Player.vehicle, y0 = u.body.y; for (let i = 0; i < 60; i++) { Input.held.up = true; Game.update(1 / 60); Input.endFrame(); } Input.held.up = false; return y0 - u.body.y > 100; }), 'the saucer flies up');
+  check(await page.evaluate(() => { const u = Player.vehicle; for (let i = 0; i < 90; i++) { Input.held.down = true; Game.update(1 / 60); Input.endFrame(); } Input.held.down = false; const t = VEHICLE_DEFS.ufo.beamTarget(u); if (!t) return false; const id = World.get(t.tx, t.ty); Input.pressed.action = true; Game.update(1 / 60); Input.endFrame(); window.__beam = [t.tx, t.ty, id]; return u.s.beam > 0; }), 'tractor beam switches on');
+  await page.waitForTimeout(700);
+  check(await page.evaluate(() => World.get(window.__beam[0], window.__beam[1]) !== window.__beam[2]), 'the beam pulls a block up out of the ground');
   // Draw everything once in each place to catch drawing errors.
   await page.evaluate(() => { ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); Moon.leave(null, true); Game.draw(ctx); });
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
@@ -894,6 +893,43 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.evaluate(() => { const ic = into('icecream'); for (let i = 0; i < 3; i++) NPCs.add({ x: ic.body.x + 80 + i * 40, y: ic.body.y, type: 'tri', fighter: false }); window.__s = Game.stars; run(1, { action: 1 }); });
   await page.waitForTimeout(2500);
   check(await page.evaluate(() => Game.stars >= window.__s + 3), 'ice cream van tune: dinos come running for a star each');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 28. Take the bus, ride a Brachiosaurus, dig into a volcano, and the pirate's open sea.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => {
+    Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing();
+    window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
+  });
+  check(await page.evaluate(() => { const bus = Vehicles.list.find(v => v.kind === 'bus' && v.npcOwned); const d = bus.driver; d.mem.pause = 5; bus.body.vx = 0; Player.body.x = bus.body.x + 40; Player.body.y = bus.body.y - 5; run(2); run(1, { enter: 1 });
+    const ok = Player.vehicle === bus && !d.vehicle && NPCs.list.includes(d); run(60, { right: 1 }); const moved = Math.abs(bus.body.vx) > 50; Vehicles.exit(Player); run(5); return ok && moved; }), 'stop by the town bus: the driver hops out and you drive it');
+  check(await page.evaluate(() => { const n = NPCs.list.find(n => n.type === 'brachio' && !n.baby); n.scaredT = 0; Player.body.x = n.body.x - 40; Player.body.y = n.body.y; run(2); run(1, { enter: 1 });
+    const v = Player.vehicle; return !!v && v.kind === 'brachioride' && !NPCs.list.includes(n); }), 'climb on a Brachiosaurus');
+  check(await page.evaluate(() => { const v = Player.vehicle; run(60, { right: 1 }); const sc = dinoScale('brachio'), hx = Math.floor((v.body.x + v.facing * 60 * sc) / TS), hy = Math.floor((v.body.y - 134 * sc) / TS);
+    World.set(hx, hy, T.LEAVES); run(1, { action: 1 }); return Math.abs(v.body.vx) > 20 && World.get(hx, hy) === T.AIR; }), 'it walks about and munches the treetops');
+  check(await page.evaluate(() => { run(1, { enter: 1 }); return !Player.vehicle && !Vehicles.list.some(v => v.kind === 'brachioride') && NPCs.list.some(n => n.type === 'brachio' && !n.baby); }), 'hop off: it wanders off as a Brachiosaurus again');
+  check(await page.evaluate(() => World.get(130, WORLD_H - 6) === T.MAGMA && World.get(52, WORLD_H - 3) === T.GOLDEGG && World.get(52, WORLD_H - 6) !== T.MAGMA), 'hot rock deep down (but not over the golden egg)');
+  check(await page.evaluate(() => {
+    const tx = 130; for (let y = World.surfaceAt(tx); y < WORLD_H - 8; y++) World.set(tx, y, T.AIR);
+    Player.body.x = tx * TS + 16; Player.body.y = (WORLD_H - 8) * TS - 0.01; run(5);
+    World.set(tx, WORLD_H - 8, T.AIR); const went = !!Volcano.active;
+    let top = 1e9; for (let i = 0; i < 150; i++) { run(1); top = Math.min(top, Player.body.y); }
+    let lava = 0; for (let y = 0; y < WORLD_H; y++) if (World.get(tx, y) === T.LAVA) lava++;
+    return went && top < (World.genSurf[tx] - 3) * TS && lava > 10 && Eggs.found.volcano; }), 'dig into hot rock: a volcano blasts you out and lava fills the hole');
+  check(await page.evaluate(() => { run(60 * 13); let lava = 0; for (let x = 120; x <= 140; x++) for (let y = 0; y < WORLD_H; y++) if (World.get(x, y) === T.LAVA) lava++;
+    return !Volcano.active && lava === 0 && World.get(130, WORLD_H - 8) === T.STONE && !bodySolidAt(Player.body, Player.body.x, Player.body.y); }), 'the lava cools back to rock and dirt');
+  check(await page.evaluate(() => { const s = Vehicles.list.find(v => v.kind === 'pirateship'); Player.body.x = s.body.x; Vehicles.enter(Player, s); Voyage.start(s); Voyage.finish(); run(30);
+    return Game.away === 'pirate' && World.get(30, SEA_LEVEL + 2) === T.WATER && World.get(PR.DOCK - 60, SEA_LEVEL + 2) === T.WATER && s.body.x > 150 * TS; }), 'Skull Island has lots of open sea to sail');
+  check(await page.evaluate(() => { const s0 = Game.stars, bar = World.props.find(p => p.type === 'seabarrel'), buoy = World.props.find(p => p.type === 'buoy');
+    const a = SeaTargets.hit({ x: bar.x * TS, y: SEA_LEVEL * TS - 10 }), b = SeaTargets.hit({ x: buoy.x * TS, y: SEA_LEVEL * TS - 40 });
+    return a && b && bar.gone > 0 && Game.stars >= s0 + 2; }), 'cannon smashes barrels and rings the bell buoy');
+  check(await page.evaluate(() => { const r = SeaTargets.rival, s0 = Game.stars; for (let i = 0; i < 3; i++) SeaTargets.hit({ x: r.x, y: SEA_LEVEL * TS - 40 }); return r.sink > 0 && Game.stars >= s0 + 5; }), 'three hits sink the rival ship');
+  check(await page.evaluate(() => { const s = Player.vehicle; s.s.cool = 0; const bar = World.props.find(p => p.type === 'seabarrel' && !(p.gone > 0)); s.body.x = bar.x * TS - 600; s.facing = 1; run(20); window.__s0 = Game.stars;
+    Input.pressed.action = true; Game.update(1 / 60); Input.endFrame(); run(120); return bar.gone > 0 || World.props.some(p => p.type === 'seabarrel' && p.gone > 0 && p !== bar); }), 'fire the cannon at a floating barrel');
+  check(await page.evaluate(() => { const s = Player.vehicle; Voyage.start(s); Voyage.finish(); run(30); return !Game.away && !SeaTargets.rival && World.props.filter(p => p.type === 'seabarrel').length === 3; }), 'home again: Earth\'s sea has barrels to shoot too');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

@@ -211,10 +211,12 @@ const Vehicles = {
       if (Input.pressed.enter) this.exit(p);
       else if (Input.pressed.roar) { p.vehicle.hornSound(); }
     } else {
-      const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver);
+      const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver || this.takeable(v));
+      const mount = !near && rideableNear(p.body.x, p.body.y);
       const table = !near && !Game.away && World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - p.body.x) < 110 && Math.abs(t.y * TS - p.body.y) < 80);
       const cafe = !near && Game.away === 'melbourne' && Melbourne.nearCafe();
-      UI.setEnter(!!near || !!table || cafe, table ? '♟️' : cafe ? '☕' : '🚪');
+      UI.setEnter(!!near || !!mount || !!table || cafe, table ? '♟️' : cafe ? '☕' : mount ? '🦕' : '🚪');
+      if (mount && Input.pressed.enter) { mountDino(p, mount); return; }
       if (table && Input.pressed.enter) { Chess.open(); return; }
       if (cafe && Input.pressed.enter) { Melbourne.coffee(); return; }
       if (near && !this.doorHint) { this.doorHint = true; Sound.say('Press the door button to get in!'); }
@@ -229,7 +231,16 @@ const Vehicles = {
     v.autoT = (v.autoT || 0) + 1 / 60;
     return { left: dx < 0, right: dx > 0, up: false, down: false, action: false, actionP: false };
   },
+  // A dino driving traffic that's stopped: you can ask for a go. The driver hops out and wanders off.
+  takeable(v) { return v.npcOwned && v.driver && v.driver !== Player && TRAFFIC_KINDS.has(v.kind) && Math.abs(v.body.vx) < 40; },
   enter(p, v) {
+    if (p === Player && this.takeable(v)) {
+      const n = v.driver;
+      n.vehicle = null; n.script = null; n.input = null; v.driver = null;
+      n.body.x = v.body.x - v.facing * (v.body.w / 2 + 30); n.body.y = v.body.y - 4; n.body.vx = 0; n.body.vy = -250;
+      n.state = 'idle'; n.timer = 2; n.dir = 0; n.home = n.body.x; n.range = 6 * TS; n.heartT = 2; n.greeted = true;
+      liftOut(n.body);
+    }
     if (v.driver) return;
     p.vehicle = v;
     v.driver = p;
@@ -283,7 +294,7 @@ const Vehicles = {
     // Bouncing arrow over a vehicle you can hop into.
     const p = Player;
     if (!p.vehicle) {
-      const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver);
+      const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver || this.takeable(v));
       if (near) {
         const y = near.body.y - near.body.h - 40 - Math.abs(Math.sin(Game.t * 5)) * 12;
         poly(c, [near.body.x - 14, y, near.body.x + 14, y, near.body.x, y + 18], '#ffd43b', 4);

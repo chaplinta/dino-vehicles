@@ -34,7 +34,9 @@ const World = {
     if (!this.inside(x, y)) return;
     const i = y * this.w + x;
     if (this.t[i] === id) return;
+    const was = this.t[i];
     this.t[i] = id;
+    if (was === T.MAGMA && id === T.AIR && typeof Volcano !== 'undefined') Volcano.erupt(x, y);   // dug into the hot rock
     this.meta[i] = 0;
     if (record) this.diff.set(i, id);
     Render.dirtyTile(x, y);

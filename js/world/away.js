@@ -5,6 +5,7 @@ const Away = {
 
   // Swap in a fresh world made by gen(world, seed).
   go(place, gen, o = {}) {
+    if (!this.earth) Volcano.reset();   // lava sets before Earth is put aside
     const cam = Game.cam;
     if (!this.earth) {
       this.earth = {

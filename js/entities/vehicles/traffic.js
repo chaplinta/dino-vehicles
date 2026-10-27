@@ -1,6 +1,8 @@
 // Everyday vehicles: a hatchback, a ute, a town bus and a delivery van. Dinos drive them about
 // as traffic, and a few are parked around the world for you to hop in.
 
+// Kinds dinos drive about as traffic; stop by one and you can take it for a drive.
+const TRAFFIC_KINDS = new Set(['car', 'ute', 'van', 'bus', 'citybike']);
 const CAR_COLOURS = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b', '#f8f9fa'];
 
 // Lights flash and a toot: what the car and van buttons do.

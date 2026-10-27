@@ -15,6 +15,8 @@ function liftOut(b) { for (let i = 0; i < 16 && bodySolidAt(b, b.x, b.y); i++) b
 
 // opts: { step: max tiles to auto-climb, gravity: multiplier, float: true to bob in water }
 function moveBody(b, dt, opts = {}) {
+  // Blasted out by a volcano: straight up until clear of the vent.
+  if (b.launchTo !== undefined) { if (b.y > b.launchTo) { b.vy = -1300; opts = Object.assign({}, opts, { gravity: 0 }); } else delete b.launchTo; }
   const g = (opts.gravity === undefined ? 1 : opts.gravity) * (World.gravity || 1);
   b.inWater = World.waterPx(b.x, b.y - b.h * 0.4);
   if (b.inWater) {

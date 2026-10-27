@@ -76,6 +76,8 @@ function generateWorld(world, seed) {
   }
 
   const put = (x, y, id) => { if (x >= 0 && x < Wt && y >= 0 && y < Ht) world.t[y * Wt + x] = id; };
+  // Deep down there's hot rock. Not under the farm, where the golden egg is buried.
+  for (let x = 1; x < Wt - 1; x++) if (x < 44 || x > 60) for (let y = Ht - 8; y < Ht - 2; y++) put(x, y, T.MAGMA);
   const putBg = (x, y, id) => { if (x >= 0 && x < Wt && y >= 0 && y < Ht) world.bg[y * Wt + x] = id; };
   const get = (x, y) => world.t[y * Wt + x];
 
@@ -159,6 +161,9 @@ function generateWorld(world, seed) {
 
   // Sunken treasure on the sea floor.
   for (const cx of [345, 362, 384]) props.push({ type: 'chest', x: cx + 0.5, y: surf[cx], open: false });
+  // Floating barrels and a bell buoy to fire the pirate ship's cannon at.
+  for (const bx of [342, 356, 376]) props.push({ type: 'seabarrel', x: bx + 0.5, y: SEA_LEVEL });
+  props.push({ type: 'buoy', x: 366.5, y: SEA_LEVEL });
 
   // Mountains: trees on lower slopes, a few flowers.
   for (let x = 424; x < 556; x += 6 + Math.floor(rng() * 7)) if (surf[x] > SURF - 9) tree(x);
