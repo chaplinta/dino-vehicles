@@ -197,3 +197,41 @@ defVehicle('jetski', {
     v.drawDriver(c, -4, -24, 0.38);
   },
 });
+
+// ---------- Skateboard ----------
+// Stand on it and roll. The button ollies; press again in the air for a kickflip (land it for a star).
+defVehicle('skateboard', {
+  name: 'Skateboard', say: 'Skateboard! Ollie!', icon: '🛹', w: 50, h: 56, speed: 340, accel: 2.2, look: 220,
+  init(v) { v.s.flip = 0; v.s.flipCool = 0; v.s.roll = 0; },
+  act(v, dt, inp) {
+    const b = v.body, s = v.s;
+    s.flipCool = Math.max(0, s.flipCool - dt);
+    if (inp.actionP) {
+      if (b.onGround) { b.vy = -620; Sound.tone(220, 0.08, 'square', 0.06); Sound.jump(); }
+      else if (!s.flipping) { s.flipping = true; s.flip = 0; Sound.tone(700, 0.2, 'triangle', 0.06, 1000); }
+    }
+    if (s.flipping) { s.flip += dt * 14; if (s.flip >= TAU) { s.flipping = false; s.flip = 0; s.landFlip = true; } }
+    if (b.onGround) {
+      if (s.flipping) { s.flipping = false; s.flip = 0; Sound.bonk(); }   // landed mid-flip: wobble, no prize
+      if (s.landFlip) {
+        s.landFlip = false;
+        if (v.driver === Player && !s.flipCool) { s.flipCool = 4; Game.addStars(1); Game.popupStar(b.x, b.y - 90); Pow.add(b.x, b.y - 80, 'KICKFLIP!'); Sound.collect(); }
+      }
+      // The rumble of the wheels.
+      s.roll -= dt;
+      if (Math.abs(b.vx) > 60 && s.roll <= 0) { s.roll = 0.09; Sound.noise(0.08, 0.03, 'lowpass', 500); }
+    }
+  },
+  draw(c, v) {
+    const s = v.s;
+    // You stand on the board, knees bent a little when going fast.
+    if (v.driver) drawDino(c, -2, -14 + Math.min(4, Math.abs(v.body.vx) / 80), dinoScale(v.driver.type), v.driver.type, { t: v.t, blinkSeed: v.driver.blinkSeed });
+    // The deck flips over end to end in a kickflip.
+    c.save(); c.translate(0, -10); c.scale(1, Math.cos(s.flip) || 0.05);
+    c.beginPath(); c.moveTo(-28, -6); c.quadraticCurveTo(-32, -10, -30, -14); c.lineTo(-24, -4); c.lineTo(24, -4); c.lineTo(30, -14); c.quadraticCurveTo(32, -10, 28, -6); c.lineTo(24, 2); c.lineTo(-24, 2); c.closePath();
+    fillStroke(c, '#7048e8', 3);
+    c.fillStyle = '#ffd43b'; c.fillRect(-14, -3, 28, 3);
+    c.restore();
+    for (const wx of [-16, 16]) ell(c, wx, -4, 5, 5, '#ffd43b', 2);
+  },
+});

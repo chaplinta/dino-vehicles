@@ -166,6 +166,10 @@ const VEHICLE_FACTS = {
     'Brachiosaurus was as tall as a four storey building.',
     'Brachiosaurus ate the leaves at the very tops of the trees, where other dinosaurs couldn\'t reach.',
   ],
+  skateboard: [
+    'An ollie is the jump that most skateboard tricks start with: you pop the tail down and the board leaps up.',
+    'Skateboarding was invented by surfers who wanted to surf on the footpath.',
+  ],
   jet: [
     'FIFO means fly in, fly out. Miners fly to the mine, work for a couple of weeks, then fly home.',
     'A jet\'s wings are shaped to push air down, and that lifts the plane up into the sky.',

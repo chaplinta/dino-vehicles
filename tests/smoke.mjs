@@ -911,6 +911,10 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   check(await page.evaluate(() => { const v = Player.vehicle; run(60, { right: 1 }); const sc = dinoScale('brachio'), hx = Math.floor((v.body.x + v.facing * 60 * sc) / TS), hy = Math.floor((v.body.y - 134 * sc) / TS);
     World.set(hx, hy, T.LEAVES); run(1, { action: 1 }); return Math.abs(v.body.vx) > 20 && World.get(hx, hy) === T.AIR; }), 'it walks about and munches the treetops');
   check(await page.evaluate(() => { run(1, { enter: 1 }); return !Player.vehicle && !Vehicles.list.some(v => v.kind === 'brachioride') && NPCs.list.some(n => n.type === 'brachio' && !n.baby); }), 'hop off: it wanders off as a Brachiosaurus again');
+  check(await page.evaluate(() => { const sk = Vehicles.list.find(v => v.kind === 'skateboard'); if (!sk) return false; if (Player.vehicle) Vehicles.exit(Player); Player.body.x = sk.body.x; Player.body.y = sk.body.y - 5; run(2); run(1, { enter: 1 }); run(10);
+    const y0 = sk.body.y; let up = 0; window.__pows = []; const add = Pow.add.bind(Pow); Pow.add = (x, y, t) => { __pows.push(t); add(x, y, t); };
+    run(1, { action: 1 }); run(5); run(1, { action: 1 }); for (let i = 0; i < 50; i++) { run(1); up = Math.max(up, y0 - sk.body.y); } Pow.add = add; Vehicles.exit(Player); run(5);
+    return up > 80 && __pows.includes('KICKFLIP!'); }), 'skateboard: ollie, then a kickflip in the air');
   check(await page.evaluate(() => World.get(130, WORLD_H - 6) === T.MAGMA && World.get(52, WORLD_H - 3) === T.GOLDEGG && World.get(52, WORLD_H - 6) !== T.MAGMA), 'hot rock deep down (but not over the golden egg)');
   check(await page.evaluate(() => {
     const tx = 130; for (let y = World.surfaceAt(tx); y < WORLD_H - 8; y++) World.set(tx, y, T.AIR);
