@@ -252,8 +252,8 @@ await scene('brachio ride', () => {
 });
 await scene('flying saucer', () => {
   G.fresh('ptero', 7171); Game.stars = 200; Vehicles.spawnMissing();
-  const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r); G.run(60 * 6);
-  if (Player.vehicle) Vehicles.exit(Player);
+  const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r);
+  for (let i = 0; i < 60 * 15 && Player.vehicle; i++) { Vehicles.exit(Player); G.frame(); }   // wait for the landing, then out
   const u = Vehicles.list.find(v => v.kind === 'ufo');
   Player.body.x = u.body.x; Player.body.y = u.body.y - 5; Vehicles.enter(Player, u);
   G.run(60 * 12, G.masher(mulberry32(21), { up: 0.3, down: 0.2, action: 0.1 }));

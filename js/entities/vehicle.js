@@ -234,6 +234,7 @@ const Vehicles = {
   // A dino driving traffic that's stopped: you can ask for a go. The driver hops out and wanders off.
   takeable(v) { return v.npcOwned && v.driver && v.driver !== Player && TRAFFIC_KINDS.has(v.kind) && Math.abs(v.body.vx) < 40; },
   enter(p, v) {
+    if (p.vehicle) return;   // one at a time: get out first
     if (p === Player && this.takeable(v)) {
       const n = v.driver;
       n.vehicle = null; n.script = null; n.input = null; v.driver = null;
