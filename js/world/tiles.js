@@ -5,7 +5,7 @@ const T = {
   CROP: 18, ROOF: 19, CONCRETE: 20, FLOWER: 21,
   MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25, GOLDEGG: 26,
   REDDIRT: 27, IRONORE: 28, BROKENORE: 29, WASTE: 30, SPINIFEX: 31, TREASURE: 32,
-  MAGMA: 33, LAVA: 34,
+  MAGMA: 33, LAVA: 34, WARMROCK: 35,
 };
 
 // Per-tile hash so textures look varied but stable.
@@ -239,8 +239,14 @@ defTile(T.MAGMA, { name: 'hot rock', hard: 2, draw(c, x, y, tx, ty) {
   c.moveTo(x + 10, y + 28); c.lineTo(x + 16, y + 20 + b * 6);
   c.stroke();
 } });
+// Warm rock: a band just above the hot rock, so you know it's coming.
+defTile(T.WARMROCK, { name: 'warm rock', hard: 2, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#8a5a4a'; c.fillRect(x, y, TS, TS);
+  speckle(c, x, y, tx, ty, '#a8705a', 4, 5);
+  speckle(c, x, y, tx + 5, ty, '#ff922b', 2, 3);
+} });
 // Molten lava: you can stand on it, but it's HOT. Cools back into rock.
-defTile(T.LAVA, { name: 'lava', dig: false, draw(c, x, y, tx, ty) {
+defTile(T.LAVA, { name: 'lava', solid: false, dig: false, fluid: true, draw(c, x, y, tx, ty) {
   c.fillStyle = '#f76707'; c.fillRect(x, y, TS, TS);
   speckle(c, x, y, tx, ty, '#ffd43b', 5, 6);
   speckle(c, x, y, tx + 9, ty, '#e03131', 3, 5);

@@ -32,6 +32,7 @@ addEventListener('blur', () => { Input.held = {}; });
 
 const UI = {
   palette: null,
+  touch: matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 0,
   init() {
     document.querySelectorAll('[data-key]').forEach(btn => {
       const key = btn.dataset.key;
@@ -94,7 +95,7 @@ const UI = {
   // cfg: { dirs: 'none'|'lr'|'all', action: icon|null, roar, enter, whistle, palette, home }
   configure(cfg) {
     const show = (id, on) => document.getElementById(id).classList.toggle('hidden', !on);
-    show('stick-zone', cfg.dirs && cfg.dirs !== 'none');
+    show('stick-zone', UI.touch && cfg.dirs && cfg.dirs !== 'none');   // touch screens only: on desktop the keys move you
     Stick.mode = cfg.dirs;
     document.getElementById('stick-zone').classList.toggle('lr', cfg.dirs === 'lr');
     Stick.release();

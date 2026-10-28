@@ -32,10 +32,12 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.keyboard.press('Space');                // title -> picker
   await page.waitForTimeout(200);
   check(await page.evaluate(() => Game.mode === 'pick'), 'title goes to dino picker');
+  check(await page.evaluate(() => !UI.touch), 'desktop: no touch screen');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Space');
   await page.waitForTimeout(1400);
   check(await page.evaluate(() => Game.mode === 'play' && Player.type === 'tri'), 'picked triceratops and started');
+  check(await page.evaluate(() => document.getElementById('stick-zone').classList.contains('hidden')), 'desktop: no joystick on screen (keys move you)');
   const x0 = await page.evaluate(() => Player.body.x);
   await hold(page, 'ArrowRight', 800);
   check(await page.evaluate(x0 => Player.body.x > x0 + 80, x0), 'dino walks right');
@@ -941,16 +943,25 @@ async function stickDrag(page, dx, dy, ms) {
     const y0 = sk.body.y; let up = 0; window.__pows = []; const add = Pow.add.bind(Pow); Pow.add = (x, y, t) => { __pows.push(t); add(x, y, t); };
     run(1, { action: 1 }); run(5); run(1, { action: 1 }); for (let i = 0; i < 50; i++) { run(1); up = Math.max(up, y0 - sk.body.y); } Pow.add = add; Vehicles.exit(Player); run(5);
     return up > 80 && __pows.includes('KICKFLIP!'); }), 'skateboard: ollie, then a kickflip in the air');
-  check(await page.evaluate(() => World.get(130, WORLD_H - 6) === T.MAGMA && World.get(52, WORLD_H - 3) === T.GOLDEGG && World.get(52, WORLD_H - 6) !== T.MAGMA), 'hot rock deep down (but not over the golden egg)');
+  check(await page.evaluate(() => World.get(130, WORLD_H - 6) === T.MAGMA && World.get(130, WORLD_H - 10) === T.WARMROCK && World.get(52, WORLD_H - 3) === T.GOLDEGG && World.get(52, WORLD_H - 6) !== T.MAGMA), 'warm rock, then hot rock deep down (but not over the golden egg)');
   check(await page.evaluate(() => {
-    const tx = 130; for (let y = World.surfaceAt(tx); y < WORLD_H - 8; y++) World.set(tx, y, T.AIR);
+    const tx = 130; for (let y = World.surfaceAt(tx) - 1; y < WORLD_H - 8; y++) World.set(tx, y, T.AIR);
     Player.body.x = tx * TS + 16; Player.body.y = (WORLD_H - 8) * TS - 0.01; run(5);
-    World.set(tx, WORLD_H - 8, T.AIR); const went = !!Volcano.active;
-    let top = 1e9; for (let i = 0; i < 150; i++) { run(1); top = Math.min(top, Player.body.y); }
-    let lava = 0; for (let y = 0; y < WORLD_H; y++) if (World.get(tx, y) === T.LAVA) lava++;
-    return went && top < (World.genSurf[tx] - 3) * TS && lava > 10 && Eggs.found.volcano; }), 'dig into hot rock: a volcano blasts you out and lava fills the hole');
-  check(await page.evaluate(() => { run(60 * 13); let lava = 0; for (let x = 120; x <= 140; x++) for (let y = 0; y < WORLD_H; y++) if (World.get(x, y) === T.LAVA) lava++;
+    World.set(tx, WORLD_H - 8, T.AIR); window.__e = Volcano.active;
+    run(60); const rumbling = Volcano.active && Volcano.active.phase === 'rumble';
+    run(90); let low = 0, high = 99; for (const i of __e.lava) { const y = Math.floor(i / World.w); low = Math.max(low, y); high = Math.min(high, y); }
+    window.__mid = high;
+    return rumbling && __e.lava.size > 3 && low >= WORLD_H - 9 && high > World.genSurf[tx] + 5; }), 'dig into hot rock: it rumbles, then lava fills the hole from the bottom');
+  check(await page.evaluate(() => { let top = 1e9; for (let i = 0; i < 60 * 10; i++) { run(1); top = Math.min(top, Player.body.y); } let high = 99; for (const i of __e.lava) high = Math.min(high, Math.floor(i / World.w));
+    return __e.erupted && high <= World.genSurf[130] && top < (World.genSurf[130] - 2) * TS && Eggs.found.volcano; }), 'it rises to the top and erupts, blasting you out');
+  check(await page.evaluate(() => { run(60 * 12); let lava = 0; for (let x = 110; x <= 150; x++) for (let y = 0; y < WORLD_H; y++) if (World.get(x, y) === T.LAVA) lava++;
     return !Volcano.active && lava === 0 && World.get(130, WORLD_H - 8) === T.STONE && !bodySolidAt(Player.body, Player.body.x, Player.body.y); }), 'the lava cools back to rock and dirt');
+  check(await page.evaluate(() => {
+    // A sealed pocket: dig in from a side tunnel that's closed off. It fills but doesn't erupt.
+    const tx = 300; for (let x = tx - 3; x <= tx; x++) World.set(x, WORLD_H - 9, T.AIR);
+    World.set(tx, WORLD_H - 8, T.AIR); const e = Volcano.active; run(60 * 6); const ok = e && !e.erupted && e.lava.size >= 4; run(60 * 8); return ok && !Volcano.active; }), 'a sealed pocket fills with lava but doesn\'t erupt');
+  check(await page.evaluate(() => { const tx = 600; for (let y = WORLD_H - 12; y < WORLD_H - 8; y++) World.set(tx, y, T.AIR); World.set(tx + 1, WORLD_H - 11, T.WATER);
+    World.set(tx, WORLD_H - 8, T.AIR); run(60 * 6); const stone = World.get(tx, WORLD_H - 11) === T.STONE || World.get(tx, WORLD_H - 10) === T.STONE; run(60 * 8); return stone; }), 'lava touching water sets into rock');
   check(await page.evaluate(() => { const s = Vehicles.list.find(v => v.kind === 'pirateship'); Player.body.x = s.body.x; Vehicles.enter(Player, s); Voyage.start(s); Voyage.finish(); run(30);
     return Game.away === 'pirate' && World.get(30, SEA_LEVEL + 2) === T.WATER && World.get(PR.DOCK - 60, SEA_LEVEL + 2) === T.WATER && s.body.x > 150 * TS; }), 'Skull Island has lots of open sea to sail');
   check(await page.evaluate(() => { const s0 = Game.stars, bar = World.props.find(p => p.type === 'seabarrel'), buoy = World.props.find(p => p.type === 'buoy');
@@ -960,6 +971,53 @@ async function stickDrag(page, dx, dy, ms) {
   check(await page.evaluate(() => { const s = Player.vehicle; s.s.cool = 0; const bar = World.props.find(p => p.type === 'seabarrel' && !(p.gone > 0)); s.body.x = bar.x * TS - 600; s.facing = 1; run(20); window.__s0 = Game.stars;
     Input.pressed.action = true; Game.update(1 / 60); Input.endFrame(); run(120); return bar.gone > 0 || World.props.some(p => p.type === 'seabarrel' && p.gone > 0 && p !== bar); }), 'fire the cannon at a floating barrel');
   check(await page.evaluate(() => { const s = Player.vehicle; Voyage.start(s); Voyage.finish(); run(30); return !Game.away && !SeaTargets.rival && World.props.filter(p => p.type === 'seabarrel').length === 3; }), 'home again: Earth\'s sea has barrels to shoot too');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 29. Writing on vehicles reads the right way, tilting over jumps, dinos climb out of holes, the rocket
+// countdown, the bigger Moon and the saucer's tractor beam.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => {
+    Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing();
+    window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
+  });
+  check(await page.evaluate(() => {
+    // Every vehicle facing left: any writing on it must not be drawn mirrored.
+    const bad = [], c = ctx, f = c.fillText, st = c.strokeText;
+    const spy = function (orig) { return function (...a) { if (c.getTransform().a < 0) bad.push(window.__k + ':' + a[0]); return orig.apply(c, a); }; };
+    c.fillText = spy(f); c.strokeText = spy(st);
+    for (const k of Object.keys(VEHICLE_DEFS)) { window.__k = k; const v = new Vehicle(k, 100, 100); v.facing = -1; v.driver = Player; c.setTransform(1, 0, 0, 1, 0, 0); try { v.draw(c); } catch (e) { bad.push(k + ' threw ' + e.message); } }
+    c.fillText = f; c.strokeText = st; window.__bad = bad; return bad.length === 0; }), 'writing on vehicles reads the right way round when they face left');
+  check(await page.evaluate(() => { const m = Vehicles.list.find(v => v.kind === 'motorbike'); if (Player.vehicle) Vehicles.exit(Player); Player.body.x = m.body.x; Player.body.y = m.body.y - 5; Vehicles.enter(Player, m);
+    m.body.x = 676 * TS; m.body.y = SURF * TS - 0.01; m.facing = 1; let up = 0, down = 0, air = 0;
+    for (let i = 0; i < 150; i++) { run(1, { right: 1 }); if (!m.body.onGround) air++; up = Math.min(up, m.pitch); down = Math.max(down, m.pitch); }
+    return up < -0.2 && down > 0.2 && air > 40; }), 'over a jump the bike tilts nose up, then nose down, and flies further');
+  check(await page.evaluate(() => { if (Player.vehicle) Vehicles.exit(Player); run(5);
+    const tx = 250; for (let x = tx - 1; x <= tx + 1; x++) for (let y = SURF - 1; y < SURF + 4; y++) World.set(x, y, T.AIR);
+    for (let x = tx - 1; x <= tx + 7; x++) for (let y = SURF - 8; y < SURF - 1; y++) World.set(x, y, T.AIR);   // nothing overhead
+    const n = NPCs.add({ x: tx * TS + 16, y: (SURF + 4) * TS - 0.01, type: 'carno', fighter: true }); n.angry = 10; n.greeted = true;
+    Player.body.x = (tx + 6) * TS; Player.body.y = World.surfaceAt(tx + 6) * TS - 0.01; Player.hurtCool = 99;
+    for (let i = 0; i < 180; i++) run(1); return n.body.y < SURF * TS + 4; }), 'a cross dino down a hole climbs out after you');
+  check(await page.evaluate(() => { Asteroid.left = 300; const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); run(1, { action: 1 }); run(60 * 5);
+    const still = r.s.state === 'count'; run(60 * 6); return still && r.s.count === 10 && r.s.state !== 'count'; }), 'rocket counts down from 10, then blasts off');
+  check(await page.evaluate(() => { Space.finish && Game.overlay === Space ? Space.finish() : (Game.overlay === Space && (Game.overlay = null)); if (Game.away === 'moon') Moon.leave(null, true); if (Player.vehicle) Vehicles.exit(Player); run(10);
+    const r = Vehicles.list.find(v => v.kind === 'rocket'); r.s.state = 'idle'; r.body.y = World.surfaceAt(Math.floor(r.body.x / TS)) * TS - 0.01; Player.body.x = r.body.x; Vehicles.enter(Player, r);
+    Asteroid.left = 20; run(1, { action: 1 }); const quick = r.s.count === 3; run(60 * 4); return quick && r.s.state !== 'count'; }), 'with the asteroid coming it\'s a quick 3-2-1');
+  check(await page.evaluate(() => { Asteroid.left = 300; ctx.setTransform(1, 0, 0, 1, 0, 0); const it = { x: 200, y: 200, kind: 'rock', rot: 0, pts: rockShape() }; drawSpaceRock(ctx, it); return it.pts.pts.length >= 18 && it.pts.craters.length >= 2; }), 'space rocks are lumpy with craters, not smooth eggs');
+  check(await page.evaluate(() => {
+    if (Game.overlay) Game.overlay = null; if (Game.away === 'moon') Moon.leave(null, true); if (Player.vehicle) { Player.vehicle.s.state = 'idle'; Vehicles.exit(Player); } run(5);
+    const r = Vehicles.list.find(v => v.kind === 'rocket'); r.s.state = 'idle'; Player.body.x = r.body.x; Vehicles.enter(Player, r); Moon.enter(r);
+    for (let i = 0; i < 60 * 15 && Player.vehicle; i++) { Vehicles.exit(Player); run(1); }
+    return Game.onMoon && World.limitW === 300 && World.gravity === 0.36 && NPCs.list.filter(n => n.type === 'alien').length >= 6; }), 'the Moon is twice as big, with stronger gravity and more Moon dinos');
+  check(await page.evaluate(() => { const u = Vehicles.list.find(v => v.kind === 'ufo'); Player.body.x = u.body.x; Player.body.y = u.body.y - 5; Vehicles.enter(Player, u);
+    const n = NPCs.list.find(n => n.type === 'alien' && !n.baby); u.body.x = n.body.x; u.body.y = n.body.y - 5 * TS; u.s.beam = 0; run(1, { action: 1 }); run(60);
+    const held = u.s.carry === n && n.body.y < u.body.y + 4 * TS; run(60, { right: 1 }); const moved = Math.abs(n.body.x - u.body.x) < 90;
+    run(1, { action: 1 }); run(90); return held && moved && !u.s.carry && !n.beamedBy && n.body.onGround; }), 'saucer beam picks up a Moon dino, carries it, and drops it');
+  check(await page.evaluate(() => { const u = Player.vehicle, bug = Vehicles.list.find(v => v.kind === 'moonbuggy'); u.body.x = bug.body.x; u.body.y = bug.body.y - 6 * TS; u.s.beam = 0; run(1, { action: 1 }); run(60);
+    const held = u.s.carry === bug && bug.body.y < World.surfaceAt(Math.floor(bug.body.x / TS)) * TS - TS; run(1, { action: 1 }); run(90); return held && !u.s.carry && bug.body.onGround; }), 'saucer beam carries the moon buggy too');
+  await page.evaluate(() => { if (Player.vehicle) Vehicles.exit(Player); Moon.leave(null, true); });
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

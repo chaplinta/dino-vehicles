@@ -58,7 +58,7 @@ defVehicle('motorbike', {
     poly(c, [-34, -28, -16, -30, -24, -40], '#ff922b', 3);
     limb(c, [14, -50, 24, -48], 4, '#343a40');
     rbox(c, 18, -38, 14, 12, 3, '#fff', 2);
-    c.font = `10px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT; c.fillText('1', 25, -31);
+    c.font = `10px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT; vehicleText(c, v, '1', 25, -31);
     v.drawDriver(c, -8, -44, 0.42);
     c.restore();
   },
@@ -116,7 +116,7 @@ defVehicle('racecar', {
     v.drawDriver(c, -12, -22, 0.3); c.restore();
     limb(c, [-30, -34, -4, -44], 4, '#343a40');   // halo bar
     c.fillStyle = '#fff'; c.beginPath(); c.arc(16, -24, 7, 0, TAU); c.fill(); c.lineWidth = 2; c.strokeStyle = OUT; c.stroke();
-    c.font = `10px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT; c.fillText('1', 16, -24);
+    c.font = `10px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT; vehicleText(c, v, '1', 16, -24);
     ell(c, -38, -17, 17, 17, '#212529', 4); ell(c, -38, -17, 7, 7, '#adb5bd', 2);
     ell(c, 40, -15, 15, 15, '#212529', 4); ell(c, 40, -15, 6, 6, '#adb5bd', 2);
   },

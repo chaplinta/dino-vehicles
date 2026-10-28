@@ -179,9 +179,17 @@ const Pirate = {
     // Skull Cave is dark; a torch and your own glow light it up.
     const x0 = (PR.CAVE[0] - 6) * TS, x1 = PR.CAVE[1] * TS, y0 = (SURF - 7) * TS, y1 = SURF * TS;
     const inside = this.inCave(Player.cx, Player.body.y);
+    // Only the open space under the rock is dark: clip to empty tiles with a roof over them.
+    c.save(); c.beginPath();
+    for (let tx = Math.floor(x0 / TS); tx < x1 / TS; tx++) for (let ty = Math.floor(y0 / TS); ty < y1 / TS; ty++) {
+      if (World.solid(tx, ty)) continue;
+      let roof = false; for (let k = 1; k <= 8 && !roof; k++) roof = World.solid(tx, ty - k);
+      if (roof) c.rect(tx * TS, ty * TS, TS, TS);
+    }
+    c.clip();
     c.fillStyle = `rgba(10,5,25,${inside ? 0.55 : 0.75})`; c.fillRect(x0 + 6 * TS, y0, x1 - x0 - 6 * TS, y1 - y0);
-    c.fillStyle = 'rgba(10,5,25,0.4)'; c.fillRect(x0, y0 + 2 * TS, 6 * TS, y1 - y0 - 2 * TS);
-    c.save(); c.globalCompositeOperation = 'lighter';
+    c.fillStyle = 'rgba(10,5,25,0.4)'; c.fillRect(x0, y0, 6 * TS, y1 - y0);
+    c.globalCompositeOperation = 'lighter';
     const glow = (gx, gy, r, a) => { const g = c.createRadialGradient(gx, gy, 0, gx, gy, r); g.addColorStop(0, `rgba(255,170,70,${a})`); g.addColorStop(1, 'rgba(255,170,70,0)'); c.fillStyle = g; c.fillRect(gx - r, gy - r, r * 2, r * 2); };
     glow((PO + 172) * TS, (SURF - 4) * TS, 150 + Math.sin(Game.t * 9) * 8, 0.35);
     if (inside) glow(Player.cx, Player.cy, 110, 0.25);

@@ -234,7 +234,7 @@ await scene('volcano', () => {
   G.run(60 * 2, () => { G.key('down', true); G.key('action', true); });   // dig into the hot rock
   G.release();
   if (!Volcano.active) G.issue('digging into hot rock did nothing');
-  G.run(60 * 16, G.masher(mulberry32(4), {}));
+  G.run(60 * 28, G.masher(mulberry32(4), {}));
   if (Volcano.active) G.issue('volcano never cooled');
   G.release();
 });

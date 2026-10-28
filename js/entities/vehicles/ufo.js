@@ -26,17 +26,47 @@ defVehicle('ufo', {
     }
     return null;
   },
+  // What's under the beam to pick up: a dino first, then a vehicle nobody is driving.
+  grabTarget(v) {
+    const under = b => Math.abs(b.x - v.body.x) < 80 && b.y > v.body.y && b.y - v.body.y < 10 * TS;
+    const n = NPCs.list.find(n => !n.vehicle && !n.ride && !n.beamedBy && under(n.body));
+    if (n) return n;
+    return Vehicles.list.find(o => o !== v && !o.driver && !o.beamedBy && o.def.mover !== 'rail' && o.kind !== 'jet' && under(o.body)) || null;
+  },
+  drop(v) {
+    const o = v.s.carry;
+    if (!o) return;
+    o.beamedBy = null; o.body.vy = 0; v.s.carry = null;
+    Sound.tone(900, 0.5, 'sine', 0.06, 400);
+  },
   act(v, dt, inp) {
     const s = v.s;
     s.beam = Math.max(0, s.beam - dt);
-    if (inp.actionP && s.beam <= 0) {
-      s.beam = 0.9;
-      Sound.tone(500, 0.8, 'sine', 0.07, 1400);
-      const t = this.beamTarget(v);
-      if (t) setTimeout(() => { if (Vehicles.list.includes(v)) { vehicleDig(t.tx, t.ty, true); Fx.burst(t.tx * TS + 16, t.ty * TS + 16, 10, { speed: 60, up: 160, g: -100, life: 0.8, r: 6, color: ['#b2f2bb', '#fff'] }); } }, 450);
-      for (const n of NPCs.list) if (!n.vehicle && Math.abs(n.body.x - v.body.x) < 60 && n.body.y > v.body.y) { n.body.vy = -420; n.heartT = 2; }
+    if (inp.actionP) {
+      if (s.carry) this.drop(v);
+      else if (s.beam <= 0) {
+        s.beam = 0.9;
+        Sound.tone(500, 0.8, 'sine', 0.07, 1400);
+        const o = this.grabTarget(v);
+        if (o) { o.beamedBy = v; s.carry = o; if (o.heartT !== undefined) { o.heartT = 3; Sound.squeak && Sound.squeak(); } }
+        else {
+          // Nothing to carry: beam a block up out of the ground.
+          const t = this.beamTarget(v);
+          if (t) setTimeout(() => { if (Vehicles.list.includes(v)) { vehicleDig(t.tx, t.ty, true); Fx.burst(t.tx * TS + 16, t.ty * TS + 16, 10, { speed: 60, up: 160, g: -100, life: 0.8, r: 6, color: ['#b2f2bb', '#fff'] }); } }, 450);
+        }
+      }
+    }
+    // Carrying: whatever it is floats up and dangles under the saucer, following it about.
+    const o = s.carry;
+    if (o) {
+      if (o.vehicle || o.ride || o.driver || (!NPCs.list.includes(o) && !Vehicles.list.includes(o))) { this.drop(v); return; }
+      s.beam = Math.max(s.beam, 0.3);
+      const b = o.body, tx = lerp(b.x, v.body.x, Math.min(1, dt * 6)), ty = lerp(b.y, v.body.y + 30 + b.h + Math.sin(v.t * 3) * 6, Math.min(1, dt * 4));
+      if (!bodySolidAt(b, tx, ty)) { b.x = tx; b.y = ty; }
+      b.vx = 0; b.vy = 0;
     }
   },
+  onExit(v) { this.drop(v); },
   draw(c, v) {
     const s = v.s, t = v.t;
     c.save(); c.rotate(v.tilt || 0);

@@ -10,10 +10,11 @@ defVehicle('rocket', {
     if (s.state === 'idle') { b.vx = 0; moveBody(b, dt, {}); }
     else if (s.state === 'count') {
       b.vx = 0; moveBody(b, dt, {});
-      const n = 3 - Math.floor(s.t);
-      if (n !== s.lastN && n > 0) { s.lastN = n; Sound.say(String(n)); Sound.tone(440, 0.2, 'square', 0.08); }
-      if (s.t > 3) { s.state = 'launch'; s.t = 0; Sound.say('Blast off!'); Sound.noise(3, 0.4, 'lowpass', 400, 0, 1500); }
-      if (Math.random() < 0.5) this.smoke(v, 0.3);
+      // 10 seconds to blast off; just 3 if the asteroid is about to hit, so you can still escape.
+      const n = s.count - Math.floor(s.t);
+      if (n !== s.lastN && n > 0) { s.lastN = n; Sound.tone(n <= 3 ? 660 : 440, 0.2, 'square', 0.08); }
+      if (s.t > s.count) { s.state = 'launch'; s.t = 0; Sound.noise(3, 0.4, 'lowpass', 400, 0, 1500); }
+      if (n <= 3 && Math.random() < 0.5) { this.smoke(v, 0.3); if (Math.random() < 0.2) Sound.noise(0.2, 0.08, 'lowpass', 200); }
     } else if (s.state === 'launch') {
       b.vy = Math.max(-900, b.vy - 700 * dt);
       b.x += (dir * 120) * dt;
@@ -36,18 +37,25 @@ defVehicle('rocket', {
       }
     }
   },
+  // The countdown, in big numbers over the rocket.
+  drawWorld(c, v) {
+    const s = v.s;
+    if (s.state !== 'count') return;
+    const n = Math.max(1, s.count - Math.floor(s.t)), k = 1 + (1 - (s.t % 1)) * 0.4;
+    bigText(c, String(n), v.body.x, v.body.y - 300, Math.round(70 * k), n <= 3 ? '#ff6b6b' : '#fff');
+  },
   smoke(v, k) {
     const b = v.body;
     for (let i = 0; i < 2; i++) Fx.add({ x: b.x + rand(-16, 16), y: b.y + 4, vx: rand(-120, 120) * k, vy: rand(40, 160), life: 1.4, r: 14, color: pick(['rgba(240,240,240,0.9)', 'rgba(255,200,120,0.9)']), shape: 'grow' });
   },
   act(v, dt, inp) {
     if (inp.actionP && v.s.state === 'idle') {
-      v.s.state = 'count'; v.s.t = 0; v.s.lastN = 4;
+      v.s.state = 'count'; v.s.t = 0; v.s.count = Asteroid.left < 30 ? 3 : 10; v.s.lastN = v.s.count + 1;
     }
   },
   draw(c, v) {
     const s = v.s;
-    if (s.state === 'launch' || s.state === 'count') {
+    if (s.state === 'launch' || (s.state === 'count' && s.count - s.t < 3)) {
       const f = s.state === 'launch' ? 1 : 0.3;
       const fl = 30 + Math.random() * 30 * f + 40 * f;
       poly(c, [-18, -6, 18, -6, 0, fl], '#ff922b', 0);
@@ -103,7 +111,7 @@ const Space = {
     if (this.spawnD > 110 && this.t < 28) {
       this.spawnD = 0;
       const r = Math.random();
-      this.items.push({ x: rand(40, W - 40), y: -40, kind: r < 0.65 ? 'star' : r < 0.9 ? 'rock' : 'ufo', rot: 0, vx: 0 });
+      this.items.push({ x: rand(40, W - 40), y: -40, kind: r < 0.65 ? 'star' : r < 0.9 ? 'rock' : 'ufo', rot: 0, vx: 0, pts: rockShape() });
     }
     for (const it of this.items) {
       it.y += speed * dt; it.x += it.vx * dt; it.rot += dt * 2;
@@ -138,7 +146,7 @@ const Space = {
     }
     for (const it of this.items) {
       if (it.kind === 'star') drawStar(c, it.x, it.y, 22, it.rot * 0.3, '#ffd43b', 3);
-      else if (it.kind === 'rock') { ell(c, it.x, it.y, 30, 26, '#868e96', 4, it.rot); ell(c, it.x - 8, it.y - 6, 7, 6, '#adb5bd', 0); }
+      else if (it.kind === 'rock') drawSpaceRock(c, it);
       else {
         ell(c, it.x, it.y - 12, 20, 18, '#bdf3ff', 3);
         drawDinoSeated(c, it.x - 2, it.y + 6, 0.25, 'raptor', { t: this.t });
@@ -154,3 +162,25 @@ const Space = {
     bigText(c, String(Math.max(0, Math.ceil(30 - this.t))), 60, 60, 40, '#fff');
   },
 };
+
+// A lumpy, cratered space rock (not a smooth egg): a jagged outline made once per rock.
+function rockShape() {
+  const n = randi(9, 12), pts = [];
+  for (let i = 0; i < n; i++) { const a = i / n * TAU + rand(-0.15, 0.15), r = rand(22, 36); pts.push(Math.cos(a) * r, Math.sin(a) * r * 0.85); }
+  const craters = Array.from({ length: randi(2, 3) }, () => [rand(-14, 12), rand(-12, 10), rand(4, 8)]);
+  return { pts, craters, spin: rand(-1.5, 1.5) };
+}
+function drawSpaceRock(c, it) {
+  const s = it.pts || (it.pts = rockShape());
+  c.save(); c.translate(it.x, it.y); c.rotate((it.rot || 0) + Space.t * s.spin);
+  poly(c, s.pts, '#7c7468', 4);
+  // Shadow on one side, a lit edge on the other.
+  c.save(); c.beginPath(); for (let i = 0; i < s.pts.length; i += 2) (i ? c.lineTo : c.moveTo).call(c, s.pts[i], s.pts[i + 1]); c.closePath(); c.clip();
+  c.fillStyle = 'rgba(30,25,20,0.35)'; c.beginPath(); c.arc(16, 14, 36, 0, TAU); c.fill();
+  c.fillStyle = 'rgba(255,255,255,0.12)'; c.beginPath(); c.arc(-18, -16, 20, 0, TAU); c.fill();
+  for (const [x, y, r] of s.craters) { ell(c, x, y, r, r * 0.8, '#5f574d', 0); ell(c, x - r * 0.25, y - r * 0.25, r * 0.6, r * 0.45, '#4a433b', 0); c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, r, Math.PI * 1.1, Math.PI * 1.8); c.stroke(); }
+  c.fillStyle = '#9a9184'; for (let i = 0; i < 5; i++) c.fillRect(s.pts[i * 2] * 0.5, s.pts[i * 2 + 1] * 0.5, 2, 2);
+  c.restore();
+  poly(c, s.pts, null, 4);
+  c.restore();
+}

@@ -43,7 +43,7 @@ defVehicle('tram', {
     }
     // Route number box up front, a door, and the bogies.
     rbox(c, 58, -88, 22, 16, 3, '#212529', 2);
-    c.font = `800 11px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffd43b'; c.fillText('35', 69, -80);
+    c.font = `800 11px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffd43b'; vehicleText(c, v, '35', 69, -80);
     rbox(c, 60, -66, 18, 44, 4, '#1e6b34', 3);
     ell(c, 82, -30, 5, 4, '#fff3bf', 2);
     for (const bx of [-52, 52]) { rbox(c, bx - 26, -22, 52, 10, 4, '#343a40', 2); drawWheel(c, bx - 14, -10, 10, v.wheel); drawWheel(c, bx + 14, -10, 10, v.wheel); }

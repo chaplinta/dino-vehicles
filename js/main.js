@@ -51,7 +51,7 @@ function drawTropicSky(c, camX, camY, t, zoom) {
   drawSun(c, 170, 120 + off * 0.1, t, Eggs.sunCool);
   Asteroid.drawSky(c, t);
   for (let i = 0; i < 4; i++) drawCloud(c, ((i * 330 - camX * 0.06 - t * 5) % (W + 300) + W + 300) % (W + 300) - 150, 80 + (i * 41 % 70) + off * 0.15, 0.8);
-  const hy = 400 + off * 0.6;
+  const hy = surfY + TS * zoom;   // the far sea lines up with the real sea, never above the land
   c.fillStyle = '#1c7ed6'; c.fillRect(0, hy, W, H - hy);
   for (let i = 0; i < 3; i++) { const ix = ((i * 520 + 200 - camX * 0.1) % (W + 400) + W + 400) % (W + 400) - 200; ell(c, ix, hy, 70 + i * 20, 18, '#2f9e44', 0); }
   c.fillStyle = 'rgba(255,255,255,0.35)'; for (let i = 0; i < 10; i++) c.fillRect(((i * 97 - t * 15 - camX * 0.1) % W + W) % W, hy + 8 + (i * 13) % 40, 30, 3);
@@ -491,7 +491,9 @@ const Game = {
     c.restore();
     // Underground gloom.
     const depth = (cy + this.viewH / 2) / TS - SURF - 6;
-    if (depth > 0) { c.fillStyle = `rgba(10,5,20,${Math.min(0.35, depth * 0.03)})`; c.fillRect(0, 0, W, H); }
+    // (eases off near the hot rock at the bottom, so its glow shows)
+    const hotGlow = this.away ? 0 : clamp(((cy + this.viewH / 2) / TS - (WORLD_H - 20)) / 10, 0, 0.7);
+    if (depth > 0) { c.fillStyle = `rgba(10,5,20,${Math.min(0.35, depth * 0.03) * (1 - hotGlow)})`; c.fillRect(0, 0, W, H); }
     if (!this.away) Jobs.drawHud(c);
     if (this.away === 'pilbara') Mine.drawHud(c);
     if (this.away === 'pirate') Pirate.drawHud(c);

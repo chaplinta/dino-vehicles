@@ -18,7 +18,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 
 | | Keyboard | Touch |
 |---|---|---|
-| Walk / drive | Arrows or WASD | joystick, bottom left: touch it and slide (further = faster) |
+| Walk / drive | Arrows or WASD | joystick, bottom left: touch it and slide (further = faster). Touch screens only |
 | Jump (automatic at walls) / climb walls | Up | push the joystick up |
 | Fly (Pterodactyl): hold to climb, let go to glide, down to dive | Up / Down | joystick up / down |
 | Dig / vehicle action | Space | big yellow button |
@@ -99,9 +99,9 @@ You start with eight: digger, dump truck, tractor, fire truck, train, bulldozer,
 | Motorbike | jump; press again in the air to flip (land it for a star) |
 | Sports car, Race car | turbo with flames |
 | Pirate ship | fire the cannon. Up hoists the sails and sails off to Skull Island; down drops the anchor |
-| Rocket | countdown, blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
+| Rocket | 10-second countdown (a quick 3-2-1 if the asteroid is under 30 s away), blast off to space, catch stars, then land on the Moon: low-gravity bouncing, moon cheese and crystals to dig, Moon dinos, a flag. Blast off again to parachute home |
 
-On the Moon everyone wears a space suit and helmet. There's a flying saucer parked there too: hop in and fly it anywhere, and its tractor beam pulls blocks up out of the ground. There's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
+On the Moon everyone wears a space suit and helmet. There's a flying saucer parked there too: hop in and fly it anywhere, and its tractor beam picks up Moon dinos or the moon buggy and carries them about (press again to drop), or pulls blocks up out of the ground when there's nothing to carry. The Moon is big, with craters, two crystal fields and six Moon dinos, and gravity a bit stronger than before. There's also a **moon buggy** parked by the landing pad: drive over the craters and press the button for a huge low-gravity bounce.
 
 
 ## The Pilbara
@@ -147,7 +147,7 @@ Also on the island: coconuts to knock out of the palm trees, a message in a bott
 - **Cool sun:** tap the sun 3 times and it puts on sunglasses.
 - **Golden egg:** dig all the way to the bottom of the world under the farm. It hatches a baby dino that follows you everywhere, even to the Moon.
 - **Nessie:** swim, or take the submarine, along the sea floor near the far side of the sea. A friendly sea monster wakes up and waves.
-- **Volcano:** dig really deep (anywhere but under the farm) and you hit glowing hot rock. It rumbles, then a volcano blasts you straight up and out of the ground, lava fills the hole and spills into a little cone, and it cools back to rock and dirt a bit later. Lava is hot to stand on, so you hop off it.
+- **Volcano:** dig really deep (anywhere but under the farm). First you reach reddish warm rock, and below it you can see the hot rock glowing. Dig into that and it rumbles, then lava fills the hole you dug from the bottom up, like water. Once it reaches the top it blows: KABOOM, you get blasted out and lava spills down the ground. It cools back to rock and dirt a bit later. Lava is hot, so it pushes you up and you hop off it. A sealed pocket just fills and cools.
 - **Moon cheese core:** dig deep down in the middle of the Moon. It really is made of cheese.
 - **Flying saucer:** hop in the saucer parked on the Moon (2 stars the first time) and fly it about.
 

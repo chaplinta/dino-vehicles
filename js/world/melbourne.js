@@ -49,8 +49,8 @@ function generateMelbourne(world, seed) {
   P.push({ type: 'bikerack', x: MEL.RACK, y: SURF });
   P.push({ type: 'coffee', x: MEL.CAFE + 0.5, y: SURF });
   for (const [x, icon] of MEL.STOPS) P.push({ type: 'tramstop', x, y: SURF, icon });
-  P.push({ type: 'ramp', x: 205, w: 4, h: 2, dir: 1, y: SURF });
-  P.push({ type: 'ramp', x: 226, w: 3, h: 2, dir: 1, y: SURF });
+  P.push({ type: 'ramp', x: 205, w: 4, h: 3, dir: 1, y: SURF });
+  P.push({ type: 'ramp', x: 226, w: 4, h: 3, dir: 1, y: SURF });
   for (const [x, text] of [[24, 'JET'], [48, 'CITY'], [69, 'ART'], [124, 'TRAM'], [166, 'BOAT'], [195, 'CAFE'], [210, 'BIKE'], [262, 'GOAL'], [286, 'STOP']]) addLabel(world, x, text);
 }
 

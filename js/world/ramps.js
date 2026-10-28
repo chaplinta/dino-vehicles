@@ -25,7 +25,7 @@ const Ramps = {
       // Just left a ramp: off the lip going the way it rises means take-off.
       const p = s.ramp, g = this.geom(p);
       if (Math.sign(b.vx) === p.dir && Math.abs(b.x - g.lip) < 40 && Math.abs(b.vx) > 120) {
-        b.vy = -(Math.abs(b.vx) * (p.h / p.w) * 1.15 + 160);
+        b.vy = -(Math.abs(b.vx) * (p.h / p.w) * 1.6 + 260);
         s.launched = true; s.airT = 0; v.flip = 0;
         Sound.jump();
         Fx.burst(b.x, b.y, 8, { speed: 120, up: 60, g: 300, life: 0.6, r: 7, color: ['#d9b38c', '#fff'] });
@@ -36,10 +36,10 @@ const Ramps = {
       if (!b.onGround) s.airT += dt;
       else {
         s.launched = false;
-        if (s.airT > 0.7 && v.driver === Player && !s.airCool) {
+        if (s.airT > 0.9 && v.driver === Player && !s.airCool) {
           s.airCool = 3;
           Game.addStars(1); Game.popupStar(b.x, b.y - b.h - 30);
-          Pow.add(b.x, b.y - b.h - 20, s.airT > 1.3 ? 'HUGE AIR!' : 'BIG AIR!');
+          Pow.add(b.x, b.y - b.h - 20, s.airT > 1.6 ? 'HUGE AIR!' : 'BIG AIR!');
           Sound.tone(660, 0.12, 'square', 0.08); Sound.tone(990, 0.2, 'square', 0.07, null, 0.1);
         }
         Fx.burst(b.x, b.y, 10, { speed: 160, up: 40, g: 400, life: 0.5, r: 8, color: 'rgba(200,180,150,0.7)' });

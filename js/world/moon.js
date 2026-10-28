@@ -1,6 +1,6 @@
 // The Moon: a small grey world the rocket lands on after its trip to space.
 // While there, the Earth world, vehicles, dinos and pickups are put aside and swapped back on leaving.
-const MOON_W = 150;            // open columns; the rest is a bedrock wall
+const MOON_W = 300;            // open columns; the rest is a bedrock wall
 const MOON_PAD = [18, 30];     // flat landing pad
 
 function generateMoon(world, seed) {
@@ -9,7 +9,7 @@ function generateMoon(world, seed) {
   const Wt = world.w, Ht = world.h, surf = world.surf;
   world.props = [];
   const craters = [];
-  for (let k = 0; k < 7; k++) craters.push({ x: 40 + k * 15 + Math.floor(rng() * 8), r: 3 + Math.floor(rng() * 4) });
+  for (let k = 0; k < 15; k++) craters.push({ x: 40 + k * 17 + Math.floor(rng() * 8), r: 3 + Math.floor(rng() * (k % 4 === 3 ? 7 : 4)) });
   for (let x = 0; x < Wt; x++) {
     let h = SURF + Math.round(n(x * 0.07) * 3);
     for (const c of craters) {
@@ -32,7 +32,7 @@ function generateMoon(world, seed) {
       else if (y >= h && y <= h + depth) id = T.MOONDUST;
       else if (y > h) id = T.MOONROCK;
       if (id === T.MOONDUST && y > h && rng() < 0.03) id = T.CHEESE;
-      else if (id === T.MOONROCK && rng() < 0.03) id = T.CRYSTAL;
+      else if (id === T.MOONROCK && rng() < (x > 180 && x < 225 ? 0.12 : 0.03)) id = T.CRYSTAL;   // a crystal field out east
       world.t[y * Wt + x] = id;
     }
   }
@@ -41,14 +41,14 @@ function generateMoon(world, seed) {
     if (((x - 76) / 10) ** 2 + ((y - 64) / 6) ** 2 <= 1) world.t[y * Wt + x] = T.CHEESE;
   }
   world.genSurf = Int16Array.from(surf);
-  for (const [x, text] of [[14, 'MOON'], [36, 'JUMP'], [62, 'DIG'], [96, 'WAVE']]) addLabel(world, x, text);
+  for (const [x, text] of [[14, 'MOON'], [36, 'JUMP'], [62, 'DIG'], [96, 'WAVE'], [176, 'GEMS'], [240, 'FAR'], [MOON_W - 6, 'END']]) addLabel(world, x, text);
 }
 
 const Moon = {
   firstFlag: false,
 
   enter(rocket) {
-    Away.go('moon', generateMoon, { gravity: 0.3, limitW: MOON_W });
+    Away.go('moon', generateMoon, { gravity: 0.36, limitW: MOON_W });
     // Rocket floats down onto the pad.
     rocket.body.x = (MOON_PAD[0] + MOON_PAD[1]) / 2 * TS;
     rocket.body.y = (SURF - 30) * TS;
@@ -59,7 +59,7 @@ const Moon = {
     Vehicles.spawn('ufo', 110 * TS, World.surfaceAt(110) * TS - 0.01, -1);   // a flying saucer, parked
     // Friendly Moon dinos.
     NPCs.list = [];
-    for (const tx of [52, 80, 116]) {
+    for (const tx of [52, 80, 116, 168, 214, 262]) {
       NPCs.add({ x: tx * TS + 16, y: World.surfaceAt(tx) * TS - 0.01, type: 'alien', baby: tx === 80 });
     }
     Game.overlay = null;

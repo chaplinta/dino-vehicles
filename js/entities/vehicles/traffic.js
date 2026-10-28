@@ -107,7 +107,7 @@ defVehicle('bus', {
     rbox(c, 64 - s.door * 12, -74, 16, 58, 3, '#495057', 3);
     cabWindow(c, v, 72, -78, 18, 28, 6, [80, -50, 0.3]);
     rbox(c, -40, -98, 80, 14, 4, '#212529', 2);
-    c.font = `800 11px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffd43b'; c.fillText('TOWN', 0, -91);
+    c.font = `800 11px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffd43b'; vehicleText(c, v, 'TOWN', 0, -91);
     ell(c, 90, -26, 4, 4, '#fff3bf', 2);
     drawWheel(c, -60, -14, 15, v.wheel); drawWheel(c, 58, -14, 15, v.wheel);
   },

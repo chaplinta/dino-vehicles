@@ -38,6 +38,7 @@ function generateWorld(world, seed) {
       else h = SURF + 3 - Math.round((x - SEA_X1) / (420 - SEA_X1) * 3);
       if (x >= SEA_X0 && x < SEA_X0 + 6) h = Math.min(h, SURF + 3 + (x - SEA_X0) * 1.2 | 0);
       if (x < SEA_X1 && x >= SEA_X1 - 6) h = Math.min(h, SURF + 3 + (SEA_X1 - x) * 1.2 | 0);
+      if (x < SEA_X0 || x >= SEA_X1) h = Math.min(h, SEA_LEVEL);   // the sand meets the water at the waterline, never below it
     } else if (b === 'mount') {
       const u = (x - 420) / 140;                       // 0..1 across the range
       const env = Math.sin(u * Math.PI);               // rise and fall
@@ -68,7 +69,7 @@ function generateWorld(world, seed) {
       else if (y === h) id = sandy ? T.SAND : rocky ? T.STONE : T.GRASS;
       else if (y > h && y <= h + dirtDepth) id = sandy ? T.SAND : rocky ? T.STONE : T.DIRT;
       else if (y > h) id = T.STONE;
-      else if (b === 'beach' && x >= SEA_X0 - 2 && x < SEA_X1 + 2 && y >= SEA_LEVEL) id = T.WATER;
+      else if (b === 'beach' && x >= SEA_X0 && x < SEA_X1 && y >= SEA_LEVEL) id = T.WATER;
       if (id === T.DIRT && rng() < 0.025) id = rng() < 0.55 ? T.BONE : T.EGG;
       else if (id === T.STONE && y > h + 5 && rng() < 0.02) id = rng() < 0.5 ? T.GEM : T.FOSSIL;
       world.t[y * Wt + x] = id;
@@ -77,7 +78,10 @@ function generateWorld(world, seed) {
 
   const put = (x, y, id) => { if (x >= 0 && x < Wt && y >= 0 && y < Ht) world.t[y * Wt + x] = id; };
   // Deep down there's hot rock. Not under the farm, where the golden egg is buried.
-  for (let x = 1; x < Wt - 1; x++) if (x < 44 || x > 60) for (let y = Ht - 8; y < Ht - 2; y++) put(x, y, T.MAGMA);
+  for (let x = 1; x < Wt - 1; x++) if (x < 44 || x > 60) {
+    for (let y = Ht - 11; y < Ht - 8; y++) put(x, y, T.WARMROCK);   // warm first, as a warning
+    for (let y = Ht - 8; y < Ht - 2; y++) put(x, y, T.MAGMA);
+  }
   const putBg = (x, y, id) => { if (x >= 0 && x < Wt && y >= 0 && y < Ht) world.bg[y * Wt + x] = id; };
   const get = (x, y) => world.t[y * Wt + x];
 
@@ -178,11 +182,11 @@ function generateWorld(world, seed) {
   building(world, SPEEDWAY.GARAGE, SURF, 12, 5, { wall: T.CONCRETE, roof: T.CONCRETE, sign: 'garage', door: 4 });
   for (let x = SPEEDWAY.GARAGE; x < SPEEDWAY.GARAGE + 12; x++) put(x, SURF, T.ROAD);
   for (let x = SPEEDWAY.BIKES[0]; x < SPEEDWAY.BIKES[1]; x++) put(x, SURF, T.DIRT);
-  props.push({ type: 'ramp', x: 684, w: 4, h: 2, dir: 1 });   // jump...
-  props.push({ type: 'ramp', x: 693, w: 5, h: 2, dir: -1 });  // ...land on the far side
-  props.push({ type: 'ramp', x: 702, w: 4, h: 3, dir: 1 });   // the big kicker
+  props.push({ type: 'ramp', x: 683, w: 5, h: 3, dir: 1 });   // jump...
+  props.push({ type: 'ramp', x: 693, w: 6, h: 3, dir: -1 });  // ...land on the far side
+  props.push({ type: 'ramp', x: 702, w: 5, h: 5, dir: 1 });   // the big kicker
   // A little skate ramp at the end of town.
-  props.push({ type: 'ramp', x: 208, w: 3, h: 1, dir: 1 });
+  props.push({ type: 'ramp', x: 208, w: 3, h: 2, dir: 1 });
 
   // Launch pad.
   for (let x = PAD_X0; x < WORLD_W; x++) { surf[x] = SURF; for (let y = SURF - 12; y < SURF; y++) put(x, y, T.AIR); put(x, SURF, x >= PAD_X0 + 6 && x < PAD_X0 + 30 ? T.CONCRETE : T.GRASS); }

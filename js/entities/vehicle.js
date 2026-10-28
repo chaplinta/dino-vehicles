@@ -43,6 +43,10 @@ class Vehicle {
       moveBody(b, dt, { step: d.step });
       vehicleHop(this, dir, dt);
       Ramps.ride(this, dt);
+      // Tilt with the ground: up a ramp, nose up off the lip, nose down coming in to land.
+      const r = this.s.ramp;
+      const want = r ? -Math.atan(r.h / r.w) * r.dir : b.onGround ? 0 : clamp(Math.atan2(b.vy, Math.abs(b.vx) + 60), -0.7, 0.7) * this.facing;
+      this.pitch = lerp(this.pitch || 0, want, Math.min(1, dt * 8));
       this.wheel += b.vx * dt / 16;
     }
     if (d.act) d.act(this, dt, inp);
@@ -63,6 +67,7 @@ class Vehicle {
     const b = this.body;
     c.save();
     c.translate(Math.round(b.x), Math.round(b.y));
+    if (this.pitch) { c.translate(0, -b.h / 2); c.rotate(this.pitch); c.translate(0, b.h / 2); }
     if (this.facing < 0) c.scale(-1, 1);
     this.def.draw(c, this);
     c.restore();
@@ -111,6 +116,14 @@ function drawHeadlight(c, x, y) { ell(c, x, y, 5, 4, '#fff3bf', 2); }
 function drawOutrigger(c, x, y, k) {
   limb(c, [x, y, x, y + 4 + k * 22], 6, '#868e96', 2);
   rbox(c, x - 10, y + 2 + k * 22, 20, 5, 2, '#495057', 2);
+}
+
+// Writing on a vehicle (a route number, a sign). Vehicles are drawn mirrored when they face left,
+// so turn the text back the right way round on the spot.
+function vehicleText(c, v, str, x, y) {
+  c.save(); c.translate(x, y); if (v.facing < 0) c.scale(-1, 1);
+  c.fillText(str, 0, 0);
+  c.restore();
 }
 
 // Wheels, used by lots of vehicles.
@@ -192,6 +205,7 @@ const Vehicles = {
     const p = Player;
     const camMid = Game.cam.x + Game.viewW / 2;
     for (const v of this.list) {
+      if (v.beamedBy) continue;   // hanging under the flying saucer
       if (v.driver !== p && Math.abs(v.body.x - camMid) > Game.viewW * 1.6) continue;   // frozen off screen
       let inp = IDLE_INPUT;
       if (v.driver === p) inp = this.playerInput();

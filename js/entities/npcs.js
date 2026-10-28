@@ -12,6 +12,24 @@ function makeNPC(o) {
   n.body = makeBody(o.x, o.y, box.w, box.h);
   return n;
 }
+// Dinos climb walls like you do, so nobody stays stuck down a hole (pirates chasing you out of the
+// treasure hole, dinos that fell into a dug pit). Fighting dinos that haven't moved for 2 s get a big hop.
+function climbOut(n, dt, chasing) {
+  const b = n.body;
+  n.pushT = b.hitWall ? (n.pushT || 0) + dt : 0;   // walking into a wall too tall to hop
+  if (n.pushT > 0.3) {
+    // Find the lip in front and hop just high enough to clear it (up to 6 tiles).
+    const fx = Math.floor((b.x + b.hitWall * (b.w / 2 + 4)) / TS);
+    let ty = Math.floor((b.y - 1) / TS);
+    while (ty > b.y / TS - 7 && World.solid(fx, ty)) ty--;
+    const h = b.y - (ty + 1) * TS;
+    if (h > 0 && h < 6 * TS) { b.vy = -Math.sqrt(2 * GRAVITY * (World.gravity || 1) * (h + 20)); n.pushT = 0; }
+  }
+  if (!chasing) return;
+  n.stillT = Math.abs(b.x - (n.lastX ?? b.x)) < 3 ? (n.stillT || 0) + dt : 0;
+  n.lastX = b.x;
+  if (n.stillT > 2 && b.onGround) { b.vy = -760; n.stillT = 0; }
+}
 function bubble(c, x, y, icon, t) {
   const b = Math.sin(t * 4) * 4;
   rbox(c, x - 26, y - 56 + b, 52, 44, 14, '#fff', 4);
@@ -191,6 +209,7 @@ const NPCs = {
       n.heartT = Math.max(0, n.heartT - dt);
       n.angryT = Math.max(0, (n.angryT || 0) - dt);
       if (n.vehicle) { if (n.script) n.script(n, n.vehicle, dt); continue; }
+      if (n.beamedBy) { n.walk += dt * 12; continue; }   // carried by the saucer's beam: legs going
       if (n.ride) { this.updateRider(n, dt); continue; }
       const far = Math.abs(n.body.x - (cam.x + Game.viewW / 2)) > Game.viewW * 1.6;
       if (far) continue;
@@ -236,6 +255,7 @@ const NPCs = {
     }
     moveBody(b, dt, { step: 1 });
     if (b.hitWall && b.onGround) b.vy = -560;
+    climbOut(n, dt, true);
     n.walk = b.onGround && Math.abs(b.vx) > 15 ? n.walk + dt * Math.abs(b.vx) * 0.06 : 0;
   },
   reachesPlayer(n, kind) {
@@ -281,6 +301,7 @@ const NPCs = {
     }
     moveBody(b, dt, { step: 1, gravity });
     if (b.hitWall && b.onGround) { if (n.scaredT > 0 || Math.random() < 0.5) b.vy = -560; else { n.dir = -n.dir; } }
+    climbOut(n, dt, n.scaredT > 0);
     n.walk = b.onGround && Math.abs(b.vx) > 15 ? n.walk + dt * Math.abs(b.vx) * 0.06 : 0;
   },
   // A dino who needs a lift hops in when the right vehicle stops nearby.
