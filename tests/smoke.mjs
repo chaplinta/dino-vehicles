@@ -90,7 +90,7 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   const page = await open({ width: 960, height: 540 });
   await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Game.stars = 200; Vehicles.spawnMissing(); const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v); });
   await page.keyboard.press('Space');
-  await page.waitForTimeout(6500);
+  await page.waitForTimeout(13500);   // 10 s countdown first
   check(await page.evaluate(() => Game.overlay === Space), 'rocket reaches space');
   await page.evaluate(() => Space.finish());
   await page.waitForTimeout(500);
@@ -437,9 +437,9 @@ async function stickDrag(page, dx, dy, ms) {
     const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Vehicles.enter(Player, v);
     Input.set('action', true); Input.set('action', false);
   });
-  await step(60 * 9);
+  await step(60 * 16);   // 10 s countdown first
   check(await page.evaluate(() => Game.overlay === Space), 'rocket reaches space');
-  await page.evaluate(() => Space.finish());
+  await page.evaluate(() => { window.__save = localStorage.getItem(SAVE_KEY); Space.finish(); });   // (Earth autosaves during the countdown)
   check(await page.evaluate(() => Game.onMoon && World.gravity < 1), 'space trip goes on to the Moon');
   await step(60 * 8);
   check(await page.evaluate(() => Player.vehicle.s.state === 'idle' && Game.moonVisits === 1 && World.props.some(p => p.type === 'flag')), 'rocket lands on the Moon, flag planted');
@@ -457,7 +457,7 @@ async function stickDrag(page, dx, dy, ms) {
   check(await page.evaluate(() => { Save.write(); return localStorage.getItem(SAVE_KEY) === window.__save; }), 'nothing saved while on the Moon');
   check(!(await page.locator('[data-key=whistle]').isVisible()), 'no whistle on the Moon');
   await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = v.body.x; Player.body.y = v.body.y; Vehicles.enter(Player, v); Input.set('action', true); Input.set('action', false); });
-  await step(60 * 9);
+  await step(60 * 16);
   check(await page.evaluate(() => !Game.onMoon && World.gravity === 1 && World.get(100, 30) === T.BRICK), 'flies home to Earth, Earth unchanged');
   await step(60 * 12);
   check(await page.evaluate(() => Player.vehicle.s.state === 'idle'), 'parachutes down on Earth');
