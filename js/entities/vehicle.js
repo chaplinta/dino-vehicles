@@ -37,7 +37,7 @@ class Vehicle {
     const dir = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
     if (d.move) d.move(this, dt, inp, dir);
     else if (d.mover === 'ground') {
-      const sp = d.speed * (this.s.slow || 1);
+      const sp = d.speed * (this.s.slow || 1) * (this.driver === Player ? Input.stick || 1 : 1);
       b.vx = lerp(b.vx, dir * sp, Math.min(1, dt * (dir ? d.accel : 5)));
       if (dir && !this.s.lockFacing) this.facing = dir;
       moveBody(b, dt, { step: d.step });

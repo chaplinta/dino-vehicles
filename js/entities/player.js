@@ -98,7 +98,7 @@ const Player = {
     const dinoDef = DINO_TYPES[this.type];
     const dir = (Input.held.right ? 1 : 0) - (Input.held.left ? 1 : 0);
     this.zoomT = Math.max(0, (this.zoomT || 0) - dt);
-    const speed = this.zoomT > 0 ? 400 : 230;   // a Melbourne coffee makes you zoom
+    const speed = (this.zoomT > 0 ? 400 : 230) * (Input.stick || 1);   // a Melbourne coffee makes you zoom; a gentle push on the stick walks
     if (this.hurtT > 0) b.vx = lerp(b.vx, 0, Math.min(1, dt * 2));   // knocked flying
     else if (this.charging) { /* charging: keep running */ }
     else b.vx = lerp(b.vx, dir * speed, Math.min(1, dt * (b.onGround || dinoDef.flies ? 12 : 5)));

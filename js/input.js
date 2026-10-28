@@ -88,14 +88,15 @@ const UI = {
     });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     this.palette = document.getElementById('palette');
+    Stick.init();
   },
 
   // cfg: { dirs: 'none'|'lr'|'all', action: icon|null, roar, enter, whistle, palette, home }
   configure(cfg) {
     const show = (id, on) => document.getElementById(id).classList.toggle('hidden', !on);
-    const pad = document.getElementById('pad-left');
-    show('pad-left', cfg.dirs && cfg.dirs !== 'none');
-    pad.classList.toggle('lr', cfg.dirs === 'lr');
+    show('stick-zone', cfg.dirs && cfg.dirs !== 'none');
+    Stick.mode = cfg.dirs;
+    Stick.release();
     const act = document.querySelector('[data-key=action]');
     act.classList.toggle('hidden', !cfg.action);
     if (cfg.action) act.textContent = cfg.action;
@@ -136,5 +137,66 @@ const UI = {
   },
   markPalette(selected) {
     [...this.palette.children].forEach((b, i) => b.classList.toggle('sel', i === selected));
+  },
+};
+
+// Thumb joystick: touch anywhere in the left zone and a stick appears under your thumb. Slide to move
+// (further = faster), up to jump, climb or fly, down to dig down. A quick tap there still taps the world.
+const Stick = {
+  mode: 'all', id: null, ox: 0, oy: 0, t0: 0, moved: 0,
+  radius() { return 56 * (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--s')) || 1); },
+  init() {
+    const zone = document.getElementById('stick-zone'), base = document.getElementById('stick'), knob = document.getElementById('stick-knob');
+    this.base = base; this.knob = knob;
+    zone.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); Sound.unlock();
+      if (this.id !== null) return;
+      try { zone.setPointerCapture(e.pointerId); } catch (_) {}
+      this.id = e.pointerId; this.ox = e.clientX; this.oy = e.clientY; this.t0 = performance.now(); this.moved = 0;
+      this.zone = zone.getBoundingClientRect();
+      document.getElementById('stick-hint').classList.add('hidden');
+      base.style.left = (e.clientX - this.zone.left) + 'px'; base.style.top = (e.clientY - this.zone.top) + 'px';
+      knob.style.transform = '';
+      base.classList.remove('hidden');
+    });
+    zone.addEventListener('pointermove', e => {
+      if (e.pointerId !== this.id) return;
+      const R = this.radius();
+      let dx = e.clientX - this.ox, dy = e.clientY - this.oy;
+      this.moved = Math.max(this.moved, Math.hypot(dx, dy));
+      const d = Math.hypot(dx, dy);
+      if (d > R) {
+        // Past the edge: drag the stick along so it never runs out.
+        this.ox += dx * (1 - R / d); this.oy += dy * (1 - R / d);
+        dx = e.clientX - this.ox; dy = e.clientY - this.oy;
+        base.style.left = (this.ox - this.zone.left) + 'px'; base.style.top = (this.oy - this.zone.top) + 'px';
+      }
+      knob.style.transform = `translate(${dx}px, ${dy}px)`;
+      this.apply(dx / R, dy / R);
+    });
+    const up = e => {
+      if (e.pointerId !== this.id) return;
+      // A quick tap that didn't move: tap the world there instead (dig, build, tap things).
+      if (performance.now() - this.t0 < 220 && this.moved < 12) {
+        const r = document.getElementById('game').getBoundingClientRect();
+        Game.tap((e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H);
+      }
+      this.release();
+    };
+    zone.addEventListener('pointerup', up);
+    zone.addEventListener('pointercancel', up);
+    zone.addEventListener('lostpointercapture', up);
+    zone.addEventListener('contextmenu', e => e.preventDefault());
+  },
+  apply(x, y) {
+    Input.set('left', x < -0.28); Input.set('right', x > 0.28);
+    const all = this.mode === 'all';
+    Input.set('up', all && y < -0.5); Input.set('down', all && y > 0.5);
+    Input.stick = Math.abs(x) > 0.28 ? clamp(Math.abs(x), 0.35, 1) : undefined;
+  },
+  release() {
+    if (this.id !== null) for (const k of ['left', 'right', 'up', 'down']) Input.set(k, false);
+    this.id = null; Input.stick = undefined;
+    if (this.base) this.base.classList.add('hidden');
   },
 };

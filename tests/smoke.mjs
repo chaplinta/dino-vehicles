@@ -119,39 +119,65 @@ const hold = async (page, key, ms) => { await page.keyboard.down(key); await pag
   await page.close();
 }
 
-// 5. Touch tablet: on-screen buttons drive the dino.
+// Thumb joystick: put a "thumb" down in the left zone, slide, hold, let go.
+async function stickDrag(page, dx, dy, ms) {
+  const z = await page.locator('#stick-zone').boundingBox();
+  const x = z.x + z.width * 0.4, y = z.y + z.height * 0.6;
+  await page.mouse.move(x, y); await page.mouse.down();
+  await page.mouse.move(x + dx / 2, y + dy / 2); await page.mouse.move(x + dx, y + dy);
+  await page.waitForTimeout(ms);
+  await page.mouse.up();
+}
+
+// 5. Touch tablet: the thumb joystick drives the dino.
 {
   const page = await open({ width: 1024, height: 768 }, { hasTouch: true, isMobile: true });
-  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('stego'); });
-  const box = await page.locator('[data-key=right]').boundingBox();
-  check(box && box.width > 40, 'right button is big enough to tap');
-  const x0 = await page.evaluate(() => Player.body.x);
-  const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
-  await page.dispatchEvent('[data-key=right]', 'pointerdown', { pointerId: 1, clientX: cx, clientY: cy });
-  await page.waitForTimeout(700);
-  await page.dispatchEvent('[data-key=right]', 'pointerup', { pointerId: 1 });
-  check(await page.evaluate(x0 => Player.body.x > x0 + 60, x0), 'touch button walks the dino');
+  await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('stego'); Jobs.t = 1e9; });
+  const z = await page.locator('#stick-zone').boundingBox();
+  check(z && z.width > 300 && z.height > 300, 'a big joystick area on the left');
+  let x0 = await page.evaluate(() => Player.body.x);
+  await stickDrag(page, 80, 0, 700);
+  const full = await page.evaluate(x0 => Player.body.x - x0, x0);
+  check(full > 60, 'slide the joystick right: the dino walks right');
+  check(await page.evaluate(() => document.getElementById('stick').classList.contains('hidden') && !Input.held.right && Input.stick === undefined), 'let go: the stick hides and the dino stops');
+  x0 = await page.evaluate(() => Player.body.x);
+  await stickDrag(page, -22, 0, 700);
+  const gentle = await page.evaluate(x0 => x0 - Player.body.x, x0);
+  check(gentle > 10 && gentle < full * 0.8, `a small push walks slower (${Math.round(gentle)} vs ${Math.round(full)})`);
+  await page.evaluate(() => { Player.body.x = 222 * TS; Player.body.y = World.surfaceAt(222) * TS - 0.01; Player.body.vx = Player.body.vy = 0; Game.snapCamera(); });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => { Player.body.vy = 0; window.__y = Player.body.y; window.__top = Player.body.y; window.__poll = setInterval(() => { window.__top = Math.min(window.__top, Player.body.y); }, 16); });
+  await stickDrag(page, 0, -80, 400);
+  check(await page.evaluate(() => { clearInterval(window.__poll); return window.__top < window.__y - 40; }), 'push up: the dino jumps');
+  // A quick tap in the joystick area still taps the world there.
+  const tapped = await page.evaluate(() => { window.__taps = []; const t = Game.tap.bind(Game); Game.tap = (x, y) => { __taps.push([x, y]); }; return true; });
+  await page.mouse.click(z.x + z.width * 0.5, z.y + z.height * 0.5);
+  check(tapped && await page.evaluate(() => window.__taps.length === 1), 'a quick tap in the joystick area taps the world');
+  await page.evaluate(() => { delete Game.tap; });
   await page.dispatchEvent('[data-key=whistle]', 'pointerdown', { pointerId: 2 });
   await page.dispatchEvent('[data-key=whistle]', 'pointerup', { pointerId: 2 });
   await page.waitForTimeout(100);
-  check(await page.evaluate(() => Game.overlay === Whistle), 'whistle opens the vehicle menu');
+  check(await page.evaluate(() => Game.overlay === Whistle && document.getElementById('stick-zone').classList.contains('hidden')), 'whistle opens the vehicle menu (joystick put away)');
   await page.mouse.click(5, 5);
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }
 
-// 6. Phone held sideways: buttons on screen, tap walks the dino.
+// 6. Phone held sideways: buttons and joystick on screen, joystick walks the dino.
 {
   const page = await open({ width: 844, height: 390 }, { hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
   await page.evaluate(() => { localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); });
   const boxes = await page.evaluate(() => [...document.querySelectorAll('.btn')].filter(b => b.offsetParent).map(b => b.getBoundingClientRect().toJSON()));
   check(boxes.every(b => b.left >= 0 && b.top >= 0 && b.right <= 844 && b.bottom <= 390), 'phone: every button is on screen');
   check(boxes.every(b => b.width >= 44), 'phone: buttons are thumb-sized');
+  const z = await page.locator('#stick-zone').boundingBox();
+  check(await page.evaluate(([zx, zw]) => [...document.querySelectorAll('.btn')].filter(b => b.offsetParent).every(b => { const r = b.getBoundingClientRect(); return r.left >= zx + zw || r.top < 90; }), [z.x, z.width]), 'phone: the joystick area doesn\'t cover any buttons');
   const x0 = await page.evaluate(() => Player.body.x);
-  await page.dispatchEvent('[data-key=right]', 'pointerdown', { pointerId: 1 });
-  await page.waitForTimeout(700);
-  await page.dispatchEvent('[data-key=right]', 'pointerup', { pointerId: 1 });
-  check(await page.evaluate(x0 => Player.body.x > x0 + 60, x0), 'phone: tap walks the dino');
+  await stickDrag(page, 70, 0, 700);
+  check(await page.evaluate(x0 => Player.body.x > x0 + 60, x0), 'phone: the joystick walks the dino');
+  await page.mouse.move(z.x + 100, z.y + z.height - 80); await page.mouse.down(); await page.mouse.move(z.x + 160, z.y + z.height - 80);
+  await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/joystick.png' : '/dev/null' }).catch(() => {});
+  await page.mouse.up();
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }
