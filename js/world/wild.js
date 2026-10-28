@@ -136,7 +136,8 @@ function genWild(world, rng, g) {
     const open = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => get(x + dx, y + dy) === T.AIR && x + dx >= c0 && x + dx < c1 && y + dy >= SURF - 6);
     if (open) { put(x, y, T.ICE); iceAt.push([x, y]); }
   }
-  for (let k = 0; k < 7 && iceAt.length; k++) { const [x, y] = iceAt.splice(Math.floor(rng() * iceAt.length), 1)[0]; if (y < SURF) put(x, y, T.CRYSTAL); }
+  const walls = iceAt.filter(([, y]) => y < SURF);   // crystals in the walls and roof, not the floor
+  for (let k = 0; k < 7 && walls.length; k++) { const [x, y] = walls.splice(Math.floor(rng() * walls.length), 1)[0]; put(x, y, T.CRYSTAL); }
   // Little snow drifts at the bottom of the ski run, for the snow plough.
   for (let x = WILD.DRIFTS[0]; x < WILD.DRIFTS[1]; x++) if (get(x, SURF - 1) === T.AIR && x % 3) put(x, SURF - 1, T.SNOW);
 

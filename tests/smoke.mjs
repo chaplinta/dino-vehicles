@@ -826,7 +826,7 @@ async function stickDrag(page, dx, dy, ms) {
     window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
     window.has = k => Vehicles.list.some(v => v.kind === k && !v.npcOwned);
   });
-  check(await page.evaluate(() => WORLD_W === 760 && World.props.some(p => p.type === 'gantry') && World.props.filter(p => p.type === 'ramp').length >= 4), 'bigger world with a speedway and jump ramps');
+  check(await page.evaluate(() => WORLD_W === 1250 && World.props.some(p => p.type === 'gantry') && World.props.filter(p => p.type === 'ramp').length >= 4), 'bigger world with a speedway and jump ramps');
   check(await page.evaluate(() => World.props.find(p => p.type === 'chess').x > 450 && World.props.find(p => p.type === 'tower').x > 720), 'chess up on a mountain, launch pad at the far end');
   check(await page.evaluate(() => !['motorbike', 'jet', 'pirateship', 'sportscar', 'rocket', 'racecar'].some(has)), 'best vehicles are hidden at the start');
   await page.evaluate(() => { Game.addStars(35); run(10); });
