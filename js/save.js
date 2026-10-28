@@ -1,7 +1,7 @@
 // Auto-save to localStorage: world seed + changed tiles + player + stars + vehicles.
 const SAVE_KEY = 'dinoVehicles.save.v1';
 const Save = {
-  V: 2,   // 2: the bigger world with the speedway
+  V: 3,   // 3: the wild end of the world (jungle, volcano, desert, snow)
   timer: 0,
   exists() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } },
   wipe() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} },

@@ -122,7 +122,11 @@ const NPCs = {
     walker(236, { type: 'ankylo' }); walker(262, { type: 'pachy' }); walker(286, {});
     walker(308, { type: 'raptor', baby: true }); walker(318, { type: 'bary' }); walker(404, { baby: true });
     walker(448, {}); walker(480, { type: 'ptero' }); walker(520, { type: 'ptero', baby: true });
-    walker(572, { type: 'megalo' }); walker(604, { type: 'carno' }); walker(658, {}); walker(696, { type: 'raptor', baby: true }); walker(732, { type: 'allo' });
+    walker(572, { type: 'megalo' }); walker(604, { type: 'carno' }); walker(658, {}); walker(696, { type: 'raptor', baby: true });
+    // The wild end: jungle, volcano, desert, snow, and the launch pad.
+    walker(750, { type: 'raptor' }); walker(796, { type: 'iguano' }); walker(838, { type: 'ptero', baby: true });
+    walker(874, { type: 'ankylo' }); walker(958, { type: 'megalo' }); walker(1000, { type: 'styraco' }); walker(1072, { type: 'tri' });
+    walker(1150, { type: 'pachy' }); walker(1178, { baby: true }); walker(1232, { type: 'allo' });
     // Half the grown-ups fight back, chosen at random.
     const adults = this.list.filter(n => !n.baby);
     for (const n of adults) n.fighter = false;
@@ -419,6 +423,7 @@ const TRAFFIC = [
   ['ute', [8, 60, 95]], ['van', [20, 90]],
   ['car', [102, 212]], ['car', [212, 150, 102]], ['bus', [104, 140, 156, 200, 212], [3, 3]], ['citybike', [110, 205]],
   ['ute', [218, 276]], ['car', [300, 328]], ['car', [575, 668], [1, 2]], ['van', [722, 754]],
+  ['citybike', [724, 776]], ['ute', [975, 1008]], ['car', [1058, 1090], [2, 2]],
 ];
 function topSolidRow(tx, y0) { return World.groundBelow(tx, y0); }
 function diggerScript(n, v, dt) {

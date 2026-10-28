@@ -128,7 +128,11 @@ const Player = {
     const wall = bodySolidAt(b, b.x - 3, b.y - 2) || bodySolidAt(b, b.x + 3, b.y - 2);
     // Climb walls: hold up, or just keep walking into a wall too tall to jump.
     const pushing = dir && bodySolidAt(b, b.x + dir * 3, b.y - 2);
-    if (!flier && (Input.held.up || (pushing && this.pushT > 0.35)) && wall && (!b.onGround || pushing) && b.vy > -260) { b.vy = -260; this.climbing = true; } else this.climbing = false;
+    // Jungle vines: hold up to climb, let go to hang on.
+    const vine = !flier && Wild.vineAt(b);
+    if (vine && Input.held.up) { if (b.vy > -220) b.vy = -220; this.climbing = true; }
+    else if (!flier && (Input.held.up || (pushing && this.pushT > 0.35)) && wall && (!b.onGround || pushing) && b.vy > -260) { b.vy = -260; this.climbing = true; } else this.climbing = false;
+    if (vine && !Input.held.up && !b.onGround && !Input.held.down) b.vy = Math.min(b.vy, 0);
     this.pushT = pushing && b.hitWall === dir ? (this.pushT || 0) + dt : 0;
 
     if (this.slideTo !== null && !dir) {

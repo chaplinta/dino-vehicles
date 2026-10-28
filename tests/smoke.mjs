@@ -1022,6 +1022,38 @@ async function stickDrag(page, dx, dy, ms) {
   await page.close();
 }
 
+// 30. The wild end: jungle and waterfall, volcano mountain, desert and canyon, snowy mountain.
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => {
+    Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Asteroid.left = 1e9;
+    window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; };
+    window.go = tx => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = tx * TS + 16; Player.body.y = World.surfaceAt(tx) * TS - 0.01; Player.body.vx = Player.body.vy = 0; Game.snapCamera(); };
+  });
+  check(await page.evaluate(() => WORLD_W === 1250 && PAD_X0 === 1210 && Vehicles.list.length > 0 && World.get(WILD.POOL[0] + 2, SURF + 1) === T.WATER && World.get(WILD.RIVER[0] + 3, SURF) === T.WOOD
+    && World.get(WILD.RIVER[0] + 3, SURF + 1) === T.WATER && World.props.some(p => p.type === 'waterfall') && World.props.some(p => p.type === 'bridge')), 'jungle: waterfall pool, river and rope bridge');
+  check(await page.evaluate(() => [...Array(9)].every((_, i) => World.get(WILD.CONE - 4 + i, SURF - 16) === T.LAVA) && World.get(WILD.CONE, SURF - 3) === T.AIR && World.get(WILD.CONE, SURF - 5) === T.WARMROCK), 'volcano: lava in the crater, a lava tube underneath');
+  check(await page.evaluate(() => [...Array(11)].every((_, i) => !World.solid(WILD.CANYON[0] + i, SURF + 6)) && World.props.filter(p => p.type === 'ramp' && Math.abs(p.x - WILD.CANYON[0]) < 12).length === 2
+    && World.skeleton.length > 20 && World.skeleton.every(i => [T.BONE, T.FOSSIL].includes(World.t[i]))), 'desert: canyon with ramps both sides, a buried skeleton');
+  check(await page.evaluate(() => { let ice = 0, gem = 0; for (let x = WILD.CAVE[0]; x <= WILD.CAVE[1]; x++) for (let y = SURF - 8; y <= SURF; y++) { const id = World.get(x, y); if (id === T.ICE) ice++; if (id === T.CRYSTAL) gem++; }
+    return ice > 20 && gem >= 4 && World.get(WILD.PEAK, World.surfaceAt(WILD.PEAK)) === T.SNOW; }), 'snowy mountain: snow on top, an ice cave with crystals');
+  check(await page.evaluate(() => { go(WILD.PEAK + 30); run(30); return outfit() === 'snow'; }) && await page.evaluate(() => { go(600); run(30); return outfit() === null; }), 'beanies up the snowy mountain only');
+  check(await page.evaluate(() => { const v = World.props.find(p => p.type === 'vine'); go(Math.floor(v.x)); Player.body.x = v.x * TS; run(10); const y0 = Player.body.y; run(90, { up: 1 }); return y0 - Player.body.y > 4 * TS; }), 'climb a jungle vine');
+  check(await page.evaluate(() => { const c = World.props.find(p => p.type === 'chest' && p.wild); const s0 = Game.stars; Player.body.x = c.x * TS; Player.body.y = c.y * TS - 0.01; run(10); return c.open && Game.stars > s0; }), 'treasure in the cave behind the waterfall');
+  check(await page.evaluate(() => { go(880); Wild.volcT = 0.01; run(5); const on = Volcano.active && Volcano.active.mountain; run(60 * 5); const n = Volcano.active ? Volcano.active.lava.size : 0; run(60 * 12);
+    return on && n >= 10 && !Volcano.active && World.get(WILD.CONE, SURF - 16) === T.LAVA; }), 'the volcano mountain erupts, lava runs down and cools; the crater stays hot');
+  check(await page.evaluate(() => { go(WILD.CONE); Player.body.x = WILD.CONE * TS + 16; Player.body.y = (SURF - 16) * TS; let top = 1e9; for (let i = 0; i < 40; i++) { run(1); top = Math.min(top, Player.body.y); } return top < (SURF - 18) * TS; }), 'crater lava is hot: it pops you out');
+  check(await page.evaluate(() => { Game.stars = 200; Vehicles.spawnMissing(); go(985); const v = Vehicles.list.find(v => v.kind === 'racecar'); v.body.x = 985 * TS; v.body.y = SURF * TS - 0.01; v.facing = 1; Player.body.x = v.body.x; Vehicles.enter(Player, v);
+    let fell = false; for (let i = 0; i < 60 * 5 && v.body.x < (WILD.CANYON[1] + 8) * TS; i++) { run(1, { right: 1 }); if (v.body.y > (SURF + 3) * TS) fell = true; } return !fell && v.body.x >= (WILD.CANYON[1] + 8) * TS; }), 'race car jumps the canyon');
+  check(await page.evaluate(() => { const v = Player.vehicle; v.body.x = (WILD.CANYON[0] + 4) * TS; v.body.y = (SURF + 12) * TS - 0.01; v.body.vx = 0; run(60 * 10, { right: 1 }); return v.body.y <= SURF * TS + 2; }), 'fall in the canyon? drive out the tunnel');
+  check(await page.evaluate(() => { const pl = Vehicles.list.find(v => v.kind === 'plough'); if (!pl) return false; const snow = () => [...Array(20)].filter((_, i) => World.get(WILD.DRIFTS[0] + i, SURF - 1) === T.SNOW).length; const a = snow();
+    if (Player.vehicle) Vehicles.exit(Player); Player.body.x = pl.body.x; Vehicles.enter(Player, pl); run(60 * 5, { left: 1 }); return a > 5 && snow() === 0; }), 'snow plough (40 stars) clears the snow drifts');
+  check(await page.evaluate(() => { if (Player.vehicle) Vehicles.exit(Player); const s0 = Game.stars; for (const i of World.skeleton) World.set(i % World.w, Math.floor(i / World.w), T.AIR); run(70); return Game.stars - s0 >= 10 && Eggs.found.skeleton; }), 'dig out the whole skeleton: 10 stars');
+  check(await page.evaluate(() => { const r = Vehicles.list.find(v => v.kind === 'rocket'); return r && Math.abs(r.body.x / TS - ROCKET_X) < 3; }), 'rocket on the pad at the far end');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
 // 8. Offline: every file the page loads is in the service worker's cache list.
 {
   const fs = await import('node:fs');

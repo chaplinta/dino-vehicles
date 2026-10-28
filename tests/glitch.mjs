@@ -118,8 +118,9 @@ for (const type of await page.evaluate(() => DINO_KEYS)) {
     const rng = mulberry32(type.length * 31);
     const m = G.masher(rng, { up: type === 'ptero' ? 0.3 : 0.08, enter: 0.004, whistle: 0.002 });
     for (let leg = 0; leg < 4; leg++) {
-      // Drop in somewhere new each leg: farm, town, sea, mountains, speedway, bike park, launch pad.
-      const tx = [12, 150, 360, 470, 600, 690, 740][(leg * 2 + type.length) % 7];
+      // Drop in somewhere new each leg: farm, town, sea, mountains, speedway, bike park, jungle, volcano,
+      // desert, canyon floor, snowy mountain, launch pad.
+      const tx = [12, 150, 360, 470, 600, 690, 790, 880, 1000, 1025, 1150, 1230][(leg * 3 + type.length) % 12];
       if (!Player.vehicle && !Game.away) { Player.body.x = tx * TS + 16; Player.body.y = World.surfaceAt(tx) * TS - 0.01; Game.snapCamera(); }
       G.run(60 * 10, m);
     }
@@ -238,6 +239,24 @@ await scene('volcano', () => {
   if (Volcano.active) G.issue('volcano never cooled');
   G.release();
 });
+await scene('canyon jump', () => {
+  G.fresh('rex', 1313); Game.stars = 200; Vehicles.spawnMissing();
+  for (const kind of ['racecar', 'monster', 'plough']) {
+    if (Player.vehicle) Vehicles.exit(Player);
+    const v = Vehicles.list.find(v => v.kind === kind) || Vehicles.spawnAtGround(kind, 990, 1);
+    v.body.x = 985 * TS; v.body.y = SURF * TS - 0.01; v.facing = 1; Player.body.x = v.body.x; Vehicles.enter(Player, v);
+    G.run(60 * 12, () => G.key('right', true));
+    G.release();
+    if (Player.vehicle && Player.vehicle.body.y > (SURF + 2) * TS) G.issue(kind + ' stuck down the canyon');
+  }
+  // The volcano mountain erupting with you on it.
+  if (Player.vehicle) Vehicles.exit(Player);
+  Player.body.x = (WILD.CONE + 8) * TS; Player.body.y = World.surfaceAt(WILD.CONE + 8) * TS - 0.01; Game.snapCamera();
+  Wild.volcT = 0.01; G.run(60 * 18, G.masher(mulberry32(13), {}));
+  if (Volcano.active) G.issue('volcano mountain never cooled');
+  G.release();
+});
+
 await scene('brachio ride', () => {
   G.fresh('rex', 6161);
   const n = NPCs.list.find(n => n.type === 'brachio' && !n.baby);

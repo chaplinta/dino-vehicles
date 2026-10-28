@@ -30,6 +30,15 @@ const Volcano = {
     Pow.add(tx * TS + 16, ty * TS - 40, 'RUMBLE!');
   },
 
+  // The volcano mountain erupting: a fountain from the crater, and a tongue of lava down one side from (tx, ty).
+  spill(tx, ty, n, mouth) {
+    if (Game.away || this.active) return false;
+    this.active = { tx, ty, t: 0, phase: 'rumble', lava: new Set(), budget: n, open: false, interval: 0.12, acc: 0, flowAcc: 0, erupted: false, mouth, mountain: true };
+    Sound.noise(1.6, 0.3, 'lowpass', 120); Sound.tone(50, 1.4, 'sawtooth', 0.08, 40);
+    Pow.add(mouth[0] * TS + 16, (mouth[1] - 3) * TS, 'RUMBLE!');
+    return true;
+  },
+
   // Lava goes into the lowest empty space touching the lava already there, so it fills up like a liquid.
   nextCell(e) {
     const src = [e.tx, e.ty];
@@ -40,7 +49,7 @@ const Volcano = {
       for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0], [0, -1]]) {
         const nx = x + dx, ny = y + dy;
         if (!World.inside(nx, ny) || World.get(nx, ny) !== T.AIR) continue;
-        if (ny < World.genSurf[nx] - 1) continue;   // no piling up into the sky
+        if (ny < World.genSurf[nx] - (e.mountain ? 2 : 1)) continue;   // no piling up into the sky (down the mountain it can tip over a step)
         if (!best || ny > best[1] || (ny === best[1] && Math.abs(nx - e.tx) < Math.abs(best[0] - e.tx))) best = [nx, ny];
       }
     }
@@ -99,7 +108,14 @@ const Volcano = {
       if (e.phase === 'rumble') {
         this.shake = 0.4;
         if (Math.random() < 0.35) Fx.add({ x: e.tx * TS + rand(0, 32), y: e.ty * TS, vx: rand(-40, 40), vy: rand(-120, -40), life: 0.6, r: 5, color: 'rgba(255,146,43,0.8)' });
-        if (e.t > 1.5) { e.phase = 'fill'; e.t = 0; }
+        if (e.t > 1.5) {
+          e.phase = 'fill'; e.t = 0;
+          if (e.mountain) {
+            e.erupted = true; this.shake = 0.8;
+            Sound.noise(1.5, 0.5, 'lowpass', 220); Sound.tone(80, 0.8, 'sawtooth', 0.1, 40);
+            Pow.add(e.mouth[0] * TS + 16, (e.mouth[1] - 4) * TS, 'KABOOM!');
+          }
+        }
       } else if (e.phase === 'fill') {
         e.acc += dt;
         while (e.acc > e.interval && e.budget > 0) {
@@ -123,12 +139,12 @@ const Volcano = {
         if (e.flowAcc > 0.06) { e.flowAcc = 0; this.flow(e); }
         if (e.t > (e.erupted ? 10 : 6)) { this.cool(e); this.active = null; }
       }
-      // Lava is hot: it pushes you (and dinos) up and out. Rising lava carries you up the hole.
-      for (const b of this.bodiesIn()) {
-        b.vy = Math.min(b.vy, -650);
-        if (b === Player.body || (Player.vehicle && b === Player.vehicle.body)) {
-          if (!this.hotCool) { this.hotCool = 0.6; Pow.add(b.x, b.y - b.h - 20, 'HOT!'); Sound.tone(900, 0.15, 'square', 0.08, 1400); }
-        }
+    }
+    // Lava is hot (any lava, the crater too): it pushes you (and dinos) up and out. Rising lava carries you up the hole.
+    for (const b of this.bodiesIn()) {
+      b.vy = Math.min(b.vy, -650);
+      if (b === Player.body || (Player.vehicle && b === Player.vehicle.body)) {
+        if (!this.hotCool) { this.hotCool = 0.6; Pow.add(b.x, b.y - b.h - 20, 'HOT!'); Sound.tone(900, 0.15, 'square', 0.08, 1400); }
       }
     }
     this.emberT -= dt;

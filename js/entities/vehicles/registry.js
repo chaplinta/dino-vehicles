@@ -9,9 +9,9 @@ const VEHICLE_ORDER = [
 const UNLOCKS = {
   digger: 0, dumptruck: 0, tractor: 0, firetruck: 0, train: 0, bulldozer: 0, police: 0, ambulance: 0,
   garbage: 10, harvester: 20, drill: 30, wrecker: 45,
-  mixer: 15, roller: 25, forklift: 35,   // not in the whistle menu: they turn up parked where they work
+  mixer: 15, roller: 25, forklift: 35, plough: 40,   // not in the whistle menu: they turn up parked where they work
 };
-const PARKED_AT = { mixer: 'at the building site', roller: 'in town', forklift: 'by the pit garage' };
+const PARKED_AT = { mixer: 'at the building site', roller: 'in town', forklift: 'by the pit garage', plough: 'at the bottom of the snowy mountain' };
 const FINDS = {
   crane: 'at the building site', tugboat: 'in the sea', fishboat: 'in the sea',
   plane: 'at the airport', helicopter: 'up in the mountains', submarine: 'in the sea', rocket: 'at the launch pad, right at the end of the world', pirateship: 'out in the sea',
@@ -42,7 +42,7 @@ const VEHICLE_WORDS = {
   digger: 'DIG', dumptruck: 'DUMP', firetruck: 'FIRE', tractor: 'FARM', train: 'RAIL', bulldozer: 'PUSH', crane: 'LIFT',
   ambulance: 'HELP', police: 'COP', tugboat: 'TUG', helicopter: 'FLY', harvester: 'CORN', wrecker: 'BALL', garbage: 'BIN',
   drill: 'HOLE', fishboat: 'FISH', submarine: 'SUB', plane: 'WING', rocket: 'ZOOM', moonbuggy: 'MOON', pirateship: 'SHIP',
-  jet: 'JET', motorbike: 'BIKE', sportscar: 'FAST', racecar: 'RACE', citybike: 'RIDE', tram: 'TRAM', car: 'CAR', ute: 'UTE', bus: 'BUS', van: 'VAN', icecream: 'YUM', skateboard: 'FLIP', ufo: 'UFO', brachioride: 'TALL', mixer: 'MIX', roller: 'ROLL', forklift: 'FORK', monster: 'BIG', jetski: 'SKI', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD', chargetruck: 'BANG', goldtruck: 'GOLD',
+  jet: 'JET', motorbike: 'BIKE', sportscar: 'FAST', racecar: 'RACE', citybike: 'RIDE', tram: 'TRAM', car: 'CAR', ute: 'UTE', bus: 'BUS', van: 'VAN', icecream: 'YUM', skateboard: 'FLIP', ufo: 'UFO', brachioride: 'TALL', mixer: 'MIX', roller: 'ROLL', forklift: 'FORK', monster: 'BIG', jetski: 'SKI', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD', chargetruck: 'BANG', goldtruck: 'GOLD', plough: 'PLOW',
 };
 
 const DEFAULT_VEHICLES = [
@@ -53,5 +53,6 @@ const DEFAULT_VEHICLES = [
   ['helicopter', 440, 1], ['rocket', ROCKET_X, 1], ['train', 30, 1], ['pirateship', 389, -1], ['goldtruck', 242, 1],
   ['ute', 66, 1], ['car', 116, 1], ['van', 214, -1], ['skateboard', 207, 1], ['citybike', 304, 1], ['bus', 588, 1],
   ['icecream', 312, 1], ['jetski', 350, 1], ['mixer', 255, 1], ['roller', 134, 1], ['forklift', 656, -1], ['monster', 676, 1],
+  ['plough', WILD.DRIFTS[1] + 2, -1],
   ['motorbike', 714, -1], ['sportscar', 612, 1], ['racecar', SPEEDWAY.GARAGE + 6, 1],
 ];

@@ -5,7 +5,7 @@ const T = {
   CROP: 18, ROOF: 19, CONCRETE: 20, FLOWER: 21,
   MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25, GOLDEGG: 26,
   REDDIRT: 27, IRONORE: 28, BROKENORE: 29, WASTE: 30, SPINIFEX: 31, TREASURE: 32,
-  MAGMA: 33, LAVA: 34, WARMROCK: 35,
+  MAGMA: 33, LAVA: 34, WARMROCK: 35, SNOW: 36, ICE: 37,
 };
 
 // Per-tile hash so textures look varied but stable.
@@ -250,6 +250,20 @@ defTile(T.LAVA, { name: 'lava', solid: false, dig: false, fluid: true, draw(c, x
   c.fillStyle = '#f76707'; c.fillRect(x, y, TS, TS);
   speckle(c, x, y, tx, ty, '#ffd43b', 5, 6);
   speckle(c, x, y, tx + 9, ty, '#e03131', 3, 5);
+} });
+
+// Up the snowy mountain.
+defTile(T.SNOW, { name: 'snow', draw(c, x, y, tx, ty) {
+  c.fillStyle = '#f8f9fa'; c.fillRect(x, y, TS, TS);
+  speckle(c, x, y, tx, ty, '#dbe4ff', 3, 4);
+  c.fillStyle = '#ffffff'; c.fillRect(x, y, TS, 4);
+} });
+defTile(T.ICE, { name: 'ice', hard: 2, draw(c, x, y, tx, ty) {
+  c.fillStyle = '#a5d8ff'; c.fillRect(x, y, TS, TS);
+  c.strokeStyle = 'rgba(255,255,255,0.8)'; c.lineWidth = 2; c.beginPath();
+  const a = tileHash(tx, ty);
+  c.moveTo(x + 4, y + 8 + a * 10); c.lineTo(x + 14, y + 4); c.moveTo(x + 18, y + 26); c.lineTo(x + 28, y + 14 + a * 8); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,0.35)'; c.fillRect(x + 2, y + 2, 8, 4);
 } });
 
 function drawTileIcon(c, id) {

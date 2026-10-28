@@ -80,9 +80,12 @@ function drawBackdrop(c, camX, camY, t, zoom = 1) {
     drawHills(c, camX, 0.5, 425 + off * 0.7, 14, '#b4532e', 2.1);
     return;
   }
-  drawHills(c, camX, 0.15, 330 + off * 0.3, 40, '#a5d8ff', 1.3);
-  drawHills(c, camX, 0.3, 380 + off * 0.5, 35, '#8fd18a', 0.2);
-  drawHills(c, camX, 0.5, 420 + off * 0.7, 25, '#6cbf5c', 2.1);
+  // Hill colours change with the place: green jungle, red-grey volcano, orange desert, white snow.
+  const pal = Wild.palette((camX + W / 2) / TS);
+  Wild.drawFar(c, camX, off, t);
+  drawHills(c, camX, 0.15, 330 + off * 0.3, 40, pal[0], 1.3);
+  drawHills(c, camX, 0.3, 380 + off * 0.5, 35, pal[1], 0.2);
+  drawHills(c, camX, 0.5, 420 + off * 0.7, 25, pal[2], 2.1);
 }
 
 // Background train track. Drawn behind tiles, so mountains become tunnels.
@@ -92,12 +95,19 @@ function drawTrack(c, camX, camY) {
   const y = TRACK_Y - camY;
   if (y < -40 || y > Game.viewH + 300) return;
   const x0 = Math.floor(camX / 24) * 24;
-  // Bridge pylons over the sea.
+  // Bridge pylons over the sea, and a wooden trestle over the canyon.
   for (let tx = SEA_X0 - 2; tx <= SEA_X1 + 2; tx += 6) {
     const px = tx * TS - camX;
     if (px < -60 || px > Game.viewW + 60) continue;
     c.fillStyle = '#9aa0aa'; c.fillRect(px - 10, y, 20, 12 * TS);
     c.fillStyle = 'rgba(43,34,51,0.6)'; c.fillRect(px - 10, y, 3, 12 * TS); c.fillRect(px + 7, y, 3, 12 * TS);
+  }
+  const t0 = WILD.CANYON[0] * TS - camX, t1 = WILD.CANYON[1] * TS - camX;
+  if (t1 > -60 && t0 < Game.viewW + 60) {
+    c.strokeStyle = '#8a5a2b'; c.lineWidth = 6;
+    for (let px = t0; px <= t1 + 1; px += (t1 - t0) / 3) { c.beginPath(); c.moveTo(px, y); c.lineTo(px, y + 12 * TS); c.stroke(); }
+    c.lineWidth = 4;
+    for (let k = 0; k < 6; k++) { const yy = y + k * 2 * TS; c.beginPath(); c.moveTo(t0, yy); c.lineTo(t1, yy + 2 * TS); c.moveTo(t1, yy); c.lineTo(t0, yy + 2 * TS); c.stroke(); }
   }
   c.fillStyle = '#7a4a24';
   for (let x = x0; x < camX + Game.viewW + 24; x += 24) c.fillRect(x - camX, y - 6, 14, 6);
@@ -197,6 +207,9 @@ function drawProps(c, camX, camY) {
     } else if (PILBARA_PROPS.has(p.type)) {
       if (sx < -700 || sx > Game.viewW + 700) continue;
       drawPilbaraProp(c, p, sx, p.y * TS - camY);
+    } else if (WILD_PROPS.has(p.type)) {
+      if (sx < -300 || sx > Game.viewW + 300) continue;
+      Wild.drawProp(c, p, sx, p.y * TS - camY);
     } else if (p.type === 'tower') {
       const sy = p.y * TS - camY;
       if (sx < -200 || sx > Game.viewW + 300) continue;
@@ -454,7 +467,7 @@ const Game = {
     Eggs.update(dt);
     for (const p of World.props) if (p.type === 'bin' && !p.full && (p.refill -= dt) <= 0) p.full = true;
     Sim.update(dt, this.cam.x, this.cam.y);
-    if (!this.away) Volcano.update(dt);
+    if (!this.away) { Volcano.update(dt); Wild.update(dt); }
     SeaTargets.update(dt);
     Fx.update(dt);
     this.updateCamera(dt);
@@ -484,7 +497,7 @@ const Game = {
     if (!this.away) Jobs.drawWorld(c);
     if (this.away === 'pilbara') Mine.drawWorld(c);
     if (this.away === 'pirate') Pirate.drawWorld(c);
-    if (!this.away) Volcano.drawWorld(c);
+    if (!this.away) { Volcano.drawWorld(c); Wild.drawWorld(c); }
     Fx.draw(c);
     Pow.draw(c);
     this.drawDigHint(c);

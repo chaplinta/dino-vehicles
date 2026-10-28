@@ -25,6 +25,11 @@ const VEHICLE_FACTS = {
     'Trains run on steel rails, which makes them very good at carrying heavy loads.',
     'The driver of a train is called the engine driver. They blow the whistle at stations.',
   ],
+  plough: [
+    'A snow plough pushes snow off the road with a big curved blade at the front.',
+    'Many snow ploughs also spread grit or salt behind them, so the road isn\'t slippery.',
+    'Their orange flashing light warns other drivers to keep back.',
+  ],
   bulldozer: [
     'A bulldozer has a big flat blade at the front for pushing dirt and rocks.',
     'Bulldozers drive on tracks, like a digger, so they can push really hard without slipping.',

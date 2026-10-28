@@ -1,4 +1,5 @@
-// World generator. Biomes left to right: farm, town, building site, beach and sea, mountains, speedway, launch pad.
+// World generator. Biomes left to right: farm, town, building site, beach and sea, mountains, speedway,
+// then the wild end (jungle, volcano mountain, desert and canyon, snowy mountain), and the launch pad.
 const SURF = 40;                  // normal ground row
 const SEA_LEVEL = SURF + 1;       // first water row
 const BIOMES = [
@@ -8,11 +9,23 @@ const BIOMES = [
   { key: 'beach', x0: 300, x1: 420 },
   { key: 'mount', x0: 420, x1: 560 },
   { key: 'speed', x0: 560, x1: 720 },
-  { key: 'pad', x0: 720, x1: WORLD_W },
+  { key: 'jungle', x0: 720, x1: 850 },
+  { key: 'volc', x0: 850, x1: 970 },
+  { key: 'desert', x0: 970, x1: 1090 },
+  { key: 'snow', x0: 1090, x1: 1210 },
+  { key: 'pad', x0: 1210, x1: WORLD_W },
 ];
 // Speedway: drag strip with a start gantry and finish line, pit garage, then a dirt bike park.
 const SPEEDWAY = { X0: 560, START: 572, FINISH: 668, STAND: [598, 628], GARAGE: 640, BIKES: [680, 718] };
-const PAD_X0 = 720, ROCKET_X = 738;   // launch pad, right at the far end
+const PAD_X0 = 1210, ROCKET_X = 1228;   // launch pad, right at the far end
+// The wild end (the places themselves are built in wild.js).
+const WILD = {
+  JUNGLE: [720, 850], RIVER: [758, 770], PLATEAU: [780, 812], POOL: [812, 822], TREES: [728, 742, 778, 832, 844],
+  VOLC: [850, 970], CONE: 910, TUBE: [856, 964],
+  DESERT: [970, 1090], CANYON: [1020, 1031], GHOST: [1062, 1072, 1082], BONES: [1060, SURF + 4],
+  SNOW: [1090, 1210], PEAK: 1126, CAVE: [1098, 1124], DRIFTS: [1188, 1206],
+};
+const WILD_BIOMES = new Set(['jungle', 'volc', 'desert', 'snow']);
 const CHESS_X = 490.5;                // chess table on a mountain lookout
 const SEA_X0 = 330, SEA_X1 = 395;
 function biomeAt(tx) {
@@ -44,7 +57,7 @@ function generateWorld(world, seed) {
       const env = Math.sin(u * Math.PI);               // rise and fall
       const peaks = 0.65 + 0.35 * Math.abs(Math.sin(u * Math.PI * 2.2));
       h = SURF - Math.round(env * peaks * 16 + n1(x * 0.12) * 1.5 * env);
-    }
+    } else if (WILD_BIOMES.has(b)) h = wildHeight(x, b, n1);
     surf[x] = clamp(h, 6, Ht - 6);
   }
   // Smooth to max one-tile steps so dinos and wheels can climb.
@@ -56,18 +69,20 @@ function generateWorld(world, seed) {
   }
   // Re-carve the sea after smoothing.
   for (let x = SEA_X0 + 4; x < SEA_X1 - 4; x++) surf[x] = Math.max(surf[x], SURF + 7);
+  wildCarve(surf);   // cliffs, pools and the canyon, which smoothing would round off
 
   // Fill columns.
   for (let x = 0; x < Wt; x++) {
     const h = surf[x], b = biomeAt(x);
     const sandy = b === 'beach';
-    const rocky = b === 'mount' && h < SURF - 9;
+    const rocky = (b === 'mount' && h < SURF - 9) || (b === 'volc' && h < SURF - 8);
+    const wm = wildMaterial(x, h, b);
     const dirtDepth = 4 + Math.floor(rng() * 3);
     for (let y = 0; y < Ht; y++) {
       let id = T.AIR;
       if (y >= Ht - 2) id = T.BEDROCK;
-      else if (y === h) id = sandy ? T.SAND : rocky ? T.STONE : T.GRASS;
-      else if (y > h && y <= h + dirtDepth) id = sandy ? T.SAND : rocky ? T.STONE : T.DIRT;
+      else if (y === h) id = wm ? wm[0] : sandy ? T.SAND : rocky ? T.STONE : T.GRASS;
+      else if (y > h && y <= h + dirtDepth) id = wm ? wm[1] : sandy ? T.SAND : rocky ? T.STONE : T.DIRT;
       else if (y > h) id = T.STONE;
       else if (b === 'beach' && x >= SEA_X0 && x < SEA_X1 && y >= SEA_LEVEL) id = T.WATER;
       if (id === T.DIRT && rng() < 0.025) id = rng() < 0.55 ? T.BONE : T.EGG;
@@ -175,7 +190,7 @@ function generateWorld(world, seed) {
   flowers(300, 330, 0.0);
 
   // Speedway: flat ground, an asphalt drag strip, grandstand, pit garage and a bike park with jumps.
-  for (let x = SPEEDWAY.X0; x < PAD_X0; x++) { surf[x] = SURF; for (let y = SURF - 12; y < SURF; y++) put(x, y, T.AIR); put(x, SURF, x < SPEEDWAY.BIKES[0] - 2 ? T.ROAD : T.GRASS); }
+  for (let x = SPEEDWAY.X0; x < WILD.JUNGLE[0]; x++) { surf[x] = SURF; for (let y = SURF - 12; y < SURF; y++) put(x, y, T.AIR); put(x, SURF, x < SPEEDWAY.BIKES[0] - 2 ? T.ROAD : T.GRASS); }
   props.push({ type: 'gantry', x: SPEEDWAY.START, y: SURF });
   props.push({ type: 'finish', x: SPEEDWAY.FINISH, y: SURF });
   props.push({ type: 'stand', x: (SPEEDWAY.STAND[0] + SPEEDWAY.STAND[1]) / 2, w: SPEEDWAY.STAND[1] - SPEEDWAY.STAND[0], y: SURF });
@@ -192,6 +207,8 @@ function generateWorld(world, seed) {
   for (let x = PAD_X0; x < WORLD_W; x++) { surf[x] = SURF; for (let y = SURF - 12; y < SURF; y++) put(x, y, T.AIR); put(x, SURF, x >= PAD_X0 + 6 && x < PAD_X0 + 30 ? T.CONCRETE : T.GRASS); }
   props.push({ type: 'tower', x: PAD_X0 + 28, y: SURF });
 
+  genWild(world, rng, { put, get, putBg, surf, props, building, tree });
+
   // Edges: tall walls so nobody walks off the world.
   for (let y = 0; y < Ht; y++) { put(0, y, T.BEDROCK); put(Wt - 1, y, T.BEDROCK); }
 
@@ -201,6 +218,8 @@ function generateWorld(world, seed) {
   props.push({ type: 'station', x: 256, name: 'site' });
   props.push({ type: 'station', x: 470, name: 'mount' });
   props.push({ type: 'station', x: 620, name: 'speedway' });
+  props.push({ type: 'station', x: 736, name: 'jungle' });
+  props.push({ type: 'station', x: 990, name: 'desert' });
   props.push({ type: 'station', x: PAD_X0 + 4, name: 'pad' });
 
   // Record generated surface for underground backdrop.
