@@ -18,7 +18,7 @@ Progress saves automatically in the browser. To start a new world (stars and unl
 
 | | Keyboard | Touch |
 |---|---|---|
-| Walk / drive | Arrows or WASD | thumb joystick: put your thumb down anywhere on the left and slide (further = faster) |
+| Walk / drive | Arrows or WASD | joystick, bottom left: touch it and slide (further = faster) |
 | Jump (automatic at walls) / climb walls | Up | push the joystick up |
 | Fly (Pterodactyl): hold to climb, let go to glide, down to dive | Up / Down | joystick up / down |
 | Dig / vehicle action | Space | big yellow button |
