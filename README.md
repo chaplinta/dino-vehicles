@@ -47,7 +47,7 @@ Everything except the bedrock at the bottom can be dug. Sparkly stars float arou
 
 **Reading signs:** one short word on signs around every place (FARM, CORN, FIRE, DIG, MOON, ROCK, CAVE...), all 3 or 4 letters. Walk up to one, or tap it, and the word lights up to read along with. Getting in a vehicle pops up its word too (DIG, DUMP, FIRE, COP, SHIP, ZOOM...). There's no voice-over: the game only makes sound effects.
 
-**Speedway:** a drag strip with a start gantry, a grandstand full of dinos, a pit garage and a dirt bike park with jump ramps. Stop just behind the gantry in any vehicle and wait: three red lights, then green. Floor it to the chequered finish for a time and a star, and 3 more for a new record. Any wheeled vehicle flies off a ramp; a long jump is BIG AIR and a star. There's a little skate ramp at the end of town too.
+**Speedway:** a drag strip with a start gantry, a grandstand full of dinos, a pit garage and a dirt bike park with jump ramps. Stop just behind the gantry in any vehicle and wait: three red lights, then green. Floor it to the chequered finish for a time and a star, and 3 more for a new record. Any wheeled vehicle you drive flies off a ramp (traffic drives straight past); a long jump is BIG AIR and a star. There's a little skate ramp at the end of town too.
 
 **Jungle:** giant trees with vines (hold up to climb, let go to hang on) and parrots that flap off as you pass. A rope bridge over a river. A rocky plateau ends at a cliff with a waterfall pouring into a pool; swim in and there's a cave behind the waterfall with treasure and gems.
 

@@ -1001,6 +1001,12 @@ async function stickDrag(page, dx, dy, ms) {
     const n = NPCs.add({ x: tx * TS + 16, y: (SURF + 4) * TS - 0.01, type: 'carno', fighter: true }); n.angry = 10; n.greeted = true;
     Player.body.x = (tx + 6) * TS; Player.body.y = World.surfaceAt(tx + 6) * TS - 0.01; Player.hurtCool = 99;
     for (let i = 0; i < 180; i++) run(1); return n.body.y < SURF * TS + 4; }), 'a cross dino down a hole climbs out after you');
+  check(await page.evaluate(() => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = 60 * TS; Player.body.y = World.surfaceAt(60) * TS - 0.01;
+    const bus = Vehicles.list.find(v => v.kind === 'bus' && v.npcOwned); bus.body.x = 196 * TS; bus.body.y = SURF * TS - 0.01; bus.driver.mem.i = 4; bus.driver.mem.dir = 1; bus.driver.mem.pause = 0;
+    let climbed = false, there = false, back = false;
+    for (let i = 0; i < 60 * 40 && !back; i++) { run(1); Game.cam.x = bus.body.x - Game.viewW / 2;
+      if (bus.body.y < SURF * TS - 8 || bus.s.ramp) climbed = true; if (bus.body.x > 211 * TS) there = true; if (there && bus.body.x < 202 * TS) back = true; }
+    return !climbed && there && back; }), 'the dino-driven bus drives straight past the skate ramp, both ways');
   check(await page.evaluate(() => { Asteroid.left = 300; const r = Vehicles.list.find(v => v.kind === 'rocket'); Player.body.x = r.body.x; Vehicles.enter(Player, r); run(1, { action: 1 }); run(60 * 5);
     const still = r.s.state === 'count'; run(60 * 6); return still && r.s.count === 10 && r.s.state !== 'count'; }), 'rocket counts down from 10, then blasts off');
   check(await page.evaluate(() => { Space.finish && Game.overlay === Space ? Space.finish() : (Game.overlay === Space && (Game.overlay = null)); if (Game.away === 'moon') Moon.leave(null, true); if (Player.vehicle) Vehicles.exit(Player); run(10);

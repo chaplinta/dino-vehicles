@@ -42,7 +42,8 @@ class Vehicle {
       if (dir && !this.s.lockFacing) this.facing = dir;
       moveBody(b, dt, { step: d.step });
       vehicleHop(this, dir, dt);
-      Ramps.ride(this, dt);
+      // Only the vehicle you're driving uses the jump ramps; traffic and parked ones go straight past.
+      if (this.driver === Player) Ramps.ride(this, dt); else this.s.ramp = this.s.launched = null;
       // Tilt with the ground: up a ramp, nose up off the lip, nose down coming in to land.
       const r = this.s.ramp;
       const want = r ? -Math.atan(r.h / r.w) * r.dir : b.onGround ? 0 : clamp(Math.atan2(b.vy, Math.abs(b.vx) + 60), -0.7, 0.7) * this.facing;
