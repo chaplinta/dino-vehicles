@@ -1096,6 +1096,13 @@ async function stickDrag(page, dx, dy, ms) {
   await page.evaluate(() => Game.startPlay('rex'));
   await page.waitForTimeout(300);
   check(await page.evaluate(() => Game.mode === 'play'), 'game plays offline');
+  check(await page.evaluate(() => {
+    let reloads = 0; Game.applyUpdate = () => { reloads++; };
+    Game.onUpdate(); const held = reloads === 0 && Game.updatePending;
+    Game.setMode('pick'); const pick = reloads === 0;
+    Game.setMode('title'); const atTitle = reloads === 1;
+    Game.updatePending = false; Game.onUpdate(); return held && pick && atTitle && reloads === 2;
+  }), 'a new version waits for the title screen, never reloads mid-game');
   check(errors.length === 0, 'no page errors offline: ' + errors.join(' | '));
   await ctx.close();
 }

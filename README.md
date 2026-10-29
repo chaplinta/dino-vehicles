@@ -10,7 +10,7 @@ No reading needed: every menu is pictures, and the game talks (browser speech).
 
 Open `index.html` in a modern browser (Chrome, Safari, Edge, Firefox). No install or server needed. It also works from GitHub Pages and on tablets. Use "Add to Home Screen" for full screen.
 
-Once loaded from the web link, it works offline: a service worker (`sw.js`) caches every file. Add a new file? List it in `sw.js` and bump `VERSION` (the smoke test checks the list).
+Once loaded from the web link, it works offline: a service worker (`sw.js`) caches every file. A new version downloads in the background and switches over at the title screen (or the next launch), never in the middle of a game. Add a new file? List it in `sw.js` and bump `VERSION` (the smoke test checks the list).
 
 Progress saves automatically in the browser. To start a new world (stars and unlocked vehicles are kept), hold the 🌱 button (top left, next to 🏠) for 2 seconds while playing.
 

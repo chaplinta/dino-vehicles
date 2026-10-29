@@ -314,6 +314,7 @@ const Game = {
   },
   setMode(m) {
     this.mode = m;
+    if (m === 'title' && this.updatePending) { this.applyUpdate(); return; }
     Install.showButton(m === 'title');
     if (m === 'play') this.configurePlay();
     else this.modes[m].enter();
@@ -517,6 +518,19 @@ const Game = {
     if (this.overlay) this.overlay.draw(c);
     Hud.draw(c);
   },
+  // A new version finished downloading. Show it straight away only if nobody has started playing;
+  // otherwise wait for the next trip to the title screen (or the next launch), so a game is never cut off.
+  updatePending: false,
+  onUpdate() {
+    this.updatePending = true;
+    if (this.mode === 'title') this.applyUpdate();
+  },
+  applyUpdate() {
+    if (this.reloading) return;
+    this.reloading = true;
+    Save.write();
+    location.reload();
+  },
   drawDigHint(c) {
     if (Player.vehicle || !Input.held.action) return;
     const tgt = Player.digTarget();
@@ -534,15 +548,9 @@ Game.init();
 
 // Offline play: cache the whole game (needs http/https; skipped when opened as a local file).
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  // When an update arrives, reload once so it shows straight away (not on the launch after).
+  // When an update arrives, reload once to show it, but only at the title screen (see Game.onUpdate).
   const hadWorker = !!navigator.serviceWorker.controller;
-  let reloading = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadWorker || reloading) return;
-    reloading = true;
-    Save.write();
-    location.reload();
-  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadWorker) Game.onUpdate(); });
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   // Ask how many game files are saved; the title screen shows "Ready offline" once all are.
   navigator.serviceWorker.addEventListener('message', e => {
