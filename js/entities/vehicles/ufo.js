@@ -62,8 +62,10 @@ defVehicle('ufo', {
       if (o.vehicle || o.ride || o.driver || (!NPCs.list.includes(o) && !Vehicles.list.includes(o))) { this.drop(v); return; }
       s.beam = Math.max(s.beam, 0.3);
       const b = o.body, tx = lerp(b.x, v.body.x, Math.min(1, dt * 6)), ty = lerp(b.y, v.body.y + 30 + b.h + Math.sin(v.t * 3) * 6, Math.min(1, dt * 4));
-      if (!bodySolidAt(b, tx, ty)) { b.x = tx; b.y = ty; }
+      // Caught on the ground or a crater rim: lift it up over the bump instead of leaving it behind.
+      for (let k = 0; k < 6; k++) { const y = Math.min(ty, b.y) - k * TS / 2; if (!bodySolidAt(b, tx, y)) { b.x = tx; b.y = y; break; } }
       b.vx = 0; b.vy = 0;
+      if (dist(b.x, b.y, v.body.x, v.body.y) > 12 * TS) this.drop(v);   // truly stuck: let go
     }
   },
   onExit(v) { this.drop(v); },

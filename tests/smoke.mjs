@@ -299,7 +299,8 @@ async function stickDrag(page, dx, dy, ms) {
     Player.body.x = tx * TS + 16; Player.body.y = (top + 20) * TS - 0.01; Player.body.vx = Player.body.vy = 0; Game.snapCamera();
     window.__top = top;
   });
-  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(4000); await page.keyboard.up('ArrowUp');
+  // Step the game ourselves: on a busy machine 4 s of wall-clock time is less than 4 s of game time.
+  await page.keyboard.down('ArrowUp'); await page.evaluate(() => { for (let i = 0; i < 240; i++) { Game.update(1 / 60); Input.endFrame(); } }); await page.keyboard.up('ArrowUp');
   check(await page.evaluate(() => Player.body.y <= window.__top * TS + 2), 'climbs out of a 20-deep hole by holding up');
 
   // Deep hole again: the whistle brings a helicopter even down there, and it can fly out.
