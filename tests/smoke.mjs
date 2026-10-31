@@ -955,14 +955,14 @@ async function stickDrag(page, dx, dy, ms) {
   });
   check(await page.evaluate(() => { const bus = Vehicles.list.find(v => v.kind === 'bus' && v.npcOwned); const d = bus.driver; d.mem.pause = 5; bus.body.vx = 0; Player.body.x = bus.body.x + 40; Player.body.y = bus.body.y - 5; run(2); run(1, { enter: 1 });
     const ok = Player.vehicle === bus && !d.vehicle && NPCs.list.includes(d); run(60, { right: 1 }); const moved = Math.abs(bus.body.vx) > 50; Vehicles.exit(Player); run(5); return ok && moved; }), 'stop by the town bus: the driver hops out and you drive it');
-  check(await page.evaluate(() => { const n = NPCs.list.find(n => n.type === 'brachio' && !n.baby); n.scaredT = 0;
+  check(await page.evaluate(() => { const n = NPCs.list.find(n => n.type === 'brachio' && !n.baby && !n.vehicle); n.scaredT = 0;
     n.body.x = 795 * TS + 16; n.body.y = World.surfaceAt(795) * TS - 0.01;   // up on the quiet jungle plateau, away from traffic
     Player.body.x = n.body.x - 40; Player.body.y = n.body.y; Game.snapCamera(); run(2); run(1, { enter: 1 });
     const v = Player.vehicle; return !!v && v.kind === 'brachioride' && !NPCs.list.includes(n); }), 'climb on a Brachiosaurus');
   check(await page.evaluate(() => { const v = Player.vehicle; run(60, { right: 1 }); const sc = dinoScale('brachio'), hx = Math.floor((v.body.x + v.facing * 60 * sc) / TS), hy = Math.floor((v.body.y - 134 * sc) / TS);
     World.set(hx, hy, T.LEAVES); run(1, { action: 1 }); return Math.abs(v.body.vx) > 20 && World.get(hx, hy) === T.AIR; }), 'it walks about and munches the treetops');
   check(await page.evaluate(() => { run(1, { enter: 1 }); return !Player.vehicle && !Vehicles.list.some(v => v.kind === 'brachioride') && NPCs.list.some(n => n.type === 'brachio' && !n.baby); }), 'hop off: it wanders off as a Brachiosaurus again');
-  check(await page.evaluate(() => { const n = NPCs.list.find(n => n.type === 'brachio' && !n.baby); n.scaredT = 0; n.angry = 0; n.leaving = false; run(5);
+  check(await page.evaluate(() => { const n = NPCs.list.find(n => n.type === 'brachio' && !n.baby && !n.vehicle); n.scaredT = 0; n.angry = 0; n.leaving = false; run(5);
     n.body.x = 795 * TS + 16; n.body.y = World.surfaceAt(795) * TS - 0.01; const car = Vehicles.list.find(v => v.kind === 'car' && !v.npcOwned); car.body.x = n.body.x - 150; car.body.y = World.surfaceAt(790) * TS - 0.01;
     Player.body.x = n.body.x - 40; Player.body.y = n.body.y; Game.snapCamera(); run(2); run(1, { enter: 1 }); const ok = Player.vehicle && Player.vehicle.kind === 'brachioride'; if (Player.vehicle) Vehicles.exit(Player); run(5); return ok; }), 'a car parked a bit further off: the door button still climbs onto the closer dino');
   check(await page.evaluate(() => { const sk = Vehicles.list.find(v => v.kind === 'skateboard'); if (!sk) return false; if (Player.vehicle) Vehicles.exit(Player); Player.body.x = sk.body.x; Player.body.y = sk.body.y - 5; run(2); run(1, { enter: 1 }); run(10);
