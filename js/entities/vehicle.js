@@ -226,8 +226,10 @@ const Vehicles = {
       if (Input.pressed.enter) this.exit(p);
       else if (Input.pressed.roar) { p.vehicle.hornSound(); }
     } else {
-      const near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver || this.takeable(v));
-      const mount = !near && rideableNear(p.body.x, p.body.y);
+      let near = this.nearest(p.body.x, p.body.y - 28, 120, v => !v.driver || this.takeable(v));
+      const ride = rideableNear(p.body.x, p.body.y);
+      if (near && ride && Math.abs(ride.body.x - p.body.x) < Math.abs(near.body.x - p.body.x)) near = null;   // a dino to ride is closer: climb on it
+      const mount = !near && ride;
       const table = !near && !Game.away && World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - p.body.x) < 110 && Math.abs(t.y * TS - p.body.y) < 80);
       const cafe = !near && Game.away === 'melbourne' && Melbourne.nearCafe();
       UI.setEnter(!!near || !!mount || !!table || cafe, table ? '♟️' : cafe ? '☕' : mount ? '🦕' : '🚪');
