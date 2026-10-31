@@ -741,12 +741,29 @@ async function stickDrag(page, dx, dy, ms) {
   await page.evaluate(() => { Game.loop = () => {}; window.said = []; Sound.say = t => said.push(t); localStorage.clear(); Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Game.stars = 200; Vehicles.spawnMissing();
     window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0 && !Input.held[k]) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); };
     window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
+    // Play the voyage's sea battle through: fire whenever the cannon's ready (their weave paused so it hits).
+    window.sailThrough = () => {
+      const r = { battle: false, parts: [], stars: Game.stars, won: false, boat: false, hitYou: false };
+      for (let i = 0; i < 60 * 60 && Game.overlay === Voyage; i++) {
+        const f = Voyage.foe, h = f.hits;
+        let fire = false;
+        if (Voyage.phase === 'battle') {
+          r.battle = true; if (Voyage.you.scorch > 0) r.hitYou = true; if (Voyage.boat) r.boat = true;
+          if (!f.sinkT && Voyage.you.cool <= 0 && !Voyage.balls.some(b => b.mine)) { f.dir = 0; fire = true; }
+        }
+        run(1, fire ? { action: 1 } : {});
+        if (f.hits > h) r.parts.push(f.hits === 1 ? Voyage.fx.some(q => q.flag) : f.hits === 2 ? f.mastT > 0 : f.sinkT > 0);
+      }
+      r.won = Voyage.won; r.stars = Game.stars - r.stars; return r;
+    };
     World.set(20, 30, T.BRICK); Save.write(); });
   check(await page.evaluate(() => { const s = Vehicles.list.find(v => v.kind === 'pirateship'); into(s); run(60); return !!s.floating; }), 'pirate ship floats in the sea');
   check(await page.evaluate(() => { run(1, { action: 1 }); run(5); return Player.vehicle.s.balls.length === 1; }), 'cannon fires a cannonball');
   await page.evaluate(() => { run(1, { up: 1 }); run(60 * 3); });
   check(await page.evaluate(() => Game.overlay === Voyage), 'hoist the sails: the voyage begins');
-  await page.evaluate(() => run(60 * 10));
+  const there = await page.evaluate(() => sailThrough());
+  check(there.battle && there.parts.length === 3 && there.parts.every(Boolean), 'pirates attack on the way: flag shot off, mast down, then sunk');
+  check(there.won && there.boat && there.stars >= 5, `their treasure floats up for you (+${there.stars}) and the crew row off`);
   check(await page.evaluate(() => Game.away === 'pirate' && outfit() === 'pirate' && NPCs.list.some(n => n.captain)), 'land on Skull Island in pirate gear, captain waiting');
   await page.evaluate(() => { window.__save = localStorage.getItem('dinoVehicles.save.v1'); Save.write(); });
   await page.evaluate(() => { Game.tap(60, 112); run(20); });
@@ -763,7 +780,8 @@ async function stickDrag(page, dx, dy, ms) {
     s.s.balls.push({ x: PR.FORT[0] * TS + 16, y: (SURF - 2) * TS, vx: 0, vy: 300, t: 0 }); run(10); s.body.x = PR.DOCK * TS; s.body.y = SEA_LEVEL * TS + 34; run(30); return sand() < before; }), 'a cannonball knocks a hole in the sandcastle fort');
   check(await page.evaluate(() => { const s0 = Game.stars; Kraken.t = 6; Kraken.cool = 0; run(60); return Kraken.hit(PR.KRAKEN * TS, SEA_LEVEL * TS) && Game.stars >= s0 + 2; }), 'hit the Kraken: it waves and showers stars');
   check(await page.evaluate(() => localStorage.getItem('dinoVehicles.save.v1') === window.__save), 'nothing saved on the island');
-  await page.evaluate(() => { run(1, { up: 1 }); run(60 * 3); run(60 * 10); });
+  const home = await page.evaluate(() => { run(1, { up: 1 }); run(60 * 3); return sailThrough(); });
+  check(home.battle && home.won, 'sailing home, the pirates attack again');
   check(await page.evaluate(() => !Game.away && Player.vehicle && Player.vehicle.kind === 'pirateship' && World.get(20, 30) === T.BRICK && Vehicles.list.filter(v => v.kind === 'pirateship').length === 1 && outfit() === null), 'sail home: Earth as it was');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
@@ -849,6 +867,8 @@ async function stickDrag(page, dx, dy, ms) {
   check(await page.evaluate(() => Game.overlay === Flight && Flight.dest === 'melbourne'), 'city picked: flying across Australia to Melbourne');
   await page.evaluate(() => { run(60 * 2); Flight.finish(); run(60 * 6); });
   check(await page.evaluate(() => Game.away === 'melbourne' && outfit() === 'footy' && !Player.vehicle && Melbourne.visits === 1), 'lands in Melbourne: footy jumper and beanie on');
+  check(await page.evaluate(() => { const st = NPCs.list.map(n => n.style); ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx);
+    return st.includes('footy') && st.includes('hipster') && st.every(Boolean) && Vehicles.list.filter(v => v.driver && v.driver !== Player).every(v => v.driver.style); }), 'Melbourne dinos are footy fans or hipsters, drivers too');
   await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/melbourne.png' : '/dev/null' }).catch(() => {});
   check(await page.evaluate(() => { const tram = Vehicles.list.find(v => v.kind === 'tram'); into(tram); const n = NPCs.list.find(n => n.need); tram.body.x = n.body.x; run(30); const on = !!n.ride; const s = Game.stars; tram.body.x = n.need.destX; run(30); return on && !n.ride && Game.stars >= s + 2; }), 'drive the tram: a dino gets on at one stop and off at theirs');
   check(await page.evaluate(() => { Vehicles.exit(Player); Player.body.x = MEL.CAFE * TS + 20; Player.body.y = SURF * TS - 0.01; run(5); run(1, { enter: 1 }); return Player.zoomT > 4; }), 'coffee cart: a flat white and a burst of speed');
@@ -972,6 +992,11 @@ async function stickDrag(page, dx, dy, ms) {
   check(await page.evaluate(() => { const s = Player.vehicle; s.s.cool = 0; const bar = World.props.find(p => p.type === 'seabarrel' && !(p.gone > 0)); s.body.x = bar.x * TS - 600; s.facing = 1; run(20); window.__s0 = Game.stars;
     Input.pressed.action = true; Game.update(1 / 60); Input.endFrame(); run(120); return bar.gone > 0 || World.props.some(p => p.type === 'seabarrel' && p.gone > 0 && p !== bar); }), 'fire the cannon at a floating barrel');
   check(await page.evaluate(() => { const s = Player.vehicle; Voyage.start(s); Voyage.finish(); run(30); return !Game.away && !SeaTargets.rival && World.props.filter(p => p.type === 'seabarrel').length === 3; }), 'home again: Earth\'s sea has barrels to shoot too');
+  check(await page.evaluate(() => { const s = Player.vehicle; Voyage.start(s); run(60 * 4); let hit = false;
+    for (let i = 0; i < 60 * 62; i++) { run(1); if (Voyage.you.scorch > 0.9) hit = true; }
+    const fled = Voyage.foe.flee; for (let i = 0; i < 60 * 12 && Game.overlay === Voyage; i++) run(1);
+    return hit && fled && Game.overlay !== Voyage && Game.away === 'pirate'; }), 'never fire back? their shots can\'t sink you, and after a minute they sail off');
+  await page.evaluate(() => { const s = Player.vehicle; Voyage.start(s); Voyage.finish(); run(30); });
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }

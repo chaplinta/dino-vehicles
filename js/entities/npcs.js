@@ -10,6 +10,8 @@ function makeNPC(o) {
   }, o);
   const box = dinoBox(n.type, baby);
   n.body = makeBody(o.x, o.y, box.w, box.h);
+  // Melbourne dinos are footy fans or hipsters (some with a takeaway coffee), drivers too.
+  if (Game.away === 'melbourne' && n.style === undefined) { n.style = Math.random() < 0.5 ? 'footy' : 'hipster'; n.cup = n.style === 'hipster' && Math.random() < 0.6; }
   return n;
 }
 // Dinos climb walls like you do, so nobody stays stuck down a hole (pirates chasing you out of the
@@ -151,7 +153,10 @@ const NPCs = {
     this.list.push(n);
     return n;
   },
-  add(o) { const n = makeNPC(o); liftOut(n.body); this.list.push(n); return n; },
+  add(o) {
+    const n = makeNPC(o); liftOut(n.body); this.list.push(n);
+    return n;
+  },
   remove(n) {
     if (n.ride) { const ps = n.ride.passengers; ps.splice(ps.indexOf(n), 1); }
     this.list.splice(this.list.indexOf(n), 1);
@@ -357,7 +362,8 @@ const NPCs = {
       const ap = n.atk ? attackPose(n.atk.kind, Math.min(1, n.atk.t / ATTACKS[n.atk.kind].len), n.facing) : null;
       if (ap) drawAttackFx(c, ap, b.x, b.y, n.facing);
       c.save(); c.translate(b.x + shake + (ap ? ap.dx : 0), b.y + 1 + (ap ? ap.dy : 0)); if (ap) c.rotate(ap.rot);
-      drawDino(c, 0, 0, s, n.type, { t: n.t, walk: ap && ap.pose ? 0 : n.walk, flip: (n.facing < 0) !== !!(ap && ap.flip), roar: ap && ap.roar !== null ? ap.roar : n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0, pose: ap ? ap.pose : null, captain: n.captain, cutlass: n.crew && !n.captain });
+      drawDino(c, 0, 0, s, n.type, { t: n.t, walk: ap && ap.pose ? 0 : n.walk, flip: (n.facing < 0) !== !!(ap && ap.flip), roar: ap && ap.roar !== null ? ap.roar : n.roarT, blinkSeed: n.blinkSeed, flap: n.type === 'ptero' && !b.onGround ? n.t * 14 : 0, pose: ap ? ap.pose : null, captain: n.captain, cutlass: n.crew && !n.captain, outfit: n.style });
+      if (n.cup && !ap) drawCoffee(c, n.facing * (b.w / 2 + 4), -b.h * 0.5, n.t);
       c.restore();
       if (n.tumble) c.restore();
       const top = b.y - dinoTop(n.type, s) + 4;

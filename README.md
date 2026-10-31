@@ -128,7 +128,7 @@ Board the jet at the camp to fly home. The mine isn't saved; Earth is left as it
 
 ## Melbourne
 
-Pick 🚋 CITY on the jet and it flies right across Australia to Melbourne. Everyone wears a footy jumper and beanie. Along the street:
+Pick 🚋 CITY on the jet and it flies right across Australia to Melbourne. You wear a footy jumper and beanie; the locals are footy fans or hipsters (check flannel shirt, flat cap, glasses, a beard and often a takeaway coffee). Along the street:
 - **Trams:** drive the green and gold tram (the button rings the bell). Dinos wait at the stops with a bubble showing where they want to go; stop next to them, then stop at their stop: 2 stars each.
 - **Bikes:** two bike-share bikes at the rack. Ride the path by the Yarra and jump the ramps.
 - **Coffee cart:** walk up and press ☕ for a flat white and five seconds of zooming about.
@@ -138,7 +138,11 @@ Board the jet again to fly home. Melbourne isn't saved.
 
 ## Pirate Island
 
-Hoist the pirate ship's sails and it sails to Skull Island. Everyone there wears a pirate hat and eye patch, and a parrot rides on your back. The treasure hunt, shown top left:
+Hoist the pirate ship's sails and it sails to Skull Island.
+
+**Sea battle:** halfway there (and halfway home) a scary black pirate ship attacks. Left and right sail your ship to dodge, and 💣 (or a tap) fires the cannon back. Every hit smashes a bit of their ship: the flag, then the mast, then a hole in the hull and down it goes. Their cannonballs can't sink you. When they sink, their treasure chest floats up and over to you (5 stars, 3 more the first time) and the pirates row off in a little boat, shaking their fists. Don't fire back and after a minute they give up and sail off.
+
+Everyone on the island wears a pirate hat and eye patch, and a parrot rides on your back. The treasure hunt, shown top left:
 
 1. **Map:** tap 🗺️ to read the treasure map. X marks the spot.
 2. **Dig** at the red X to find the chest.

@@ -89,6 +89,30 @@ function drawSuit(c, fit, x, y, rx, ry, rot, bands) {
   else if (fit === 'space') { drawVest(c, x, y, rx, ry, rot, bands, '#f1f3f5', '#adb5bd'); ell(c, x + rx * 0.35, y - ry * 0.3, 5, 4, '#4dabf7', 2); }
   else if (fit === 'pirate') drawVest(c, x, y, rx, ry, rot, [bands[0] - 6, bands[0] + 4, bands[1] + 4], '#f8f9fa', '#e03131');
   else if (fit === 'footy') drawVest(c, x, y, rx, ry, rot, [bands[0] - 2, bands[1] + 2], '#1c3f8f', '#e03131');
+  else if (fit === 'hipster') {
+    // Red and black check flannel shirt.
+    c.save(); c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); c.clip();
+    c.fillStyle = '#c92a2a'; c.fillRect(x - rx - 4, y - ry - 4, rx * 2 + 8, ry * 2 + 8);
+    c.fillStyle = 'rgba(33,37,41,0.55)';
+    for (let k = -rx; k < rx; k += 12) c.fillRect(x + k, y - ry - 4, 5, ry * 2 + 8);
+    for (let k = -ry; k < ry; k += 12) c.fillRect(x - rx - 4, y + k, rx * 2 + 8, 5);
+    c.restore();
+    c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); fillStroke(c, null, 4);
+  }
+}
+// A grey flat cap with a short peak at the front.
+function drawFlatCap(c, cx, top) {
+  c.beginPath(); c.moveTo(cx - 20, top + 6); c.quadraticCurveTo(cx - 18, top - 10, cx + 4, top - 10); c.quadraticCurveTo(cx + 22, top - 8, cx + 30, top + 4); c.lineTo(cx + 18, top + 7); c.closePath();
+  fillStroke(c, '#868e96', 3);
+  c.strokeStyle = 'rgba(33,37,41,0.35)'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx - 12, top - 2); c.lineTo(cx + 14, top - 4); c.stroke();
+}
+// A takeaway coffee with a lid, a cardboard sleeve and a wisp of steam.
+function drawCoffee(c, x, y, t) {
+  poly(c, [x - 7, y - 10, x + 7, y - 10, x + 5, y + 10, x - 5, y + 10], '#fff', 2.5);
+  c.fillStyle = '#a0662e'; c.fillRect(x - 6, y - 2, 12, 6);
+  rbox(c, x - 9, y - 14, 18, 5, 2, '#495057', 2);
+  c.strokeStyle = 'rgba(255,255,255,0.7)'; c.lineWidth = 2; c.beginPath();
+  c.moveTo(x, y - 16); c.quadraticCurveTo(x + 5 + Math.sin(t * 3) * 3, y - 22, x, y - 28); c.stroke();
 }
 // Woolly beanie with a pom-pom, in footy colours (or red and white for the snow).
 function drawBeanie(c, cx, top, snow) {
@@ -267,10 +291,19 @@ function drawDinoHead(c, type, hx, hy, d, o) {
   }
   if (o.lick > 0) { const m = TONGUE_AT[type] || [22, 6]; drawTongue(c, hx + m[0], hy + m[1], o.lick, o.t || 0); }
   const fit = o.outfit;
-  if (fit === 'hivis' || fit === 'pirate' || fit === 'footy' || fit === 'snow') {
+  if (fit === 'hivis' || fit === 'pirate' || fit === 'footy' || fit === 'snow' || fit === 'hipster') {
     const at = { pachy: [-2, -27], rex: [0, -27], megalo: [2, -22], allo: [4, -18], carno: [6, -24], raptor: [4, -13], tri: [4, -16], styraco: [4, -16], ptero: [0, -12], bary: [-2, -15], iguano: [0, -17] }[type] || [4, -13];
     if (fit === 'hivis') drawHardHat(c, hx + at[0], hy + at[1] - 2);
     else if (fit === 'footy' || fit === 'snow') drawBeanie(c, hx + at[0], hy + at[1] + 2, fit === 'snow');
+    else if (fit === 'hipster') {
+      // Neat beard under the jaw, thick black-rimmed glasses and a flat cap.
+      const m = TONGUE_AT[type] || [22, 6], e = EYE_AT[type] || [1, -4];
+      c.beginPath(); c.moveTo(hx + m[0] - 22, hy + m[1] - 4); c.quadraticCurveTo(hx + m[0] - 12, hy + m[1] + 18, hx + m[0] + 2, hy + m[1] + 4); c.closePath(); fillStroke(c, '#6e4520', 2.5);
+      c.strokeStyle = '#212529'; c.lineWidth = 3.5;
+      c.beginPath(); c.arc(hx + e[0], hy + e[1], 8, 0, TAU); c.stroke();
+      c.beginPath(); c.moveTo(hx + e[0] - 8, hy + e[1]); c.lineTo(hx + e[0] - 22, hy + e[1] - 2); c.stroke();
+      drawFlatCap(c, hx + at[0], hy + at[1] + 2);
+    }
     else {
       // Eye patch over the eye, strap round the head, tricorn on top.
       const e = EYE_AT[type] || [1, -4];

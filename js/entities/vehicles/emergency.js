@@ -3,7 +3,7 @@
 function drawPassengers(c, v, spots) {
   (v.passengers || []).forEach((n, i) => {
     const sp = spots[i];
-    if (sp) drawDinoSeated(c, sp[0], sp[1], sp[2], n.type, { t: v.t + i, blinkSeed: n.blinkSeed });
+    if (sp) drawDinoSeated(c, sp[0], sp[1], sp[2], n.type, { t: v.t + i, blinkSeed: n.blinkSeed, outfit: n.style });
   });
 }
 function lightBar(c, x, y, t, on) {

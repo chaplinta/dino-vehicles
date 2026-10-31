@@ -77,7 +77,7 @@ class Vehicle {
   drawDriver(c, sx, sy, s) {
     const dr = this.driver;
     if (!dr) return;
-    drawDinoSeated(c, sx, sy, s, dr.type, { t: this.t + (dr.blinkSeed || 0), roar: dr.roarT || 0 });
+    drawDinoSeated(c, sx, sy, s, dr.type, { t: this.t + (dr.blinkSeed || 0), roar: dr.roarT || 0, outfit: dr.style });
   }
   // Front edge in world px, and the tile row the wheels stand on.
   frontX(extra = 0) { return this.body.x + this.facing * (this.body.w / 2 + extra); }

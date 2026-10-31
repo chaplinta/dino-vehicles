@@ -257,6 +257,19 @@ await scene('canyon jump', () => {
   G.release();
 });
 
+await scene('voyage battle', () => {
+  G.fresh('rex', 4545); Game.stars = 200; Vehicles.spawnMissing();
+  for (let k = 0; k < 2; k++) {
+    let ship = Player.vehicle && Player.vehicle.kind === 'pirateship' ? Player.vehicle : Vehicles.list.find(v => v.kind === 'pirateship');
+    if (!ship) { G.issue('no pirate ship for the voyage'); break; }
+    if (Player.vehicle !== ship) { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = ship.body.x; Player.body.y = ship.body.y - 10; Vehicles.enter(Player, ship); }
+    Voyage.start(ship);
+    for (let i = 0; i < 70 && Game.overlay === Voyage; i++) G.run(60, G.masher(mulberry32(k * 100 + i), {}));
+    if (Game.overlay === Voyage) G.issue('voyage battle never ended');
+    G.release();
+  }
+});
+
 await scene('brachio ride', () => {
   G.fresh('rex', 6161);
   const n = NPCs.list.find(n => n.type === 'brachio' && !n.baby);
