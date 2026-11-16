@@ -15,7 +15,7 @@ defVehicle('jet', {
   },
   board(v) {
     v.s.state = 'board'; v.s.t = 0;
-    const where = { home: 'Flying home.', pilbara: 'Next stop, the Pilbara.', melbourne: 'Next stop, Melbourne.' }[v.s.dest];
+    const where = { home: 'Flying home.', pilbara: 'Next stop, the Pilbara.', melbourne: 'Next stop, Melbourne.', africa: 'Next stop, Africa.', antarctica: 'Next stop, Antarctica.' }[v.s.dest];
     setTimeout(() => Sound.say('All aboard! ' + where), 1600);
   },
   // Glide down onto column tx from the side the jet faces away from.
@@ -61,6 +61,8 @@ defVehicle('jet', {
         if (v.driver === Player) Vehicles.exit(Player);   // everybody off
         if (Game.away === 'pilbara') Pilbara.landed();
         else if (Game.away === 'melbourne') Melbourne.landed();
+        else if (Game.away === 'africa') Africa.landed();
+        else if (Game.away === 'antarctica') Antarctica.landed();
         else Game.celebrate('Home!', 'Home again! That was a long swing. Time to rest.');
       }
     }
@@ -132,6 +134,8 @@ const Flight = {
     Sound.say({
       pilbara: 'Fly in, fly out! Miners fly from Perth up to the Pilbara. They work for two weeks, then fly home again.',
       melbourne: 'Off to Melbourne, all the way across Australia! Melbourne has the biggest tram network in the world.',
+      africa: 'Off to Africa! Africa has the biggest land animals in the world: elephants!',
+      antarctica: 'Off to Antarctica! It is the coldest place on Earth. Penguins live there!',
     }[this.dest] || 'Flying home to Perth.');
   },
   update(dt) {
@@ -145,10 +149,15 @@ const Flight = {
     Game.overlay = null;
     if (this.dest === 'pilbara') Pilbara.enter(this.jet);
     else if (this.dest === 'melbourne') Melbourne.enter(this.jet);
+    else if (this.dest === 'africa') Africa.enter(this.jet);
+    else if (this.dest === 'antarctica') Antarctica.enter(this.jet);
     else if (this.from === 'melbourne') Melbourne.leave(this.jet);
+    else if (this.from === 'africa') Africa.leave(this.jet);
+    else if (this.from === 'antarctica') Antarctica.leave(this.jet);
     else Pilbara.leave(this.jet);
   },
   draw(c) {
+    if (this.dest === 'africa' || this.dest === 'antarctica' || this.from === 'africa' || this.from === 'antarctica') { this.drawWorldMap(c); return; }
     c.fillStyle = '#4dabf7'; c.fillRect(0, 0, W, H);
     // Gentle waves.
     c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 3;
@@ -185,18 +194,51 @@ const Flight = {
     bigText(c, { pilbara: 'Off to the mine!', melbourne: 'Off to Melbourne!' }[this.dest] || 'Going home!', W / 2, 60, 40, '#fff');
     if (this.t > 2) bigText(c, 'tap to land', W / 2, H - 40, 24, 'rgba(255,255,255,0.85)');
   },
+  // Far trips need a bigger map: Australia, Africa and Antarctica, with the jet flying between.
+  drawWorldMap(c) {
+    c.fillStyle = '#339af0'; c.fillRect(0, 0, W, H);
+    c.strokeStyle = 'rgba(255,255,255,0.3)'; c.lineWidth = 3;
+    for (let i = 0; i < 14; i++) { const y = (i * 47 + this.t * 10) % H; c.beginPath(); c.moveTo((i * 97) % W, y); c.quadraticCurveTo((i * 97) % W + 20, y - 8, (i * 97) % W + 40, y); c.stroke(); }
+    const k = Math.min(W / 190, H / 130), map = ([lo, la]) => [W / 2 + (lo - 72) * k, H / 2 + (-la - 22) * k];
+    const shape = (pts, fill) => { c.beginPath(); pts.forEach((p, i) => { const [x, y] = map(p); if (i) c.lineTo(x, y); else c.moveTo(x, y); }); c.closePath(); fillStroke(c, fill, 4); };
+    shape(AUS, '#f4c27a'); shape(TAS, '#f4c27a');
+    shape(AFRICA_MAP, '#94d82d');
+    shape([[-20, -66], [40, -68], [80, -66], [120, -66], [160, -70], [175, -78], [175, -90], [-20, -90]], '#f8f9fa');
+    const lab = (txt, [x, y], dy) => { c.font = `800 20px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = OUT; c.fillText(txt, x, y + dy); };
+    const pe = map(PERTH), there = map(this.dest === 'africa' || this.from === 'africa' ? SERENGETI : ANTARCTIC_BASE);
+    ell(c, pe[0], pe[1], 7, 7, '#e8262b', 3); lab('Perth', pe, 22);
+    ell(c, there[0], there[1], 7, 7, '#e8262b', 3); lab(this.dest === 'africa' || this.from === 'africa' ? 'Africa' : 'Antarctica', there, -24);
+    const [a, b] = this.dest === 'home' ? [there, pe] : [pe, there];
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2 - 60;
+    c.setLineDash([8, 10]); c.strokeStyle = '#fff'; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(a[0], a[1]); c.quadraticCurveTo(mx, my, b[0], b[1]); c.stroke(); c.setLineDash([]);
+    const u = Math.min(1, this.t / 9);
+    const x = (1 - u) * (1 - u) * a[0] + 2 * (1 - u) * u * mx + u * u * b[0], y = (1 - u) * (1 - u) * a[1] + 2 * (1 - u) * u * my + u * u * b[1];
+    const dx = 2 * (1 - u) * (mx - a[0]) + 2 * u * (b[0] - mx), dy = 2 * (1 - u) * (my - a[1]) + 2 * u * (b[1] - my), ang = Math.atan2(dy, dx);
+    c.save(); c.translate(x, y); c.rotate(ang); c.scale(0.24, 0.24);
+    if (ang > Math.PI / 2 || ang < -Math.PI / 2) c.scale(1, -1);
+    VEHICLE_DEFS.jet.draw(c, { s: { pitch: 0, gear: 0 }, wheel: 0, t: this.t, driver: Player, drawDriver: Vehicle.prototype.drawDriver });
+    c.restore();
+    bigText(c, { africa: 'Off to Africa!', antarctica: 'Off to Antarctica!' }[this.dest] || 'Going home!', W / 2, 60, 40, '#fff');
+    if (this.t > 2) bigText(c, 'tap to land', W / 2, H - 40, 24, 'rgba(255,255,255,0.85)');
+  },
 };
+// Rough outline of Africa, and where the jet lands there and in Antarctica (longitude, latitude).
+const AFRICA_MAP = [[-17, 15], [-16, 21], [-10, 30], [-5, 36], [10, 37], [20, 32], [32, 31], [35, 22], [43, 12], [51, 12], [42, -2], [40, -15], [35, -25], [27, -34], [18, -34], [12, -17], [9, -1], [-8, 5], [-17, 15]];
+const SERENGETI = [35, -2.5], ANTARCTIC_BASE = [110, -68];
 
 // Boarding the jet at home: two big pictures to pick where to fly.
 const JetPick = {
   jet: null, sel: 0, t: 0,
-  DESTS: [{ key: 'pilbara', icon: '⛏️', word: 'MINE', col: '#d9653b' }, { key: 'melbourne', icon: '🚋', word: 'CITY', col: '#2b8a3e' }],
+  DESTS: [{ key: 'pilbara', icon: '⛏️', word: 'MINE', col: '#d9653b' }, { key: 'melbourne', icon: '🚋', word: 'CITY', col: '#2b8a3e' },
+    { key: 'africa', icon: '🦁', word: 'AFRICA', col: '#f59f00' }, { key: 'antarctica', icon: '🐧', word: 'ICE', col: '#74c0fc' }],
   open(jet) { this.jet = jet; this.t = 0; this.sel = 0; this.ui = false; Game.overlay = this; },
-  cells() { return this.DESTS.map((d, i) => ({ d, x: W / 2 - 300 + i * 320, y: H / 2 - 130, w: 280, h: 260 })); },
+  cells() { const n = this.DESTS.length, w = 210, gap = 18, x0 = W / 2 - (n * w + (n - 1) * gap) / 2; return this.DESTS.map((d, i) => ({ d, x: x0 + i * (w + gap), y: H / 2 - 120, w, h: 240 })); },
   update(dt) {
     this.t += dt;
     if (!this.ui) { this.ui = true; UI.configure({ dirs: 'lr', action: '✅', roar: false, home: true, enter: false, whistle: false, palette: false }); }
-    if (Input.pressed.left || Input.pressed.right) { this.sel = 1 - this.sel; Sound.click(); }
+    const n = this.DESTS.length;
+    if (Input.pressed.left || Input.pressed.right) { this.sel = (this.sel + (Input.pressed.right ? 1 : n - 1)) % n; Sound.click(); }
     if ((Input.pressed.action || Input.pressed.enter) && this.t > 0.2) this.pick(this.DESTS[this.sel].key);
   },
   tap(x, y) {
@@ -219,9 +261,9 @@ const JetPick = {
     this.cells().forEach((cell, i) => {
       const on = i === this.sel, bob = on ? Math.sin(this.t * 5) * 4 : 0;
       rbox(c, cell.x, cell.y + bob, cell.w, cell.h, 24, on ? '#fff3bf' : '#fff', on ? 7 : 4);
-      rbox(c, cell.x + 20, cell.y + 20 + bob, cell.w - 40, 150, 18, cell.d.col, 3);
-      c.font = `96px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(cell.d.icon, cell.x + cell.w / 2, cell.y + 96 + bob);
-      bigText(c, cell.d.word, cell.x + cell.w / 2, cell.y + 214 + bob, 46, '#ffd43b');
+      rbox(c, cell.x + 16, cell.y + 16 + bob, cell.w - 32, 140, 18, cell.d.col, 3);
+      c.font = `84px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(cell.d.icon, cell.x + cell.w / 2, cell.y + 88 + bob);
+      bigText(c, cell.d.word, cell.x + cell.w / 2, cell.y + 200 + bob, cell.d.word.length > 4 ? 36 : 44, '#ffd43b');
     });
   },
 };

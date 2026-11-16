@@ -77,6 +77,7 @@ const Player = {
     Sound.roar();
     Eggs.onRoar();
     if (typeof NPCs !== 'undefined') NPCs.heardRoar(this.cx, this.cy);
+    if (Wildlife.list.length) Wildlife.heardRoar(this.cx, this.cy);
   },
 
   update(dt) {
@@ -99,10 +100,15 @@ const Player = {
     const dir = (Input.held.right ? 1 : 0) - (Input.held.left ? 1 : 0);
     this.zoomT = Math.max(0, (this.zoomT || 0) - dt);
     const speed = (this.zoomT > 0 ? 400 : 230) * (Input.stick || 1);   // a Melbourne coffee makes you zoom; a gentle push on the stick walks
+    const vx0 = b.vx;
     if (this.hurtT > 0) b.vx = lerp(b.vx, 0, Math.min(1, dt * 2));   // knocked flying
     else if (this.charging) { /* charging: keep running */ }
     else b.vx = lerp(b.vx, dir * speed, Math.min(1, dt * (b.onGround || dinoDef.flies ? 12 : 5)));
     if (dir) this.facing = dir;
+    // Antarctica: hold down on snow or ice to whizz along on your tummy like a penguin.
+    const under = World.get(Math.floor(b.x / TS), Math.floor((b.y + 2) / TS));
+    this.belly = Game.away === 'antarctica' && !dinoDef.flies && Input.held.down && (b.onGround ? under === T.SNOW || under === T.ICE : this.belly);
+    if (this.belly) b.vx = lerp(vx0, (dir || this.facing) * 520, Math.min(1, dt * 2.5));   // slides on, not slowed by walking
 
     const flier = dinoDef.flies;
     let gravity = 1;
@@ -156,9 +162,12 @@ const Player = {
     // The action button attacks a dino in reach, otherwise digs.
     const kind = dinoDef.attack;
     const targets = NPCs.inReach(b.x, b.y, this.facing, ATTACKS[kind].charge ? 'charge' : kind);
-    const icon = targets.length ? ATTACK_ICON[kind] : '⛏️';
+    // On a trip with wild animals about, the button takes a photo of the one in front of you.
+    const snap = Wildlife.list.length ? Wildlife.photoTarget(b.x, b.y - b.h / 2, this.facing, 280) : null;
+    const icon = snap ? '📷' : targets.length ? ATTACK_ICON[kind] : '⛏️';
     if (icon !== this.actIcon && !Game.overlay) { this.actIcon = icon; UI.setAction(icon); }
-    if (Input.pressed.action && targets.length) { this.attack(); this.attackHeld = true; }
+    if (Input.pressed.action && snap) { Wildlife.snap(snap); this.attackHeld = true; }
+    else if (Input.pressed.action && targets.length) { this.attack(); this.attackHeld = true; }
     if (!Input.held.action) this.attackHeld = false;
     // Digging with the action button.
     if (Input.held.action && !this.attackHeld) {
@@ -276,6 +285,7 @@ const Player = {
     let pose = null;
     if (ap) { x += ap.dx; y += ap.dy; rot = ap.rot; if (ap.flip) flip = !flip; if (ap.roar !== null) roar = ap.roar; pose = ap.pose; drawAttackFx(c, ap, b.x, b.y, this.facing); }
     if (this.hurtT > 0) { rot += this.hurtSpin; if (Math.floor(this.hurtT * 20) % 2) c.globalAlpha = 0.55; }
+    if (this.belly) { rot += this.facing * 1.25; y += b.h * 0.25; }   // on your tummy
     c.save(); c.translate(x, y); c.rotate(rot);
     const lick = this.lickT > 0 ? 1 - this.lickT / LICK_TIME : 0;
     const sc = dinoScale(this.type);

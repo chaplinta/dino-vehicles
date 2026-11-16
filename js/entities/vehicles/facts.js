@@ -25,6 +25,16 @@ const VEHICLE_FACTS = {
     'Trains run on steel rails, which makes them very good at carrying heavy loads.',
     'The driver of a train is called the engine driver. They blow the whistle at stations.',
   ],
+  safari: [
+    'Safari jeeps have open tops, so you can stand up and see the animals.',
+    'On safari people shoot animals with cameras, not guns. Photos are the best trophies!',
+    'Safari is a Swahili word. It means a journey.',
+  ],
+  snowmobile: [
+    'A snowmobile has skis at the front for steering and a rubber track at the back to push it along.',
+    'Scientists in Antarctica ride snowmobiles to get about on the ice.',
+    'Antarctica has no roads at all!',
+  ],
   plough: [
     'A snow plough pushes snow off the road with a big curved blade at the front.',
     'Many snow ploughs also spread grit or salt behind them, so the road isn\'t slippery.',

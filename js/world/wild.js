@@ -60,7 +60,7 @@ function genWild(world, rng, g) {
   for (let x = 724; x < 846; x += 9) if (x < WILD.RIVER[0] - 3 || x > WILD.POOL[1] + 4) if (!WILD.TREES.some(t => Math.abs(t - x) < 4)) tree(x);
   // A river with a rope bridge over it.
   for (let x = WILD.RIVER[0]; x < WILD.RIVER[1]; x++) { put(x, SURF, T.WOOD); put(x, SURF + 1, T.WATER); put(x, SURF + 2, T.WATER); }
-  props.push({ type: 'bridge', x: WILD.RIVER[0] - 0.5, x1: WILD.RIVER[1] + 0.5, y: SURF });
+  props.push({ type: 'ropebridge', x: WILD.RIVER[0] - 0.5, x1: WILD.RIVER[1] + 0.5, y: SURF });
   // A rocky plateau ends at a cliff: the waterfall pours into a pool, and there's a cave behind it.
   for (let x = WILD.POOL[0]; x < WILD.POOL[1] + 3; x++) for (let y = SURF; y < surf[x]; y++) put(x, y, T.WATER);
   const cliff = WILD.PLATEAU[1] - 1;
@@ -149,7 +149,7 @@ function genWild(world, rng, g) {
 }
 
 // ---------- In the game ----------
-const WILD_PROPS = new Set(['vine', 'waterfall', 'bridge', 'parrot', 'nest', 'cactus', 'watertower']);
+const WILD_PROPS = new Set(['vine', 'waterfall', 'ropebridge', 'parrot', 'nest', 'cactus', 'watertower']);
 const WILD_SKY = {   // far, middle and near hills
   base: ['#a5d8ff', '#8fd18a', '#6cbf5c'],
   jungle: ['#96d4a0', '#2f9e44', '#237a35'],
@@ -230,7 +230,7 @@ const Wild = {
       c.fillStyle = 'rgba(255,255,255,0.7)';
       for (let i = 0; i < 6; i++) { const y = top + ((t * 260 + i * 53) % (sy - top)); c.fillRect(sx + 2 + i * 5, y, 3, 18); }
       for (let i = 0; i < 4; i++) ell(c, sx + 16 + Math.sin(t * 5 + i * 2) * 22, sy - 2, 10 + i * 2, 5, 'rgba(255,255,255,0.75)', 0);
-    } else if (p.type === 'bridge') {
+    } else if (p.type === 'ropebridge') {
       const w = (p.x1 - p.x) * TS;
       for (const px of [sx, sx + w]) limb(c, [px, sy, px, sy - 50], 6, '#8a5a2b');
       c.strokeStyle = '#c9a66b'; c.lineWidth = 4;

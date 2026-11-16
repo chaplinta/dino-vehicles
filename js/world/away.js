@@ -25,7 +25,7 @@ const Away = {
     Render.clear();
     Water.drops = []; Falling.list = []; Fx.list = [];
     Fish.list = []; Fire.cells = new Map();
-    Vehicles.list = []; NPCs.list = [];
+    Vehicles.list = []; NPCs.list = []; Wildlife.reset();
     Pickups.generate(this.earth.seed + 1);
   },
 
@@ -38,7 +38,7 @@ const Away = {
     World.gravity = 1;
     World.limitW = WORLD_W;
     Vehicles.list = e.vehicles; NPCs.list = e.npcs; Fish.list = e.fish; Fire.cells = e.fires; Pickups.list = e.pickups;
-    Water.drops = []; Falling.list = []; Fx.list = [];
+    Water.drops = []; Falling.list = []; Fx.list = []; Wildlife.reset();
     this.earth = null;
     Game.away = null;
     if (typeof Player !== 'undefined') { Player.carry = false; Player.zoomT = 0; }

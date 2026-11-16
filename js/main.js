@@ -60,6 +60,8 @@ function drawBackdrop(c, camX, camY, t, zoom = 1) {
   if (Game.onMoon) { drawMoonSky(c, camX, camY, t); return; }
   if (Game.away === 'pirate') { drawTropicSky(c, camX, camY, t, zoom); return; }
   if (Game.away === 'melbourne') { drawCitySky(c, camX, camY, t, zoom); return; }
+  if (Game.away === 'africa') { drawSavannaSky(c, camX, camY, t, zoom); return; }
+  if (Game.away === 'antarctica') { drawPolarSky(c, camX, camY, t, zoom); return; }
   const pil = Game.away === 'pilbara';
   const g = c.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, pil ? '#4fb3f0' : '#6cc6ff'); g.addColorStop(1, pil ? '#ffe3bf' : '#d4f1ff');
@@ -207,6 +209,12 @@ function drawProps(c, camX, camY) {
     } else if (PILBARA_PROPS.has(p.type)) {
       if (sx < -700 || sx > Game.viewW + 700) continue;
       drawPilbaraProp(c, p, sx, p.y * TS - camY);
+    } else if (AFRICA_PROPS.has(p.type)) {
+      if (sx < -300 || sx > Game.viewW + 300) continue;
+      drawAfricaProp(c, p, sx, p.y * TS - camY);
+    } else if (ANTARCTICA_PROPS.has(p.type)) {
+      if (sx < -300 || sx > Game.viewW + 300) continue;
+      drawAntarcticaProp(c, p, sx, p.y * TS - camY);
     } else if (WILD_PROPS.has(p.type)) {
       if (sx < -300 || sx > Game.viewW + 300) continue;
       Wild.drawProp(c, p, sx, p.y * TS - camY);
@@ -229,7 +237,7 @@ const Game = {
   mode: 'title', t: 0, stars: 0, worldReady: false,
   cam: { x: 0, y: 0 },
   drove: {},   // vehicles driven at least once (first drive earns a star)
-  away: null,   // 'moon', 'pilbara', 'pirate' or 'melbourne' while on a trip
+  away: null,   // 'moon', 'pilbara', 'pirate', 'melbourne', 'africa' or 'antarctica' while on a trip
   get onMoon() { return this.away === 'moon'; },
   moonVisits: 0,
   found: {},   // vehicles found out in the world (the whistle can call them)
@@ -390,6 +398,7 @@ const Game = {
     if (this.away === 'pilbara' && Mine.tapWorld(wx, wy)) return;
     if (this.away === 'pirate' && Pirate.tapWorld(wx, wy)) return;
     if (this.away === 'melbourne' && Melbourne.tapWorld(wx, wy)) return;
+    if (Wildlife.list.length && Wildlife.tapWorld(wx, wy)) return;
     if (Jobs.tapWorld(wx, wy)) return;
     if (!Player.vehicle && !this.away) {
       const table = World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - wx) < 90 && wy > t.y * TS - 120 && wy < t.y * TS + 10);
@@ -461,6 +470,8 @@ const Game = {
     if (this.away === 'pilbara') Mine.update(dt);
     if (this.away === 'pirate') Pirate.update(dt);
     if (this.away === 'melbourne') Melbourne.update(dt);
+    if (this.away === 'africa' && !this.overlay) Africa.update(dt);
+    if (this.away === 'antarctica' && !this.overlay) Antarctica.update(dt);
     Fire.update(dt);
     Fish.update(dt);
     Falling.update(dt);
@@ -492,12 +503,14 @@ const Game = {
     Fire.draw(c);
     Falling.draw(c);
     NPCs.draw(c);
+    Wildlife.draw(c);
     Vehicles.draw(c);
     Eggs.drawPet(c);
     Player.draw(c);
     if (!this.away) Jobs.drawWorld(c);
     if (this.away === 'pilbara') Mine.drawWorld(c);
     if (this.away === 'pirate') Pirate.drawWorld(c);
+    if (this.away === 'antarctica') Antarctica.drawWorld(c);
     if (!this.away) { Volcano.drawWorld(c); Wild.drawWorld(c); }
     Fx.draw(c);
     Pow.draw(c);
@@ -515,6 +528,7 @@ const Game = {
     Asteroid.drawHud(c);
     Swarm.drawHud(c);
     Reading.drawHud(c);
+    if (Wildlife.list.length) Wildlife.drawHud(c);
     if (this.overlay) this.overlay.draw(c);
     Hud.draw(c);
   },

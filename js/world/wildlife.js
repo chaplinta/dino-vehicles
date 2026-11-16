@@ -1,0 +1,435 @@
+// Wild animals on the jet trips: lions, elephants and hippos in Africa, penguins and seals in Antarctica.
+// They aren't dinos: they wander, graze and react to you, and you photograph them for stars.
+const WILD_ANIMALS = {
+  lion: { word: 'LION', icon: '🦁', speed: 45, h: 70 },
+  elephant: { word: 'ELEPHANT', icon: '🐘', speed: 40, h: 150 },
+  hippo: { word: 'HIPPO', icon: '🦛', speed: 25, h: 40, water: true },
+  giraffe: { word: 'GIRAFFE', icon: '🦒', speed: 35, h: 230 },
+  zebra: { word: 'ZEBRA', icon: '🦓', speed: 40, h: 90 },
+  rhino: { word: 'RHINO', icon: '🦏', speed: 30, h: 80 },
+  warthog: { word: 'WARTHOG', icon: '🐗', speed: 70, h: 45 },
+  meerkat: { word: 'MEERKAT', icon: '🐿️', speed: 0, h: 45 },
+  flamingo: { word: 'FLAMINGO', icon: '🦩', speed: 12, h: 100 },
+  penguin: { word: 'PENGUIN', icon: '🐧', speed: 40, h: 75 },
+  chick: { word: 'CHICK', icon: '🐣', speed: 30, h: 40 },
+  adelie: { word: 'ADELIE', icon: '🐧', speed: 50, h: 50 },
+  seal: { word: 'SEAL', icon: '🦭', speed: 0, h: 40 },
+  orca: { word: 'ORCA', icon: '🐋', speed: 90, h: 40, water: true },
+  whale: { word: 'WHALE', icon: '🐳', speed: 12, h: 40, water: true },
+  skua: { word: 'SKUA', icon: '🐦', speed: 110, h: 30, fly: true },
+};
+// What there is to photograph in each place, in the order the HUD shows them.
+const WILD_SETS = {
+  africa: ['lion', 'elephant', 'hippo', 'giraffe', 'zebra', 'rhino', 'warthog', 'meerkat', 'flamingo'],
+  antarctica: ['penguin', 'chick', 'adelie', 'seal', 'orca', 'whale', 'skua'],
+};
+
+const Wildlife = {
+  list: [], got: {}, flash: 0, card: null,
+  add(kind, tx, o = {}) {
+    const a = Object.assign({ kind, x: tx * TS + 16, home: tx * TS + 16, range: 4, dir: Math.random() < 0.5 ? -1 : 1, t: rand(0, 9), state: 'idle', st: rand(1, 4), scale: 1 }, o);
+    a.y = this.groundY(a.x, a);
+    this.list.push(a);
+    return a;
+  },
+  reset() { this.list = []; this.got = {}; this.flash = 0; this.card = null; },
+  // Where its feet go: on the ground, or at the top of the water for swimmers and anything over the sea.
+  groundY(x, a) {
+    const tx = Math.floor(x / TS);
+    if (World.get(tx, SURF) === T.WATER || (a && WILD_ANIMALS[a.kind].water)) return SURF * TS + (a && a.kind === 'whale' ? 30 : 12);
+    return World.surfaceAt(tx) * TS;
+  },
+  overWater(x) { return World.get(Math.floor(x / TS), SURF) === T.WATER; },
+
+  update(dt) {
+    const pb = Player.vehicle ? Player.vehicle.body : Player.body, fast = Math.abs(pb.vx) > 150;
+    this.flash = Math.max(0, this.flash - dt * 2.5);
+    if (this.card && (this.card.t += dt) > 2.6) this.card = null;
+    let rank = 0;
+    for (const a of this.list) {
+      const def = WILD_ANIMALS[a.kind];
+      a.t += dt; a.st -= dt;
+      const near = Math.abs(pb.x - a.x) < 200 && Math.abs(pb.y - a.y) < 160;
+      let speed = def.speed;
+      switch (a.kind) {
+        case 'lion':
+          if (a.state === 'roar') { if (a.st <= 0) { a.state = 'rest'; a.st = rand(4, 8); } speed = 0; break; }
+          if (a.st <= 0) { a.state = a.state === 'rest' ? 'walk' : 'rest'; a.st = a.state === 'rest' ? rand(5, 10) : rand(2, 4); if (a.state === 'walk') a.dir = pick([-1, 1]); }
+          if (a.state === 'rest') speed = 0;
+          break;
+        case 'elephant':
+          if (a.mum) {   // a baby trots along behind its mum
+            const m = a.mum, goal = m.x - m.dir * 90;
+            a.dir = Math.sign(goal - a.x) || a.dir; speed = Math.abs(goal - a.x) > 20 ? 60 : 0; a.state = m.state === 'spray' ? 'spray' : 'walk';
+            break;
+          }
+          if (a.state === 'spray') { speed = 0; if (Math.random() < 0.5) this.drop(a.x + a.dir * 110, a.y - 150, a.dir); if (a.st <= 0) { a.state = 'walk'; a.dir = -a.dir; a.st = rand(6, 10); } break; }
+          // Off to the waterhole for a spray, now and then.
+          if (a.st <= 0 && a.water !== undefined) { a.dir = Math.sign(a.water - a.x); if (Math.abs(a.water - a.x) < 20) { a.state = 'spray'; a.st = 3.5; a.dir = 1; Sound.tone(260, 0.5, 'sawtooth', 0.05, 420); } }
+          break;
+        case 'hippo':
+          if (a.state === 'yawn') { speed = 0; if (a.st <= 0) { a.state = 'swim'; a.st = rand(5, 9); } break; }
+          a.state = 'swim';
+          if (a.st <= 0) { a.state = 'yawn'; a.st = 2; Sound.tone(110, 0.6, 'sawtooth', 0.05, 70); }
+          break;
+        case 'zebra':
+          // Rush at the herd and they all gallop off.
+          if (a.state !== 'run' && near && fast) { a.state = 'run'; a.st = 2.5; a.dir = Math.sign(a.x - pb.x) || 1; }
+          if (a.state === 'run') { speed = 240; if (a.st <= 0) { a.state = 'idle'; a.st = rand(2, 4); } }
+          else if (a.st <= 0) { a.state = a.state === 'idle' ? 'walk' : 'idle'; a.st = rand(2, 5); if (a.state === 'walk') a.dir = pick([-1, 1]); }
+          if (a.state === 'idle') speed = 0;
+          break;
+        case 'meerkat':
+          // Pops up to look about, and ducks down when you come close.
+          if (near && a.state === 'up') { a.state = 'down'; a.st = rand(2, 3); Sound.tone(1400, 0.06, 'square', 0.04); }
+          if (a.st <= 0) { a.state = a.state === 'up' ? 'down' : 'up'; a.st = a.state === 'up' ? rand(2, 5) : rand(1, 3); }
+          a.pop = lerp(a.pop || 0, a.state === 'up' ? 1 : 0, Math.min(1, dt * 8));
+          speed = 0;
+          break;
+        case 'penguin':
+          if (a.slider) { speed = this.slide(a, dt); break; }
+          // Close by on foot and moving? Penguins follow you in a line.
+          if (!Player.vehicle && Math.abs(Player.body.x - a.x) < 140 && Math.abs(Player.body.vx) > 30) a.follow = true;
+          if (a.follow && (Player.vehicle || Math.abs(Player.body.x - a.x) > 900)) a.follow = false;
+          if (a.follow) {
+            const goal = Player.body.x - Player.facing * (70 + rank++ * 55);
+            a.dir = Math.sign(goal - a.x) || a.dir; speed = Math.abs(goal - a.x) > 20 ? 150 : 0; a.state = speed ? 'walk' : 'idle';
+            break;
+          }
+          if (a.st <= 0) { a.state = a.state === 'idle' ? 'walk' : 'idle'; a.st = rand(2, 5); if (a.state === 'walk') a.dir = pick([-1, 1]); }
+          if (a.state === 'idle') speed = 0;
+          break;
+        case 'chick':
+          if (a.mum) { const goal = a.mum.x + 30; a.dir = Math.sign(goal - a.x) || a.dir; speed = Math.abs(goal - a.x) > 16 ? Math.max(60, Math.abs(a.mum.vx || 0)) : 0; }
+          break;
+        case 'skua':
+          a.x += a.dir * def.speed * dt;
+          if (Math.abs(a.x - a.home) > a.range * TS) a.dir = Math.sign(a.home - a.x);
+          a.y = a.y0 + Math.sin(a.t * 1.3) * 30;
+          continue;
+        case 'whale':
+          if (a.st <= 0) { a.st = rand(4, 7); a.spout = 1.6; Sound.noise(0.8, 0.08, 'highpass', 1500); }
+          a.spout = Math.max(0, (a.spout || 0) - dt);
+          break;
+        case 'orca':
+          if (a.st <= 0) { a.state = a.state === 'leap' ? 'swim' : Math.random() < 0.3 ? 'leap' : 'swim'; a.st = a.state === 'leap' ? 1.2 : rand(3, 6); if (a.state === 'leap') Sound.noise(0.4, 0.1, 'lowpass', 800); }
+          break;
+        case 'seal':
+          speed = 0;
+          if (a.st <= 0) { a.st = rand(3, 6); a.bark = 0.6; Sound.tone(500, 0.12, 'square', 0.04, 350); }
+          a.bark = Math.max(0, (a.bark || 0) - dt);
+          break;
+        default:   // rhino, warthog, giraffe, flamingo, adelie: wander and stop
+          if (a.st <= 0) { a.state = a.state === 'idle' ? 'walk' : 'idle'; a.st = rand(2, 6); if (a.state === 'walk') a.dir = pick([-1, 1]); }
+          if (a.state === 'idle') speed = 0;
+      }
+      a.vx = a.dir * speed;
+      let nx = a.x + a.vx * dt;
+      // Stay near home (unless following you or sliding), never walk into the sea unless a swimmer, never off the world.
+      if (!a.follow && !a.slider && !a.mum && Math.abs(nx - a.home) > a.range * TS) { a.dir = Math.sign(a.home - a.x); nx = a.x; }
+      if (!def.water && !a.slider && !a.follow && this.overWater(nx) !== this.overWater(a.x)) { a.dir = -a.dir; nx = a.x; }
+      if (def.water && !this.overWater(nx)) { a.dir = -a.dir; nx = a.x; }
+      a.x = clamp(nx, 3 * TS, ((World.limitW || WORLD_W) - 3) * TS);
+      a.y = lerp(a.y, this.groundY(a.x, a), Math.min(1, dt * 12));
+      if (a.kind === 'adelie' && speed) a.hop = Math.abs(Math.sin(a.t * 9)) * 8; else a.hop = 0;
+    }
+  },
+  // A tobogganing penguin: up the hill, belly-slide down into the sea, swim back, waddle home, again.
+  slide(a, dt) {
+    const L = a.loop;
+    if (a.state === 'idle' || a.state === 'walk') a.state = 'uphill';
+    if (a.state === 'uphill') { a.dir = 1; if (a.x >= L.top) { a.state = 'slide'; Sound.tone(900, 0.3, 'triangle', 0.05, 1500); } return 45; }
+    if (a.state === 'slide') {
+      a.dir = 1;
+      if (this.overWater(a.x)) { a.state = 'swim'; a.swimT = 0; Fx.burst(a.x, SURF * TS, 16, { speed: 160, up: 260, g: 700, life: 0.8, r: 7, color: ['#a5d8ff', '#e7f5ff'] }); Sound.noise(0.3, 0.2, 'lowpass', 800); }
+      return 300;
+    }
+    if (a.state === 'swim') { a.swimT += dt; a.dir = a.swimT < 3 ? 1 : -1; if (a.swimT > 3 && !this.overWater(a.x)) a.state = 'home'; return 90; }
+    if (a.state === 'home') { a.dir = -1; if (a.x < L.back) a.state = 'uphill'; return 55; }
+    return 0;
+  },
+  drop(x, y, dir) { Fx.add({ x, y, vx: dir * rand(60, 160), vy: rand(-260, -120), g: 700, life: 1, r: 5, color: 'rgba(116,192,252,0.9)' }); },
+
+  // You roared: lions roar right back, zebras bolt, penguins flap and squawk.
+  heardRoar(x, y) {
+    let lions = 0;
+    for (const a of this.list) {
+      if (Math.abs(a.x - x) > 700) continue;
+      if (a.kind === 'lion') { a.state = 'roar'; a.st = 1.4; lions++; Pow.add(a.x, a.y - 100, 'ROAR!'); }
+      else if (a.kind === 'zebra') { a.state = 'run'; a.st = 2.5; a.dir = Math.sign(a.x - x) || 1; }
+      else if (a.kind === 'penguin' || a.kind === 'adelie' || a.kind === 'chick') { a.flap = 1; }
+    }
+    if (lions) setTimeout(() => { Sound.roar(); Sound.noise(1, 0.25, 'lowpass', 180); }, 500);
+  },
+
+  // Photos: the nearest animal in front of you, within reach.
+  photoTarget(x, y, facing, reach = 280) {
+    let best = null, bd = reach;
+    for (const a of this.list) {
+      const dx = a.x - x;
+      if (dx * facing < -60) continue;
+      const d = dist(x, y, a.x, a.y - WILD_ANIMALS[a.kind].h / 2);
+      if (d < bd) { bd = d; best = a; }
+    }
+    return best;
+  },
+  snap(a) {
+    this.flash = 1;
+    Sound.noise(0.06, 0.3, 'highpass', 3000); Sound.tone(1800, 0.05, 'square', 0.05, null, 0.05);
+    if (!a) return;
+    this.card = { kind: a.kind, t: 0, fresh: !this.got[a.kind] };
+    if (this.got[a.kind]) return;
+    this.got[a.kind] = true;
+    Game.addStars(1); Game.popupStar(a.x, a.y - WILD_ANIMALS[a.kind].h - 30);
+    const set = WILD_SETS[Game.away] || [];
+    if (set.length && set.every(k => this.got[k])) {
+      Game.addStars(5); Game.celebrate(Game.away === 'africa' ? 'Safari complete!' : 'Antarctica complete!', 'You took a photo of every animal!');
+    }
+  },
+  tapWorld(wx, wy) {
+    const a = this.list.find(a => Math.abs(a.x - wx) < 70 && wy > a.y - WILD_ANIMALS[a.kind].h - 20 && wy < a.y + 20);
+    if (!a || dist(a.x, a.y, Player.cx, Player.cy) > 500) return false;
+    this.snap(a);
+    return true;
+  },
+
+  draw(c) {
+    const cam = Game.cam, wet = new Set();
+    for (const a of this.list) {
+      if (a.x < cam.x - 300 || a.x > cam.x + Game.viewW + 300) continue;
+      c.save(); c.translate(a.x, a.y - (a.hop || 0));
+      if (a.dir < 0) c.scale(-1, 1);
+      c.scale(a.scale, a.scale);
+      drawAnimal(c, a);
+      c.restore();
+      // In the water: the part below the surface is seen through the water.
+      if (this.overWater(a.x) && !WILD_ANIMALS[a.kind].fly) for (let tx = Math.floor((a.x - 110 * a.scale) / TS); tx <= Math.floor((a.x + 110 * a.scale) / TS); tx++) wet.add(tx);
+    }
+    c.fillStyle = 'rgba(64,156,255,0.7)';
+    for (const tx of wet) for (let ty = SURF; World.get(tx, ty) === T.WATER; ty++) c.fillRect(tx * TS, ty * TS + (ty === SURF ? 4 : 0), TS, ty === SURF ? TS - 4 : TS);
+  },
+  // The row of animals to find, and the photo you just took.
+  drawHud(c) {
+    const set = WILD_SETS[Game.away];
+    if (!set) return;
+    const n = set.length, sz = 34, x0 = W / 2 - (n * (sz + 6)) / 2, y = 128;
+    c.font = `24px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    set.forEach((k, i) => {
+      const x = x0 + i * (sz + 6) + sz / 2, got = this.got[k];
+      ell(c, x, y, sz / 2, sz / 2, got ? '#fff3bf' : 'rgba(255,255,255,0.55)', 2.5);
+      c.globalAlpha = got ? 1 : 0.3; c.fillText(WILD_ANIMALS[k].icon, x, y + 1); c.globalAlpha = 1;
+    });
+    if (this.flash > 0) { c.fillStyle = `rgba(255,255,255,${this.flash * 0.8})`; c.fillRect(0, 0, W, H); }
+    const cd = this.card;
+    if (cd) {
+      // A polaroid slides in with the animal and its name.
+      const k = Math.min(1, cd.t * 4), out = Math.max(0, (cd.t - 2.2) * 3), cx = W - 150 + out * 300, cy = 300 - (1 - k) * 60;
+      c.save(); c.translate(cx, cy); c.rotate(0.06);
+      rbox(c, -110, -120, 220, 250, 6, '#fff', 4);
+      c.fillStyle = Game.away === 'africa' ? '#ffd8a8' : '#d0ebff'; c.fillRect(-94, -104, 188, 170);
+      c.save(); c.beginPath(); c.rect(-94, -104, 188, 170); c.clip();
+      const h = WILD_ANIMALS[cd.kind].h, s = Math.min(1.2, 140 / Math.max(60, h));
+      c.translate(0, 50); c.scale(s, s); drawAnimal(c, { kind: cd.kind, t: Game.t, state: 'idle', pop: 1, spout: 1 });
+      c.restore();
+      bigText(c, WILD_ANIMALS[cd.kind].word, 0, 98, WILD_ANIMALS[cd.kind].word.length > 6 ? 28 : 36, cd.fresh ? '#e8590c' : OUT);
+      c.restore();
+    }
+  },
+};
+
+// Each animal drawn facing right with its feet at (0, 0).
+function drawAnimal(c, a) {
+  const t = a.t || 0, st = a.state, walk = st === 'walk' || st === 'run' || st === 'uphill' || st === 'home' ? Math.sin(t * (st === 'run' ? 18 : 8)) : 0;
+  const legs = (xs, top, len, w, col) => xs.forEach((x, i) => limb(c, [x, top, x + walk * (i % 2 ? -8 : 8), top + len], w, col));
+  switch (a.kind) {
+    case 'lion': {
+      const cub = a.cub, male = a.male, rest = st === 'rest';
+      if (cub) c.scale(0.55, 0.55);
+      const dy = rest ? 18 : 0;
+      limb(c, [-46, -40 + dy, -70, -54 + dy + Math.sin(t * 2) * 6], 5, '#d69a35');
+      ell(c, -72, -56 + dy + Math.sin(t * 2) * 6, 6, 6, '#8a5a1e', 2);
+      if (!rest) legs([-30, -14, 18, 32], -34, 34, 11, '#d69a35');
+      else { ell(c, 30, -4, 18, 7, '#e8a93b', 3); ell(c, -26, -4, 16, 7, '#e8a93b', 3); }
+      ell(c, 0, -34 + dy, 46, 22, '#e8a93b');
+      const hx = 44, hy = -52 + dy, roar = st === 'roar';
+      if (male) { for (let i = 0; i < 10; i++) { const ang = i / 10 * TAU; ell(c, hx - 4 + Math.cos(ang) * 20, hy + Math.sin(ang) * 20, 12, 12, '#a0521d', 0); } ell(c, hx - 4, hy, 26, 26, '#a0521d', 3); }
+      ell(c, hx - 8, hy - 14, 6, 6, '#d69a35', 2);
+      ell(c, hx, hy, 18, 17, '#f0b445');
+      ell(c, hx + 14, hy + 6, 9, 7, '#f7d08a', 2);
+      poly(c, [hx + 18, hy, hx + 24, hy, hx + 21, hy + 4], '#5c3d1e', 1.5);
+      drawEye(c, hx + 6, hy - 6, 4, rest && !roar && Math.sin(t) > 0.3);
+      if (roar) { ell(c, hx + 16, hy + 12, 9, 8, '#5c1f1f', 2); for (const tx of [-5, 5]) poly(c, [hx + 16 + tx, hy + 5, hx + 18 + tx, hy + 9, hx + 14 + tx, hy + 9], '#fff', 0); }
+      break;
+    }
+    case 'elephant': {
+      const spray = st === 'spray';
+      limb(c, [-66, -86, -76, -50 + Math.sin(t * 2) * 4], 4, '#868e96');
+      legs([-44, -20, 20, 42], -60, 60, 22, '#868e96');
+      ell(c, 0, -84, 70, 46, '#9aa1a9');
+      ell(c, 62, -104, 32, 30, '#9aa1a9');
+      // Trunk: hanging down, or curled up high to spray.
+      if (spray) limb(c, [86, -100, 104, -130, 112, -160], 13, '#9aa1a9');
+      else limb(c, [86, -96, 100, -60, 98, -24 + Math.sin(t * 3) * 4], 13, '#9aa1a9');
+      poly(c, [80, -88, 104, -78, 82, -80], '#f8f9fa', 2);   // tusk
+      ell(c, 42, -100, 24 + Math.sin(t * 2) * 2, 32, '#adb5bd', 3);   // big flappy ear
+      ell(c, 44, -98, 14, 20, '#d0b8b8', 0);
+      drawEye(c, 72, -112, 4.5, false);
+      if (spray) for (let i = 0; i < 5; i++) { const k = (t * 2 + i / 5) % 1; ell(c, 112 + k * 60, -160 - Math.sin(k * Math.PI) * 50, 5, 5, 'rgba(116,192,252,0.85)', 0); }
+      break;
+    }
+    case 'hippo': {
+      // Mostly underwater: just the back, the head, little ears and nostrils show.
+      const yawn = st === 'yawn' ? Math.min(1, Math.sin(Math.min(1, (2 - a.st) / 2) * Math.PI) * 1.4) : 0;
+      ell(c, -10, 0, 60, 24, '#8f7a96');
+      if (yawn > 0.05) {
+        poly(c, [36, -2, 92, -10, 90, 2, 40, 10], '#8f7a96', 3);   // lower jaw
+        c.save(); c.translate(40, -4); c.rotate(-yawn * 0.9);
+        poly(c, [0, 0, 54, -4, 52, 10, 0, 8], '#ffa8a8', 3);
+        poly(c, [-2, -12, 56, -16, 56, -2, 0, 0], '#8f7a96', 3);
+        for (const tx of [44, 30]) poly(c, [tx, -2, tx + 4, 8, tx + 8, -2], '#fff', 1.5);
+        c.restore();
+      } else {
+        ell(c, 54, -8, 34, 18, '#8f7a96');
+        ell(c, 80, -14, 4, 3, OUT, 0); ell(c, 72, -15, 4, 3, OUT, 0);
+      }
+      ell(c, 30, -22, 6, 6, '#8f7a96', 2.5); ell(c, 40, -24, 6, 6, '#8f7a96', 2.5);
+      drawEye(c, 44, -16, 4, false);
+      break;
+    }
+    case 'giraffe': {
+      legs([-28, -12, 18, 30], -120, 120, 9, '#e9b949');
+      ell(c, 0, -128, 44, 24, '#f4c24f');
+      for (const [px, py] of [[-20, -132], [0, -122], [18, -136], [-30, -120]]) ell(c, px, py, 8, 6, '#b5651d', 0);
+      const reach = Math.sin(t * 0.8) * 6;
+      limb(c, [30, -138, 46, -196, 56 + reach, -244], 15, '#f4c24f');
+      for (let i = 0; i < 4; i++) ell(c, 36 + i * 5, -160 - i * 20, 5, 4, '#b5651d', 0);
+      ell(c, 62 + reach, -248, 16, 10, '#f4c24f');
+      limb(c, [56 + reach, -256, 54 + reach, -268], 3, '#8a5a2b'); limb(c, [62 + reach, -256, 64 + reach, -268], 3, '#8a5a2b');
+      drawEye(c, 64 + reach, -252, 3.5, false);
+      limb(c, [-44, -132, -52, -96], 3, '#e9b949');
+      break;
+    }
+    case 'zebra': {
+      legs([-26, -10, 16, 28], -50, 50, 8, '#f8f9fa');
+      limb(c, [-38, -60, -46, -30], 3, '#212529');
+      c.save(); c.beginPath(); c.ellipse(0, -60, 40, 20, 0, 0, TAU); c.clip();
+      c.fillStyle = '#fff'; c.fillRect(-42, -82, 84, 44);
+      c.fillStyle = '#212529'; for (let x = -34; x < 40; x += 11) c.fillRect(x, -82, 5, 44);
+      c.restore(); c.beginPath(); c.ellipse(0, -60, 40, 20, 0, 0, TAU); fillStroke(c, null, 3);
+      limb(c, [30, -66, 44, -92], 14, '#f8f9fa');
+      for (let i = 0; i < 3; i++) limb(c, [33 + i * 4, -72 - i * 7, 42 + i * 4, -70 - i * 7], 3, '#212529', 0);
+      ell(c, 52, -94, 15, 9, '#f8f9fa');
+      ell(c, 64, -92, 6, 6, '#495057', 0);
+      limb(c, [38, -98, 46, -106], 4, '#212529');   // mane
+      drawEye(c, 50, -98, 3.5, false);
+      break;
+    }
+    case 'rhino': {
+      legs([-36, -14, 18, 36], -36, 36, 15, '#868e96');
+      ell(c, 0, -44, 56, 30, '#9aa1a9');
+      ell(c, 58, -42, 26, 20, '#9aa1a9');
+      poly(c, [72, -56, 90, -88, 84, -54], '#e9ecef', 2.5); poly(c, [62, -60, 68, -78, 70, -58], '#e9ecef', 2);
+      ell(c, 44, -62, 6, 8, '#9aa1a9', 2);
+      drawEye(c, 56, -48, 3.5, false);
+      break;
+    }
+    case 'warthog': {
+      legs([-16, -6, 10, 18], -18, 18, 6, '#6d4c41');
+      limb(c, [-24, -26, -26, -52], 3, '#6d4c41'); ell(c, -26, -54, 4, 6, '#3e2723', 0);   // tail up like an aerial
+      ell(c, 0, -24, 28, 15, '#8d6e63');
+      limb(c, [-14, -38, 14, -40], 5, '#3e2723', 0);   // mane
+      ell(c, 28, -22, 14, 12, '#8d6e63');
+      c.strokeStyle = '#fff'; c.lineWidth = 3; c.beginPath(); c.arc(38, -18, 8, Math.PI * 0.6, Math.PI * 1.6); c.stroke();
+      drawEye(c, 30, -28, 3, false);
+      break;
+    }
+    case 'meerkat': {
+      const up = a.pop === undefined ? 1 : a.pop;
+      ell(c, 0, 4, 18, 7, '#5c3d1e', 0);   // the hole
+      c.save(); c.beginPath(); c.rect(-30, -80, 60, 82); c.clip(); c.translate(0, (1 - up) * 46);
+      ell(c, 0, -20, 8, 18, '#c8a27a');
+      ell(c, 2, -42, 8, 8, '#c8a27a');
+      ell(c, 5, -43, 3, 3, '#3e2723', 0);
+      ell(c, 9, -40, 2, 2, OUT, 0);
+      limb(c, [4, -28, 9, -24], 3, '#c8a27a');
+      c.restore();
+      break;
+    }
+    case 'flamingo': {
+      limb(c, [0, 0, 0, -52], 3, '#f783ac');
+      limb(c, [0, -40, 8, -46, 2, -52], 3, '#f783ac');   // the other leg tucked up
+      ell(c, 0, -62, 18, 11, '#ff8fab');
+      const bob = Math.sin(t * 1.5) * 4;
+      limb(c, [12, -66, 22, -84, 12, -96 + bob], 4, '#ff8fab');
+      ell(c, 14, -98 + bob, 6, 5, '#ff8fab');
+      poly(c, [18, -100 + bob, 30, -96 + bob, 22, -92 + bob], '#212529', 1.5);
+      drawEye(c, 14, -100 + bob, 2, false);
+      break;
+    }
+    case 'penguin': case 'chick': case 'adelie': {
+      const belly = st === 'slide', chick = a.kind === 'chick', adelie = a.kind === 'adelie';
+      if (belly) { c.translate(0, -10); c.rotate(Math.PI / 2 - 0.1); c.translate(30, 0); }
+      const sw = st === 'walk' || st === 'uphill' || st === 'home' ? Math.sin(t * 10) * 0.12 : 0;
+      c.rotate(sw);
+      if (st === 'swim') { c.translate(0, 6); c.rotate(1.2); }
+      const s = chick ? 0.6 : adelie ? 0.75 : 1;
+      c.scale(s, s);
+      const flap = (a.flap > 0 || st === 'slide') ? Math.sin(t * 20) * 0.6 : 0.2;
+      if (a.flap) a.flap = Math.max(0, a.flap - 1 / 60);
+      ell(c, -4, -4, 9, 4, '#fd7e14', 2); ell(c, 8, -4, 9, 4, '#fd7e14', 2);
+      ell(c, 0, -34, 18, 32, chick ? '#adb5bd' : '#212529');
+      if (!chick) ell(c, 5, -30, 12, 24, '#fff', 0);
+      c.save(); c.translate(-8, -44); c.rotate(-0.4 - flap); ell(c, 0, 14, 6, 18, chick ? '#adb5bd' : '#212529', 2); c.restore();
+      ell(c, 4, -64, 12, 11, chick ? '#adb5bd' : '#212529');
+      if (chick) ell(c, 6, -63, 8, 7, '#fff', 0);
+      else if (!adelie) ell(c, 9, -56, 6, 5, '#ffd43b', 0);   // emperor's yellow neck patch
+      poly(c, [12, -66, 22, -62, 12, -60], adelie ? '#212529' : '#fd7e14', 1.5);
+      if (adelie) ell(c, 8, -67, 5, 5, '#fff', 0);
+      drawEye(c, 8, -67, 2.6, false);
+      break;
+    }
+    case 'seal': {
+      const lift = a.bark > 0 ? -10 : 0;
+      ell(c, -10, -14, 54, 15, '#6c757d');
+      for (const [px, py] of [[-30, -18], [-8, -10], [12, -20], [-46, -10]]) ell(c, px, py, 4, 3, '#343a40', 0);
+      poly(c, [-62, -14, -80, -24, -78, -4], '#6c757d', 2.5);
+      ell(c, 42, -24 + lift, 16, 12, '#6c757d');
+      ell(c, 56, -22 + lift, 6, 4, '#495057', 0);
+      drawEye(c, 46, -28 + lift, 3, false);
+      limb(c, [52, -20 + lift, 66, -24 + lift], 1, '#212529', 0); limb(c, [52, -18 + lift, 66, -16 + lift], 1, '#212529', 0);
+      ell(c, 18, -4, 12, 5, '#495057', 2);
+      break;
+    }
+    case 'orca': {
+      if (st === 'leap') {
+        const k = 1 - a.st / 1.2, h = Math.sin(k * Math.PI) * 90;
+        c.save(); c.translate(0, -h); c.rotate((k - 0.5) * 1.6);
+        ell(c, 0, 0, 56, 20, '#212529'); ell(c, 10, 6, 34, 10, '#fff', 0); ell(c, 30, -8, 8, 5, '#fff', 0);
+        poly(c, [-6, -16, 4, -48, 14, -16], '#212529', 2.5); poly(c, [-56, 0, -76, -14, -72, 12], '#212529', 2.5);
+        c.restore();
+      } else {
+        poly(c, [-10, 0, 6, -52 + Math.sin(t * 2) * 3, 18, 0], '#212529', 3);   // tall black fin
+        ell(c, 4, 2, 44, 8, '#212529');
+      }
+      break;
+    }
+    case 'whale': {
+      ell(c, 0, 4, 90, 18, '#495057');
+      ell(c, -60, 0, 8, 5, '#343a40', 0);
+      if (a.spout > 0) {
+        const k = Math.min(1, a.spout);
+        for (let i = 0; i < 7; i++) ell(c, 30 + (i - 3) * 8 * k, -30 - 60 * k + Math.abs(i - 3) * 10, 10, 10, 'rgba(231,245,255,0.85)', 0);
+        limb(c, [30, -6, 30, -40 * k], 6, 'rgba(231,245,255,0.85)', 0);
+      }
+      break;
+    }
+    case 'skua': {
+      const f = Math.sin(t * 10) * 14;
+      poly(c, [-6, 0, -34, -10 - f, -10, -4], '#7a5c48', 2); poly(c, [6, 0, 34, -10 - f, 10, -4], '#7a5c48', 2);
+      ell(c, 0, 0, 14, 7, '#8d6e63');
+      ell(c, 14, -4, 6, 5, '#8d6e63', 2);
+      poly(c, [19, -5, 26, -3, 19, -1], '#343a40', 1);
+      break;
+    }
+  }
+}

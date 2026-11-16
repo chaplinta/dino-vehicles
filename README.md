@@ -136,6 +136,20 @@ Pick 🚋 CITY on the jet and it flies right across Australia to Melbourne. You 
 
 Board the jet again to fly home. Melbourne isn't saved.
 
+## Africa
+
+Pick 🦁 AFRICA on the jet and it flies across the Indian Ocean to the savanna. You wear a safari hat. Kilimanjaro is snow-capped in the distance and the sun is going down. It's a photo safari: hop in the safari jeep (or walk up close) and press 📷 to take a photo of an animal. Each new animal is a star and shows its name to read; photograph all nine for 5 more. The row of animals at the top fills in as you go:
+
+- **Lions** lazing on Pride Rock. Roar at them and they roar back.
+- **Elephants**, a mum and her baby, walk to the waterhole and spray water with their trunks.
+- **Hippos** wallow in the waterhole and do giant yawns. **Flamingos** stand on one leg at the edge.
+- **Giraffes** nibble the tops of the acacia trees. A big baobab tree and tall termite mounds.
+- **Zebras**: a herd that gallops off if you rush at them. A **rhino**, two **warthogs** with their tails up, and **meerkats** that pop up out of their holes and duck down when you come close.
+
+## Antarctica
+
+Pick 🐧 ICE on the jet and it flies south to Antarctica. You wear a puffy red parka with a furry hood, and the southern lights ripple across the sky. There's a red research station, an emperor penguin colony with fluffy grey chicks (walk past and they follow you in a line), Adélie penguins hopping, and a long icy slide hill. Penguins waddle up it and toboggan down on their tummies into the sea. Hold down on the snow and you belly-slide too: slide into the sea for a splash and a star. Out on the water: seals lying on the ice floes, an orca, a whale blowing its spout, and a skua flying over. A snowmobile waits by the station, and the 📷 photo game is here too (7 animals).
+
 ## Pirate Island
 
 Hoist the pirate ship's sails and it sails to Skull Island.
@@ -184,7 +198,7 @@ There is no failing and no dying.
 
 Plain JavaScript and canvas, no build step and no dependencies at runtime.
 
-- `js/world/` holds the tile world. That's the generator, the chunk-cached renderer, falling sand, flowing water and growing crops, plus fire and water spray. `away.js` swaps Earth out for trips to the Moon (`moon.js`), the Pilbara (`pilbara.js`, which also runs the mine steps), Pirate Island (`pirate.js`) and Melbourne (`melbourne.js`). `ramps.js` is the jump ramps. `wild.js` builds and runs the jungle, volcano mountain, desert and snowy mountain.
+- `js/world/` holds the tile world. That's the generator, the chunk-cached renderer, falling sand, flowing water and growing crops, plus fire and water spray. `away.js` swaps Earth out for trips to the Moon (`moon.js`), the Pilbara (`pilbara.js`, which also runs the mine steps), Pirate Island (`pirate.js`) and Melbourne (`melbourne.js`). `ramps.js` is the jump ramps. `wild.js` builds and runs the jungle, volcano mountain, desert and snowy mountain. `africa.js` and `antarctica.js` are the jet's far trips, and `wildlife.js` their animals and the photo game.
 - `js/entities/` holds the dinos, the player, NPCs and the vehicle base class. Each vehicle is in `vehicles/*.js`. To add one, call `defVehicle(...)` and list it in `registry.js`.
 - `js/jobs.js` holds the job system. `js/asteroid.js` is the 10-minute clock, `js/chess.js` the chess game.
 - The title screen shows `GAME_VERSION` and `RELEASE_DATE` from `js/core.js`. Bump them with each release.

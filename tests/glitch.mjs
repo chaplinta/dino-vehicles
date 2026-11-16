@@ -257,6 +257,25 @@ await scene('canyon jump', () => {
   G.release();
 });
 
+await scene('far trips', () => {
+  const into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
+  G.fresh('rex', 6262); Game.stars = 200; Vehicles.spawnMissing();
+  for (const [dest, ride] of [['africa', 'safari'], ['antarctica', 'snowmobile']]) {
+    into(Vehicles.list.find(v => v.kind === 'jet')); if (Game.overlay === JetPick) JetPick.pick(dest);
+    G.run(60 * 9); if (Game.overlay === Flight) Flight.finish(); G.run(60 * 6);
+    if (Game.away !== dest) { G.issue('did not get to ' + dest); continue; }
+    if (Player.vehicle) Vehicles.exit(Player);
+    G.run(60 * 12, G.masher(mulberry32(dest.length), { down: 0.3, action: 0.2, roar: 0.05 }));   // on foot: photos, roars, belly-slides
+    G.release();
+    const v = Vehicles.list.find(v => v.kind === ride);
+    if (!v) G.issue('missing ' + ride); else { into(v); G.run(60 * 10, G.masher(mulberry32(ride.length), { action: 0.2 })); G.release(); }
+    if (Wildlife.list.some(a => !Number.isFinite(a.x) || !Number.isFinite(a.y))) G.issue('an animal went NaN in ' + dest);
+    // A new world in the middle of the trip lands you home with nothing left behind.
+    Game.resetWorld(); G.run(60);
+    if (Game.away || Wildlife.list.length || Vehicles.list.some(v => v.kind === ride)) G.issue(dest + ' left behind after a new world');
+  }
+});
+
 await scene('voyage battle', () => {
   G.fresh('rex', 4545); Game.stars = 200; Vehicles.spawnMissing();
   for (let k = 0; k < 2; k++) {

@@ -68,7 +68,7 @@ function onSite() { return outfit() === 'hivis'; }
 function outfit() {
   if (typeof Game === 'undefined') return null;
   if (!Game.away && Wild.snowy()) return 'snow';
-  return { pilbara: 'hivis', pirate: 'pirate', moon: 'space', melbourne: 'footy' }[Game.away] || null;
+  return { pilbara: 'hivis', pirate: 'pirate', moon: 'space', melbourne: 'footy', africa: 'safari', antarctica: 'parka' }[Game.away] || null;
 }
 function pickOutfit(o, type) {
   if (type === 'alien') return null;   // Moon dinos live there
@@ -89,6 +89,14 @@ function drawSuit(c, fit, x, y, rx, ry, rot, bands) {
   else if (fit === 'space') { drawVest(c, x, y, rx, ry, rot, bands, '#f1f3f5', '#adb5bd'); ell(c, x + rx * 0.35, y - ry * 0.3, 5, 4, '#4dabf7', 2); }
   else if (fit === 'pirate') drawVest(c, x, y, rx, ry, rot, [bands[0] - 6, bands[0] + 4, bands[1] + 4], '#f8f9fa', '#e03131');
   else if (fit === 'footy') drawVest(c, x, y, rx, ry, rot, [bands[0] - 2, bands[1] + 2], '#1c3f8f', '#e03131');
+  else if (fit === 'safari') {
+    // Khaki safari shirt with two pockets.
+    drawVest(c, x, y, rx, ry, rot, [], '#c9b27c', '#c9b27c');
+    rbox(c, x - rx * 0.1, y - ry * 0.35, rx * 0.4, ry * 0.35, 3, '#b39b66', 2);
+  } else if (fit === 'parka') {
+    // Big puffy red parka.
+    drawVest(c, x, y, rx, ry, rot, [y - ry * 0.4, y, y + ry * 0.4].map(v => v - 1), '#e03131', '#c92a2a');
+  }
   else if (fit === 'hipster') {
     // Red and black check flannel shirt.
     c.save(); c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); c.clip();
@@ -99,6 +107,19 @@ function drawSuit(c, fit, x, y, rx, ry, rot, bands) {
     c.restore();
     c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); fillStroke(c, null, 4);
   }
+}
+// A khaki pith helmet with a brim all round.
+function drawSafariHat(c, cx, top) {
+  ell(c, cx, top + 4, 28, 6, '#b39b66', 3);
+  c.beginPath(); c.moveTo(cx - 18, top + 4); c.quadraticCurveTo(cx - 18, top - 20, cx, top - 20); c.quadraticCurveTo(cx + 18, top - 20, cx + 18, top + 4); c.closePath();
+  fillStroke(c, '#d6c08c', 3);
+  c.fillStyle = '#7a5c2e'; c.fillRect(cx - 17, top - 2, 34, 4);
+}
+// A parka hood with a furry rim.
+function drawParkaHood(c, cx, top) {
+  c.beginPath(); c.moveTo(cx - 22, top + 10); c.quadraticCurveTo(cx - 22, top - 22, cx, top - 22); c.quadraticCurveTo(cx + 22, top - 22, cx + 22, top + 10); c.closePath();
+  fillStroke(c, '#e03131', 3);
+  for (let i = 0; i < 9; i++) { const a = Math.PI + i / 8 * Math.PI; ell(c, cx + Math.cos(a) * 20, top + 4 + Math.sin(a) * 18, 6, 6, '#f1f3f5', 0); }
 }
 // A grey flat cap with a short peak at the front.
 function drawFlatCap(c, cx, top) {
@@ -291,10 +312,12 @@ function drawDinoHead(c, type, hx, hy, d, o) {
   }
   if (o.lick > 0) { const m = TONGUE_AT[type] || [22, 6]; drawTongue(c, hx + m[0], hy + m[1], o.lick, o.t || 0); }
   const fit = o.outfit;
-  if (fit === 'hivis' || fit === 'pirate' || fit === 'footy' || fit === 'snow' || fit === 'hipster') {
+  if (fit === 'hivis' || fit === 'pirate' || fit === 'footy' || fit === 'snow' || fit === 'hipster' || fit === 'safari' || fit === 'parka') {
     const at = { pachy: [-2, -27], rex: [0, -27], megalo: [2, -22], allo: [4, -18], carno: [6, -24], raptor: [4, -13], tri: [4, -16], styraco: [4, -16], ptero: [0, -12], bary: [-2, -15], iguano: [0, -17] }[type] || [4, -13];
     if (fit === 'hivis') drawHardHat(c, hx + at[0], hy + at[1] - 2);
     else if (fit === 'footy' || fit === 'snow') drawBeanie(c, hx + at[0], hy + at[1] + 2, fit === 'snow');
+    else if (fit === 'safari') drawSafariHat(c, hx + at[0], hy + at[1] + 2);
+    else if (fit === 'parka') drawParkaHood(c, hx + at[0], hy + at[1] + 2);
     else if (fit === 'hipster') {
       // Neat beard under the jaw, thick black-rimmed glasses and a flat cap.
       const m = TONGUE_AT[type] || [22, 6], e = EYE_AT[type] || [1, -4];

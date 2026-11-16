@@ -5,7 +5,7 @@ const T = {
   CROP: 18, ROOF: 19, CONCRETE: 20, FLOWER: 21,
   MOONDUST: 22, MOONROCK: 23, CRYSTAL: 24, CHEESE: 25, GOLDEGG: 26,
   REDDIRT: 27, IRONORE: 28, BROKENORE: 29, WASTE: 30, SPINIFEX: 31, TREASURE: 32,
-  MAGMA: 33, LAVA: 34, WARMROCK: 35, SNOW: 36, ICE: 37,
+  MAGMA: 33, LAVA: 34, WARMROCK: 35, SNOW: 36, ICE: 37, SAVANNA: 38,
 };
 
 // Per-tile hash so textures look varied but stable.
@@ -264,6 +264,15 @@ defTile(T.ICE, { name: 'ice', hard: 2, draw(c, x, y, tx, ty) {
   const a = tileHash(tx, ty);
   c.moveTo(x + 4, y + 8 + a * 10); c.lineTo(x + 14, y + 4); c.moveTo(x + 18, y + 26); c.lineTo(x + 28, y + 14 + a * 8); c.stroke();
   c.fillStyle = 'rgba(255,255,255,0.35)'; c.fillRect(x + 2, y + 2, 8, 4);
+} });
+
+// Africa's dry golden grass on red earth.
+defTile(T.SAVANNA, { name: 'savanna grass', draw(c, x, y, tx, ty) {
+  TILES[T.REDDIRT].draw(c, x, y, tx, ty);
+  c.fillStyle = '#e0b04c'; c.fillRect(x, y, TS, 9);
+  c.fillStyle = '#c9952e';
+  for (let i = 0; i < 5; i++) c.fillRect(x + i * 6 + 2, y + 8, 3, 3 + tileHash(tx + i, ty) * 6);
+  c.fillStyle = '#f2cf6b'; c.fillRect(x, y, TS, 3);
 } });
 
 function drawTileIcon(c, id) {

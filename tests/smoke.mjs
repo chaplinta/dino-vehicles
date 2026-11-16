@@ -1068,7 +1068,7 @@ async function stickDrag(page, dx, dy, ms) {
     window.go = tx => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = tx * TS + 16; Player.body.y = World.surfaceAt(tx) * TS - 0.01; Player.body.vx = Player.body.vy = 0; Game.snapCamera(); };
   });
   check(await page.evaluate(() => WORLD_W === 1250 && PAD_X0 === 1210 && Vehicles.list.length > 0 && World.get(WILD.POOL[0] + 2, SURF + 1) === T.WATER && World.get(WILD.RIVER[0] + 3, SURF) === T.WOOD
-    && World.get(WILD.RIVER[0] + 3, SURF + 1) === T.WATER && World.props.some(p => p.type === 'waterfall') && World.props.some(p => p.type === 'bridge')), 'jungle: waterfall pool, river and rope bridge');
+    && World.get(WILD.RIVER[0] + 3, SURF + 1) === T.WATER && World.props.some(p => p.type === 'waterfall') && World.props.some(p => p.type === 'ropebridge')), 'jungle: waterfall pool, river and rope bridge');
   check(await page.evaluate(() => [...Array(9)].every((_, i) => World.get(WILD.CONE - 4 + i, SURF - 16) === T.LAVA) && World.get(WILD.CONE, SURF - 3) === T.AIR && World.get(WILD.CONE, SURF - 5) === T.WARMROCK), 'volcano: lava in the crater, a lava tube underneath');
   check(await page.evaluate(() => [...Array(11)].every((_, i) => !World.solid(WILD.CANYON[0] + i, SURF + 6)) && World.props.filter(p => p.type === 'ramp' && Math.abs(p.x - WILD.CANYON[0]) < 12).length === 2
     && World.skeleton.length > 20 && World.skeleton.every(i => [T.BONE, T.FOSSIL].includes(World.t[i]))), 'desert: canyon with ramps both sides, a buried skeleton');
@@ -1087,6 +1087,35 @@ async function stickDrag(page, dx, dy, ms) {
     if (Player.vehicle) Vehicles.exit(Player); Player.body.x = pl.body.x; Vehicles.enter(Player, pl); run(60 * 5, { left: 1 }); return a > 5 && snow() === 0; }), 'snow plough (40 stars) clears the snow drifts');
   check(await page.evaluate(() => { if (Player.vehicle) Vehicles.exit(Player); const s0 = Game.stars; for (const i of World.skeleton) World.set(i % World.w, Math.floor(i / World.w), T.AIR); run(70); return Game.stars - s0 >= 10 && Eggs.found.skeleton; }), 'dig out the whole skeleton: 10 stars');
   check(await page.evaluate(() => { const r = Vehicles.list.find(v => v.kind === 'rocket'); return r && Math.abs(r.body.x / TS - ROCKET_X) < 3; }), 'rocket on the pad at the far end');
+  check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
+  await page.close();
+}
+
+// 31. The jet flies to Africa (photo safari) and Antarctica (penguins, belly-sliding, a snowmobile).
+{
+  const page = await open({ width: 960, height: 540 });
+  await page.evaluate(() => {
+    Game.loop = () => {}; Sound.say = () => {}; localStorage.clear(); Game.found = {}; Game.newWorld(); Game.startPlay('rex'); Jobs.t = 1e9; Asteroid.left = 1e9; Game.stars = 200; Vehicles.spawnMissing();
+    window.run = (n, keys = {}) => { for (let i = 0; i < n; i++) { for (const k in keys) { if (i === 0) Input.pressed[k] = true; Input.held[k] = true; } Game.update(1 / 60); Input.endFrame(); } for (const k in keys) Input.held[k] = false; ctx.setTransform(viewK, 0, 0, viewK, 0, 0); Game.draw(ctx); };
+    window.into = v => { if (Player.vehicle) Vehicles.exit(Player); Player.body.x = v.body.x; Player.body.y = v.body.y - 10; Vehicles.enter(Player, v); };
+    window.fly = dest => { into(Vehicles.list.find(v => v.kind === 'jet')); run(5); if (dest && Game.overlay === JetPick) JetPick.pick(dest); for (let i = 0; i < 60 * 12 && Game.overlay !== Flight; i++) run(1); const ok = Game.overlay === Flight && Flight.dest === (dest || 'home'); Flight.finish(); run(60 * 6); if (Player.vehicle) Vehicles.exit(Player); return ok; };
+    World.set(20, 30, T.BRICK); Save.write(); window.__save = localStorage.getItem(SAVE_KEY);
+  });
+  check(await page.evaluate(() => { into(Vehicles.list.find(v => v.kind === 'jet')); run(5); const ok = Game.overlay === JetPick && JetPick.cells().length === 4 && JetPick.DESTS.some(d => d.key === 'africa') && JetPick.DESTS.some(d => d.key === 'antarctica'); JetPick.close(); run(5); return ok; }), 'the jet picker offers the mine, the city, Africa and Antarctica');
+  check(await page.evaluate(() => fly('africa') && Game.away === 'africa' && outfit() === 'safari'), 'fly to Africa: land in a safari hat');
+  check(await page.evaluate(() => ['lion', 'elephant', 'hippo', 'giraffe', 'zebra', 'rhino', 'meerkat', 'flamingo'].every(k => Wildlife.list.some(a => a.kind === k)) && World.get(140, SURF) === T.WATER && World.get(AFR.HOLE[0] - 2, SURF) !== T.WATER),
+    'lions, elephants, hippos, giraffes, zebras, a rhino, meerkats and flamingos; a waterhole level with the ground');
+  check(await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'safari'); into(j); j.body.x = 70 * TS; j.body.y = World.surfaceAt(70) * TS - 0.01; j.facing = 1; run(10); const s0 = Game.stars;
+    run(1, { action: 1 }); run(5); return Wildlife.got.lion && Game.stars === s0 + 1 && Wildlife.card && Wildlife.card.kind === 'lion'; }), 'safari jeep: photograph a lion for a star');
+  check(await page.evaluate(() => { Vehicles.exit(Player); run(5); Player.body.x = 66 * TS; Player.body.y = World.surfaceAt(66) * TS - 0.01; run(5); Player.roar(); run(5); return Wildlife.list.some(a => a.kind === 'lion' && a.state === 'roar'); }), 'roar at the lions: they roar back');
+  check(await page.evaluate(() => { const s0 = Game.stars; for (const k of WILD_SETS.africa) Wildlife.snap(Wildlife.list.find(a => a.kind === k)); run(60 * 2); return Game.stars >= s0 + WILD_SETS.africa.length - 1 + 5; }), 'photograph every animal: safari complete bonus');
+  check(await page.evaluate(() => fly() && !Game.away && World.get(20, 30) === T.BRICK && !Wildlife.list.length && localStorage.getItem(SAVE_KEY) !== null), 'fly home from Africa: Earth as it was');
+  check(await page.evaluate(() => fly('antarctica') && Game.away === 'antarctica' && outfit() === 'parka' && ['penguin', 'chick', 'seal', 'orca', 'whale'].every(k => Wildlife.list.some(a => a.kind === k))), 'fly to Antarctica: a parka on, penguins, chicks, seals, an orca and a whale');
+  check(await page.evaluate(() => { const go = keys => { Player.body.x = 120 * TS; Player.body.y = World.surfaceAt(120) * TS - 0.01; Player.body.vx = 0; Player.facing = 1; run(5); const x0 = Player.body.x; run(60, keys); return Player.body.x - x0; };
+    const walk = go({ right: 1 }), slide = go({ right: 1, down: 1 }); return slide > walk * 1.4; }), 'hold down on the snow: belly-slide faster than walking');
+  check(await page.evaluate(() => { const p = Wildlife.list.find(a => a.kind === 'penguin' && !a.slider); Player.body.x = p.x - 60; Player.body.y = World.surfaceAt(Math.floor(p.x / TS)) * TS - 0.01; run(5); run(60, { right: 1 }); run(90); return p.follow && Math.abs(p.x - Player.body.x) < 300; }), 'walk past a penguin: it follows you');
+  check(await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'snowmobile'); into(v); const x0 = v.body.x; run(60, { right: 1 }); return v.body.x - x0 > 4 * TS; }), 'the snowmobile zooms across the snow');
+  check(await page.evaluate(() => fly() && !Game.away && World.get(20, 30) === T.BRICK), 'fly home from Antarctica');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();
 }
