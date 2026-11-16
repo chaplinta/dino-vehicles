@@ -56,10 +56,11 @@ const Africa = {
     W_.add('lion', 74, { male: true, range: 3, state: 'rest' }); W_.add('lion', 78, { range: 3, state: 'rest' }); W_.add('lion', 80, { cub: true, range: 3, state: 'walk' });
     const mum = W_.add('elephant', 110, { range: 12, water: AFR.HOLE[0] * TS - 40 });
     W_.add('elephant', 106, { mum, scale: 0.55 });
-    W_.add('hippo', 138, { range: 5 }); W_.add('hippo', 150, { range: 5, scale: 0.85 });
+    const banks = [(AFR.HOLE[0] - 4) * TS, (AFR.HOLE[1] + 4) * TS];
+    W_.add('hippo', 138, { range: 30, banks, state: 'swim' }); W_.add('hippo', 150, { range: 30, banks, state: 'swim', scale: 0.85 });
     for (const x of [131, 156, 154]) W_.add('flamingo', x, { range: 1 });
     W_.add('giraffe', AFR.ACACIAS[2] + 2, { range: 4 }); W_.add('giraffe', AFR.ACACIAS[3] + 2, { range: 5, scale: 0.85 });
-    for (let i = 0; i < 5; i++) W_.add('zebra', 254 + i * 6, { home: 268 * TS, range: 14, scale: i === 4 ? 0.6 : 1 });
+    for (let i = 0; i < 5; i++) W_.add('zebra', 254 + i * 6, { home: 268 * TS, range: 14, scale: i === 4 ? 0.45 : 0.7 });
     W_.add('rhino', 200, { range: 8 });
     W_.add('warthog', 222, { range: 6 }); W_.add('warthog', 226, { range: 6, scale: 0.7 });
     for (const x of AFR.MEERKATS) W_.add('meerkat', x, { range: 0, state: 'up' });

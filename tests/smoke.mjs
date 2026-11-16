@@ -1105,6 +1105,7 @@ async function stickDrag(page, dx, dy, ms) {
   check(await page.evaluate(() => fly('africa') && Game.away === 'africa' && outfit() === 'safari'), 'fly to Africa: land in a safari hat');
   check(await page.evaluate(() => ['lion', 'elephant', 'hippo', 'giraffe', 'zebra', 'rhino', 'meerkat', 'flamingo'].every(k => Wildlife.list.some(a => a.kind === k)) && World.get(140, SURF) === T.WATER && World.get(AFR.HOLE[0] - 2, SURF) !== T.WATER),
     'lions, elephants, hippos, giraffes, zebras, a rhino, meerkats and flamingos; a waterhole level with the ground');
+  check(await page.evaluate(() => { let land = false; for (let i = 0; i < 60 * 40 && !land; i++) { Game.update(1 / 60); Input.endFrame(); land = Wildlife.list.some(a => a.kind === 'hippo' && !Wildlife.overWater(a.x)); } return land; }), 'hippos climb out onto the bank on their stumpy legs');
   check(await page.evaluate(() => { const j = Vehicles.list.find(v => v.kind === 'safari'); into(j); j.body.x = 70 * TS; j.body.y = World.surfaceAt(70) * TS - 0.01; j.facing = 1; run(10); const s0 = Game.stars;
     run(1, { action: 1 }); run(5); return Wildlife.got.lion && Game.stars === s0 + 1 && Wildlife.card && Wildlife.card.kind === 'lion'; }), 'safari jeep: photograph a lion for a star');
   check(await page.evaluate(() => { Vehicles.exit(Player); run(5); Player.body.x = 66 * TS; Player.body.y = World.surfaceAt(66) * TS - 0.01; run(5); Player.roar(); run(5); return Wildlife.list.some(a => a.kind === 'lion' && a.state === 'roar'); }), 'roar at the lions: they roar back');
