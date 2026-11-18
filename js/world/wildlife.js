@@ -17,11 +17,14 @@ const WILD_ANIMALS = {
   orca: { word: 'ORCA', icon: '🐋', speed: 90, h: 40, water: true },
   whale: { word: 'WHALE', icon: '🐳', speed: 12, h: 40, water: true },
   skua: { word: 'SKUA', icon: '🐦', speed: 110, h: 30, fly: true },
+  // From the ice age, in Antarctica's hidden valley.
+  mammoth: { word: 'MAMMOTH', icon: '🦣', speed: 30, h: 170 },
+  sabretooth: { word: 'SABRE-TOOTH', icon: '🐯', speed: 45, h: 75 },
 };
 // What there is to photograph in each place, in the order the HUD shows them.
 const WILD_SETS = {
   africa: ['lion', 'elephant', 'hippo', 'giraffe', 'zebra', 'rhino', 'warthog', 'meerkat', 'flamingo'],
-  antarctica: ['penguin', 'chick', 'adelie', 'seal', 'orca', 'whale', 'skua'],
+  antarctica: ['penguin', 'chick', 'adelie', 'seal', 'orca', 'whale', 'skua', 'mammoth', 'sabretooth'],
 };
 
 const Wildlife = {
@@ -36,7 +39,7 @@ const Wildlife = {
   // Where its feet go: on the ground, or at the top of the water for swimmers and anything over the sea.
   groundY(x, a) {
     const tx = Math.floor(x / TS);
-    if (World.get(tx, SURF) === T.WATER || (a && WILD_ANIMALS[a.kind].water)) return SURF * TS + (a && a.kind === 'whale' ? 30 : a && a.kind === 'hippo' ? 34 : 12);
+    if (World.get(tx, SURF) === T.WATER || (a && WILD_ANIMALS[a.kind].water)) return SURF * TS + (a && (a.kind === 'whale' || a.kind === 'orca') ? 0 : a && a.kind === 'hippo' ? 34 : 12);
     return World.surfaceAt(tx) * TS;
   },
   overWater(x) { return World.get(Math.floor(x / TS), SURF) === T.WATER; },
@@ -123,11 +126,37 @@ const Wildlife = {
           a.y = a.y0 + Math.sin(a.t * 1.3) * 30;
           continue;
         case 'whale':
-          if (a.st <= 0) { a.st = rand(4, 7); a.spout = 1.6; Sound.noise(0.8, 0.08, 'highpass', 1500); }
-          a.spout = Math.max(0, (a.spout || 0) - dt);
+          // A humpback: rolls along the surface, blows, raises its tail to dive, and now and then breaches.
+          if (a.st <= 0) {
+            const was = a.state;
+            a.state = was === 'swim' || was === 'idle' ? pick(['blow', 'blow', 'fluke', 'breach']) : 'swim';
+            a.st = { swim: rand(4, 7), blow: 2, fluke: 3, breach: 2.2 }[a.state];
+            if (a.state === 'blow') Sound.noise(0.8, 0.08, 'highpass', 1500);
+            if (was === 'breach') this.splash(a.x, 30, 0.8);
+          }
+          if (a.state === 'breach' || a.state === 'fluke') speed = 4;
           break;
         case 'orca':
-          if (a.st <= 0) { a.state = a.state === 'leap' ? 'swim' : Math.random() < 0.3 ? 'leap' : 'swim'; a.st = a.state === 'leap' ? 1.2 : rand(3, 6); if (a.state === 'leap') Sound.noise(0.4, 0.1, 'lowpass', 800); }
+          // Killer whales porpoise along, rolling up through the surface; sometimes one leaps right out.
+          if (a.st <= 0) {
+            if (a.state === 'leap') this.splash(a.x + a.dir * 60, 22, 0.6);
+            a.state = a.state === 'leap' ? 'swim' : Math.random() < 0.3 ? 'leap' : 'swim'; a.st = a.state === 'leap' ? 1.4 : rand(3, 6);
+            if (a.state === 'leap') Sound.noise(0.4, 0.1, 'lowpass', 800);
+          }
+          break;
+        case 'mammoth':
+          if (a.mum) {   // a baby mammoth sticks close to a grown-up
+            const m = a.mum, goal = m.x - m.dir * 110;
+            a.dir = Math.sign(goal - a.x) || a.dir; speed = Math.abs(goal - a.x) > 20 ? 55 : 0; a.state = speed ? 'walk' : 'idle';
+            break;
+          }
+          if (a.st <= 0) { a.state = a.state === 'idle' ? 'walk' : 'idle'; a.st = rand(3, 7); if (a.state === 'walk') a.dir = pick([-1, 1]); }
+          if (a.state === 'idle') speed = 0;
+          break;
+        case 'sabretooth':
+          if (a.state === 'snarl') { speed = 0; if (a.st <= 0) { a.state = 'idle'; a.st = rand(3, 6); } break; }
+          if (a.st <= 0) { a.state = a.state === 'idle' ? 'walk' : 'idle'; a.st = rand(2, 5); if (a.state === 'walk') a.dir = pick([-1, 1]); }
+          if (a.state === 'idle') speed = 0;
           break;
         case 'seal':
           speed = 0;
@@ -163,6 +192,8 @@ const Wildlife = {
     if (a.state === 'home') { a.dir = -1; if (a.x < L.back) a.state = 'uphill'; return 55; }
     return 0;
   },
+  // A big splash where something crashed back into the sea.
+  splash(x, n, k) { Fx.burst(x, SURF * TS, n, { speed: 220 * k, up: 380 * k, g: 700, life: 1.1, r: 9, color: ['#a5d8ff', '#e7f5ff', '#fff'] }); Sound.noise(0.6, 0.3 * k, 'lowpass', 600); },
   drop(x, y, dir) { Fx.add({ x, y, vx: dir * rand(60, 160), vy: rand(-260, -120), g: 700, life: 1, r: 5, color: 'rgba(116,192,252,0.9)' }); },
 
   // You roared: lions roar right back, zebras bolt, penguins flap and squawk.
@@ -173,6 +204,8 @@ const Wildlife = {
       if (a.kind === 'lion') { a.state = 'roar'; a.st = 1.4; lions++; Pow.add(a.x, a.y - 100, 'ROAR!'); }
       else if (a.kind === 'zebra') { a.state = 'run'; a.st = 2.5; a.dir = Math.sign(a.x - x) || 1; }
       else if (a.kind === 'penguin' || a.kind === 'adelie' || a.kind === 'chick') { a.flap = 1; }
+      else if (a.kind === 'mammoth' && !a.trumpet) { a.trumpet = true; setTimeout(() => { a.trumpet = false; Pow.add(a.x, a.y - 200, 'TOOT!'); Sound.tone(300, 0.7, 'sawtooth', 0.06, 560); }, 400); }
+      else if (a.kind === 'sabretooth') { a.state = 'snarl'; a.st = 1.4; Pow.add(a.x, a.y - 100, 'GRR!'); Sound.noise(0.6, 0.2, 'lowpass', 300); }
     }
     if (lions) setTimeout(() => { Sound.roar(); Sound.noise(1, 0.25, 'lowpass', 180); }, 500);
   },
@@ -218,7 +251,7 @@ const Wildlife = {
       drawAnimal(c, a);
       c.restore();
       // In the water: the part below the surface is seen through the water.
-      if (this.overWater(a.x) && !WILD_ANIMALS[a.kind].fly) for (let tx = Math.floor((a.x - 110 * a.scale) / TS); tx <= Math.floor((a.x + 110 * a.scale) / TS); tx++) wet.add(tx);
+      if (this.overWater(a.x) && !WILD_ANIMALS[a.kind].fly) { const span = (a.kind === 'whale' ? 200 : a.kind === 'orca' ? 130 : 110) * a.scale; for (let tx = Math.floor((a.x - span) / TS); tx <= Math.floor((a.x + span) / TS); tx++) wet.add(tx); }
     }
     c.fillStyle = 'rgba(64,156,255,0.7)';
     for (const tx of wet) for (let ty = SURF; World.get(tx, ty) === T.WATER; ty++) c.fillRect(tx * TS, ty * TS + (ty === SURF ? 4 : 0), TS, ty === SURF ? TS - 4 : TS);
@@ -452,26 +485,93 @@ function drawAnimal(c, a) {
       break;
     }
     case 'orca': {
+      // A killer whale. Origin is the water surface; it rolls up through it, or leaps right out.
+      const bull = a.bull;
       if (st === 'leap') {
-        const k = 1 - a.st / 1.2, h = Math.sin(k * Math.PI) * 90;
-        c.save(); c.translate(0, -h); c.rotate((k - 0.5) * 1.6);
-        ell(c, 0, 0, 56, 20, '#212529'); ell(c, 10, 6, 34, 10, '#fff', 0); ell(c, 30, -8, 8, 5, '#fff', 0);
-        poly(c, [-6, -16, 4, -48, 14, -16], '#212529', 2.5); poly(c, [-56, 0, -76, -14, -72, 12], '#212529', 2.5);
-        c.restore();
-      } else {
-        poly(c, [-10, 0, 6, -52 + Math.sin(t * 2) * 3, 18, 0], '#212529', 3);   // tall black fin
-        ell(c, 4, 2, 44, 8, '#212529');
-      }
+        const k = 1 - Math.max(0, a.st) / 1.4, h = Math.sin(k * Math.PI) * 120;
+        c.translate(0, -h); c.rotate((k - 0.5) * 1.4);
+      } else c.translate(0, 26 - Math.max(0, Math.sin(t * 1.6)) * 30);
+      limb(c, [-60, 0, -92, -2], 12, '#212529');
+      poly(c, [-90, -2, -112, -16, -104, -2, -112, 12], '#212529', 2.5);   // notched tail flukes
+      c.beginPath(); c.moveTo(-70, 0); c.quadraticCurveTo(-40, -24, 30, -20); c.quadraticCurveTo(76, -14, 80, 2); c.quadraticCurveTo(60, 20, 0, 20); c.quadraticCurveTo(-50, 18, -70, 0); c.closePath();
+      fillStroke(c, '#212529', 3);
+      c.save(); c.clip();
+      ell(c, 20, 18, 52, 10, '#f8f9fa', 0);   // white belly
+      ell(c, -30, 10, 20, 7, '#f8f9fa', 0);   // white flank sweep
+      ell(c, 46, -10, 11, 5, '#f8f9fa', 0);   // eye patch
+      ell(c, -18, -18, 16, 6, '#adb5bd', 0);   // grey saddle
+      c.restore();
+      poly(c, [-14, -20, 0, bull ? -96 : -60, 14, -20], '#212529', 3);   // dorsal fin, the bull's is very tall
+      c.save(); c.translate(36, 14); c.rotate(0.5); ell(c, 0, 8, 7, 14, '#212529', 2); c.restore();   // flipper
+      ell(c, 54, -4, 2, 2, '#495057', 0);
       break;
     }
     case 'whale': {
-      ell(c, 0, 4, 90, 18, '#495057');
-      ell(c, -60, 0, 8, 5, '#343a40', 0);
-      if (a.spout > 0) {
-        const k = Math.min(1, a.spout);
-        for (let i = 0; i < 7; i++) ell(c, 30 + (i - 3) * 8 * k, -30 - 60 * k + Math.abs(i - 3) * 10, 10, 10, 'rgba(231,245,255,0.85)', 0);
-        limb(c, [30, -6, 30, -40 * k], 6, 'rgba(231,245,255,0.85)', 0);
+      // A humpback whale: long and dark, knobbly head, long white-edged flippers.
+      const blow = st === 'blow' ? Math.min(1, (2 - a.st) * 2) * Math.min(1, a.st) : 0;
+      if (st === 'fluke') {
+        // Tail up high as it dives, white underneath, water streaming off.
+        const k = Math.sin(Math.min(1, (3 - a.st) / 3) * Math.PI);
+        c.save(); c.translate(-30, 10 - k * 80);
+        limb(c, [0, 80, 0, 10], 22, '#3d4a5c');
+        poly(c, [0, 10, -60, -20, -50, 0, 0, 4, 50, 0, 60, -20], '#3d4a5c', 3);
+        poly(c, [-4, 6, -48, -10, 0, 0, 48, -10, 4, 6], '#f1f3f5', 0);
+        for (let i = 0; i < 4; i++) ell(c, -40 + i * 26, ((t * 80 + i * 20) % 60), 3, 5, 'rgba(231,245,255,0.8)', 0);
+        c.restore();
+        break;
       }
+      if (st === 'breach') {
+        const k = 1 - Math.max(0, a.st) / 2.2, h = Math.sin(k * Math.PI) * 140;
+        c.translate(40, 40 - h); c.rotate(-1.1 + k * 0.9);
+      } else c.translate(0, st === 'blow' ? 10 : 34 - Math.max(0, Math.sin(t * 0.9)) * 22);   // up at the surface to breathe
+      limb(c, [-120, 0, -160, -4], 16, '#3d4a5c');
+      poly(c, [-158, -4, -190, -24, -178, -4, -190, 16], '#3d4a5c', 3);
+      c.beginPath(); c.moveTo(-130, 0); c.quadraticCurveTo(-60, -34, 60, -28); c.quadraticCurveTo(140, -20, 150, 4); c.quadraticCurveTo(120, 30, 20, 30); c.quadraticCurveTo(-90, 26, -130, 0); c.closePath();
+      fillStroke(c, '#3d4a5c', 3);
+      c.save(); c.clip(); for (let i = 0; i < 6; i++) limb(c, [30 + i * 18, 22, 46 + i * 18, 30], 2, '#adb5bd', 0); c.restore();   // throat grooves
+      for (const [bx, by] of [[100, -20], [116, -16], [128, -10], [108, -12]]) ell(c, bx, by, 3.5, 3, '#2b3442', 0);   // knobbly bumps
+      poly(c, [-56, -26, -44, -40, -30, -28], '#3d4a5c', 2.5);   // small dorsal hump
+      c.save(); c.translate(70, 20); c.rotate(0.45); ell(c, -30, 6, 46, 8, '#e9ecef', 3); c.restore();   // long white-edged flipper
+      ell(c, 112, 2, 2.5, 2.5, '#f8f9fa', 0);
+      if (blow > 0) {
+        // The blow: a bushy V of mist from the blowhole.
+        for (let i = 0; i < 10; i++) { const sx = 60 + (i % 2 ? 1 : -1) * (6 + i * 5) * blow; ell(c, sx, -34 - i * 14 * blow, 9 + i * 1.5, 9 + i * 1.5, `rgba(255,255,255,${0.95 - i * 0.07})`, 0); }
+      }
+      break;
+    }
+    case 'mammoth': {
+      // Woolly mammoth: shaggy brown coat, high domed head, little ear, long curling tusks.
+      const baby = a.baby;
+      limb(c, [-62, -100, -72, -70], 4, '#5d4037'); ell(c, -72, -66, 5, 7, '#3e2723', 0);
+      legs([-40, -16, 22, 44], -66, 66, 24, '#5d4037');
+      ell(c, 0, -100, 70, 50, '#6d4c41');
+      c.fillStyle = '#6d4c41'; c.strokeStyle = OUT; c.lineWidth = 3; c.beginPath(); c.moveTo(-62, -82);
+      for (let x = -62; x <= 56; x += 12) { c.lineTo(x + 6, -54 + (x % 24 ? 6 : 0)); c.lineTo(x + 12, -74); }
+      c.closePath(); c.fill();   // shaggy fringe of fur hanging down
+      ell(c, 64, -132, 30, 32, '#6d4c41');
+      ell(c, 54, -160, 22, 16, '#6d4c41');   // the high dome
+      ell(c, 44, -128, 10, 13, '#5d4037', 2.5);   // small furry ear
+      limb(c, [86, -120, 98, -80, 94, -30 + Math.sin(t * 2) * 4], 12, '#6d4c41');   // trunk
+      if (!baby) { c.strokeStyle = OUT; c.lineWidth = 9; c.beginPath(); c.moveTo(82, -110); c.quadraticCurveTo(150, -70, 128, -140); c.stroke(); c.strokeStyle = '#f3ead2'; c.lineWidth = 6; c.stroke(); }
+      drawEye(c, 72, -140, 4, false);
+      for (let i = 0; i < 6; i++) limb(c, [-40 + i * 16, -136, -44 + i * 16, -126], 2, '#4e342e', 0);   // shaggy texture
+      break;
+    }
+    case 'sabretooth': {
+      // Smilodon: a stocky tan cat with a stubby tail and two huge fangs.
+      const snarl = st === 'snarl';
+      limb(c, [-46, -46, -56, -40], 7, '#c9a36b');
+      legs([-30, -14, 18, 32], -36, 36, 13, '#b8925c');
+      ell(c, 0, -40, 48, 24, '#c9a36b');
+      for (const [px, py] of [[-20, -48], [0, -54], [-30, -38], [14, -44]]) ell(c, px, py, 5, 3, '#a07a46', 0);
+      const hx = 48, hy = -56;
+      ell(c, hx - 10, hy - 14, 6, 6, '#b8925c', 2);
+      ell(c, hx, hy, 19, 17, '#c9a36b');
+      ell(c, hx + 14, hy + 6, 10, 7, '#e3c79a', 2);
+      poly(c, [hx + 20, hy - 1, hx + 26, hy - 1, hx + 23, hy + 3], '#5c3d1e', 1.5);
+      if (snarl) ell(c, hx + 16, hy + 14, 8, 6, '#5c1f1f', 2);
+      for (const fx of [hx + 10, hx + 18]) poly(c, [fx, hy + 8, fx + 2, hy + (snarl ? 34 : 30), fx + 5, hy + 8], '#fff8e7', 2);   // the sabre teeth
+      drawEye(c, hx + 6, hy - 6, 4, false);
       break;
     }
     case 'skua': {

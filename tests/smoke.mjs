@@ -1116,6 +1116,17 @@ async function stickDrag(page, dx, dy, ms) {
     const walk = go({ right: 1 }), slide = go({ right: 1, down: 1 }); return slide > walk * 1.4; }), 'hold down on the snow: belly-slide faster than walking');
   check(await page.evaluate(() => { const p = Wildlife.list.find(a => a.kind === 'penguin' && !a.slider); Player.body.x = p.x - 60; Player.body.y = World.surfaceAt(Math.floor(p.x / TS)) * TS - 0.01; run(5); run(60, { right: 1 }); run(90); return p.follow && Math.abs(p.x - Player.body.x) < 300; }), 'walk past a penguin: it follows you');
   check(await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'snowmobile'); into(v); const x0 = v.body.x; run(60, { right: 1 }); return v.body.x - x0 > 4 * TS; }), 'the snowmobile zooms across the snow');
+  check(await page.evaluate(() => World.limitW === ANT.W && ANT.W > 360 && Wildlife.list.filter(a => a.kind === 'mammoth').length === 3 && Wildlife.list.some(a => a.kind === 'sabretooth')
+    && World.props.filter(p => p.type === 'an_frozen').length === 2 && !Wildlife.list.some(a => (a.kind === 'mammoth' || a.kind === 'sabretooth') && a.x < ANT.SEA[1] * TS)), 'a small hidden valley past the sea: a mammoth family and a sabre-tooth, two more frozen in ice');
+  check(await page.evaluate(() => { const p = World.props.find(p => p.type === 'an_frozen'), s0 = Game.stars, n0 = Wildlife.list.length;
+    for (const i of p.tiles) World.set(i % World.w, Math.floor(i / World.w), T.AIR); run(40); return Game.stars >= s0 + 3 && Wildlife.list.length === n0 + 1 && !World.props.includes(p); }), 'dig the ice off a frozen animal: it thaws out and walks off');
+  check(await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'hagglunds'); into(v); v.body.x = 214 * TS; v.body.y = World.surfaceAt(214) * TS - 0.01; let wet = false;
+    for (let i = 0; i < 60 * 30 && v.body.x < (ANT.SEA[1] + 3) * TS; i++) { run(1, { right: 1 }); if (v.floating) wet = true; } return wet && v.body.x >= (ANT.SEA[1] + 3) * TS && !v.floating; }), 'the Hägglunds floats across the sea and drives up into the valley');
+  check(await page.evaluate(() => { const v = Vehicles.list.find(v => v.kind === 'icebreaker'); into(v); const ice = () => ANT.FLOES.reduce((n, [a, b]) => n + [...Array(b - a)].filter((_, i) => World.get(a + i, SURF) === T.ICE).length, 0), i0 = ice();
+    for (let i = 0; i < 60 * 12; i++) run(1, { right: 1 }); return ice() < i0; }), 'the icebreaker crunches through the floes');
+  check(await page.evaluate(() => { const h = Vehicles.list.find(v => v.kind === 'helicopter'); if (!h) return false; into(h); const y0 = h.body.y; run(60, { up: 1 }); return h.body.y < y0 - 2 * TS; }), 'a research helicopter by the station flies');
+  check(await page.evaluate(() => { for (const a of Wildlife.list) { if (a.kind === 'orca') { a.state = 'leap'; a.st = 1.4; } if (a.kind === 'whale') { a.state = 'breach'; a.st = 2.2; } } run(60 * 3);
+    return Wildlife.list.filter(a => a.kind === 'orca' || a.kind === 'whale').every(a => Number.isFinite(a.x) && Number.isFinite(a.y)); }), 'orcas leap and the humpback breaches with a splash');
   check(await page.evaluate(() => fly() && !Game.away && World.get(20, 30) === T.BRICK), 'fly home from Antarctica');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();

@@ -30,6 +30,16 @@ const VEHICLE_FACTS = {
     'On safari people shoot animals with cameras, not guns. Photos are the best trophies!',
     'Safari is a Swahili word. It means a journey.',
   ],
+  hagglunds: [
+    'A Hägglunds has two cabins joined in the middle, so it bends like a caterpillar over bumpy snow.',
+    'It can float! Scientists drive it straight into the water and across.',
+    'Its wide rubber tracks spread its weight, so it does not sink into soft snow.',
+  ],
+  icebreaker: [
+    'An icebreaker has a very strong, rounded bow. It rides up onto the ice and breaks it with its weight.',
+    'Icebreakers carry scientists and supplies to Antarctica.',
+    'Many icebreakers have a helideck, so a helicopter can land on the ship.',
+  ],
   snowmobile: [
     'A snowmobile has skis at the front for steering and a rubber track at the back to push it along.',
     'Scientists in Antarctica ride snowmobiles to get about on the ice.',

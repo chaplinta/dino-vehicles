@@ -269,6 +269,7 @@ await scene('far trips', () => {
     G.release();
     const v = Vehicles.list.find(v => v.kind === ride);
     if (!v) G.issue('missing ' + ride); else { into(v); G.run(60 * 10, G.masher(mulberry32(ride.length), { action: 0.2 })); G.release(); }
+    if (dest === 'antarctica') for (const k of ['hagglunds', 'icebreaker']) { const w = Vehicles.list.find(v => v.kind === k); if (!w) { G.issue('missing ' + k); continue; } into(w); G.run(60 * 8, G.masher(mulberry32(k.length), { action: 0.2 })); G.release(); }
     if (Wildlife.list.some(a => !Number.isFinite(a.x) || !Number.isFinite(a.y))) G.issue('an animal went NaN in ' + dest);
     // A new world in the middle of the trip lands you home with nothing left behind.
     Game.resetWorld(); G.run(60);

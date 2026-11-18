@@ -50,3 +50,75 @@ defVehicle('snowmobile', {
     if (lit) { c.fillStyle = 'rgba(255,250,200,0.5)'; c.beginPath(); c.moveTo(52, -30); c.lineTo(130, -46); c.lineTo(130, -12); c.closePath(); c.fill(); }
   },
 });
+
+// ---------- Hägglunds ----------
+// The two-cabin tracked carrier scientists use in Antarctica. It floats, so it drives straight into the sea and paddles across.
+defVehicle('hagglunds', {
+  name: 'Hägglunds', say: 'Hägglunds! It can even swim!', icon: '🟠', w: 150, h: 72, speed: 220, draft: 30, noSave: true, exhaust: [-74, -40],
+  init(v) { v.s.flash = 0; },
+  move(v, dt, inp, dir) {
+    const b = v.body;
+    if (waterSurfaceY(b.x, b.y) !== null) boatMove(v, dt, inp, dir, 260);
+    else {
+      b.vx = lerp(b.vx, dir * this.speed, Math.min(1, dt * (dir ? 2.5 : 5)));
+      if (dir) v.facing = dir;
+      moveBody(b, dt, { step: 1 });
+      vehicleHop(v, dir, dt);
+      v.floating = false;
+    }
+    v.wheel += b.vx * dt / 14;
+  },
+  act(v, dt, inp) { flashToot(v, inp, dt); },
+  draw(c, v) {
+    const lit = v.s.flash > 0 && Math.floor(v.s.flash * 8) % 2;
+    // Two orange cabins on rubber tracks, joined in the middle.
+    for (const [x0, w] of [[-74, 66], [6, 70]]) {
+      rbox(c, x0, -24, w, 18, 9, '#343a40', 3);
+      for (let i = 0; i < 4; i++) ell(c, x0 + 10 + i * (w - 20) / 3, -15, 5, 5, '#868e96', 2);
+      rbox(c, x0 + 2, -66, w - 4, 44, 8, '#ff922b', 4);
+    }
+    rbox(c, -10, -40, 18, 12, 3, '#495057', 2);   // the joint
+    for (const x of [-64, -40]) rbox(c, x, -58, 18, 16, 4, '#bdf3ff', 2);
+    c.save(); rbox(c, 40, -60, 30, 22, 5, '#bdf3ff', 2); c.clip(); v.drawDriver(c, 54, -36, 0.3); c.restore();
+    rbox(c, 40, -60, 30, 22, 5, null, 2);
+    rbox(c, 18, -76, 10, 10, 3, lit ? '#ffd43b' : '#e8590c', 2);   // beacon
+    if (lit) { c.fillStyle = 'rgba(255,212,59,0.35)'; c.beginPath(); c.arc(23, -72, 22, 0, TAU); c.fill(); }
+  },
+});
+
+// ---------- Icebreaker ----------
+// A red research ship with a strong bow that smashes through the sea ice.
+defVehicle('icebreaker', {
+  name: 'Icebreaker', say: 'The icebreaker! Crunch through the ice!', icon: '📯', w: 240, h: 110, speed: 300, draft: 46, horn: 'boat', noSave: true, look: 260, camY: -60,
+  move(v, dt, inp, dir) { boatMove(v, dt, inp, dir, this.speed); },
+  act(v, dt, inp) {
+    const b = v.body;
+    if (inp.actionP) v.hornSound();
+    // Floe ice at the bow breaks up.
+    for (let k = -1; k <= 2; k++) {
+    const tx = Math.floor(v.frontX(k * TS) / TS);
+    if (World.get(tx, SURF) === T.ICE && World.get(tx, SURF + 1) === T.WATER) {
+      World.set(tx, SURF, T.WATER);
+      Fx.burst(tx * TS + 16, SURF * TS, 12, { speed: 160, up: 200, g: 600, life: 0.9, r: 7, color: ['#e7f5ff', '#a5d8ff', '#fff'], shape: 'rect' });
+      Sound.noise(0.25, 0.25, 'bandpass', 1200);
+      Pow.add(tx * TS + 16, SURF * TS - 60, 'CRUNCH!');
+    }
+    }
+    if (v.driver && Math.random() < 0.15) Fx.add({ x: b.x - v.facing * 10, y: b.y - 150, vx: rand(-10, 10), vy: -40, life: 1.4, r: 10, color: 'rgba(230,230,230,0.7)', shape: 'grow' });
+  },
+  draw(c, v) {
+    // Hull: red with a raised ice-breaking bow.
+    c.beginPath(); c.moveTo(-120, -64); c.lineTo(-112, -6); c.quadraticCurveTo(0, 10, 100, -6); c.lineTo(122, -60); c.closePath();
+    fillStroke(c, '#e03131', 5);
+    c.fillStyle = '#fff'; c.fillRect(-110, -36, 216, 5);
+    // White superstructure, bridge windows, a funnel and a helideck at the back.
+    rbox(c, -40, -118, 90, 56, 6, '#f8f9fa', 4);
+    rbox(c, -20, -142, 60, 26, 5, '#f8f9fa', 4);
+    for (let i = 0; i < 4; i++) rbox(c, -14 + i * 13, -136, 9, 12, 2, '#74c0fc', 2);
+    c.save(); rbox(c, -30, -104, 70, 22, 4, '#bdf3ff', 2); c.clip(); v.drawDriver(c, 20, -84, 0.3); c.restore();
+    rbox(c, -76, -126, 22, 58, 4, '#e03131', 3); c.fillStyle = '#212529'; c.fillRect(-76, -126, 22, 8);
+    rbox(c, -118, -72, 60, 8, 3, '#495057', 3); c.font = `800 12px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffd43b';
+    vehicleText(c, v, 'H', -88, -68);
+    limb(c, [10, -142, 10, -170], 3, '#495057'); ell(c, 10, -172, 6, 4, '#ced4da', 2);
+  },
+});
