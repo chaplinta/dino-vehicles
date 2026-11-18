@@ -262,7 +262,8 @@ async function stickDrag(page, dx, dy, ms) {
     }, type);
     await page.waitForTimeout(100);
     await page.keyboard.press('Space');
-    await page.waitForTimeout(1000);
+    // Step a second of game time ourselves: on a busy machine a second of wall-clock time is less.
+    await page.evaluate(() => { for (let i = 0; i < 60; i++) { Game.update(1 / 60); Input.endFrame(); } });
     const after = await page.evaluate(id => { const n = NPCs.list.find(n => n.id === id); return { x: n.body.x, scared: n.scaredT > 0 }; }, r.id);
     check(after.scared && after.x - r.x > 64, `${type}: ${await page.evaluate(t => DINO_TYPES[t].attack, type)} sends the dino running (${Math.round((after.x - r.x) / 32)} tiles)`);
   }
