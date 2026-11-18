@@ -1127,6 +1127,12 @@ async function stickDrag(page, dx, dy, ms) {
   check(await page.evaluate(() => { const h = Vehicles.list.find(v => v.kind === 'helicopter'); if (!h) return false; into(h); const y0 = h.body.y; run(60, { up: 1 }); return h.body.y < y0 - 2 * TS; }), 'a research helicopter by the station flies');
   check(await page.evaluate(() => { for (const a of Wildlife.list) { if (a.kind === 'orca') { a.state = 'leap'; a.st = 1.4; } if (a.kind === 'whale') { a.state = 'breach'; a.st = 2.2; } } run(60 * 3);
     return Wildlife.list.filter(a => a.kind === 'orca' || a.kind === 'whale').every(a => Number.isFinite(a.x) && Number.isFinite(a.y)); }), 'orcas leap and the humpback breaches with a splash');
+  check(await page.evaluate(() => { const q = Wildlife.list.find(a => a.kind === 'squirrel'); if (!q) return false;
+    const h = Player.vehicle; if (h) { h.body.y = World.surfaceAt(Math.floor(h.body.x / TS)) * TS - 0.01; h.body.vy = 0; run(30); Vehicles.exit(Player); }   // land the helicopter first Player.body.x = q.x - 600; run(5);
+    q.state = 'toss'; q.st = 4; let bonk = false; for (let i = 0; i < 60 * 3 && !bonk; i++) { run(1); Player.body.x = q.x - 600; bonk = q.state === 'dizzy'; }
+    Player.body.x = q.x - 300; Player.roar(); run(2); const flew = !q.ac.held && q.state === 'chase';
+    let got = false; for (let i = 0; i < 60 * 14 && !got; i++) { run(1); Player.body.x = q.x - 600; got = q.ac.held && q.state === 'hold'; }
+    return bonk && flew && got; }), 'the little squirrel tosses its acorn and gets bonked; roar and it chases the acorn and grabs it back');
   check(await page.evaluate(() => fly() && !Game.away && World.get(20, 30) === T.BRICK), 'fly home from Antarctica');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();

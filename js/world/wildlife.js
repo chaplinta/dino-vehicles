@@ -20,11 +20,12 @@ const WILD_ANIMALS = {
   // From the ice age, in Antarctica's hidden valley.
   mammoth: { word: 'MAMMOTH', icon: '🦣', speed: 30, h: 170 },
   sabretooth: { word: 'SABRE-TOOTH', icon: '🐯', speed: 45, h: 75 },
+  squirrel: { word: 'SQUIRREL', icon: '🌰', speed: 0, h: 60 },
 };
 // What there is to photograph in each place, in the order the HUD shows them.
 const WILD_SETS = {
   africa: ['lion', 'elephant', 'hippo', 'giraffe', 'zebra', 'rhino', 'warthog', 'meerkat', 'flamingo'],
-  antarctica: ['penguin', 'chick', 'adelie', 'seal', 'orca', 'whale', 'skua', 'mammoth', 'sabretooth'],
+  antarctica: ['penguin', 'chick', 'adelie', 'seal', 'orca', 'whale', 'skua', 'mammoth', 'sabretooth', 'squirrel'],
 };
 
 const Wildlife = {
@@ -153,6 +154,9 @@ const Wildlife = {
           if (a.st <= 0) { a.state = a.state === 'idle' ? 'walk' : 'idle'; a.st = rand(3, 7); if (a.state === 'walk') a.dir = pick([-1, 1]); }
           if (a.state === 'idle') speed = 0;
           break;
+        case 'squirrel':
+          speed = this.squirrel(a, dt);
+          break;
         case 'sabretooth':
           if (a.state === 'snarl') { speed = 0; if (a.st <= 0) { a.state = 'idle'; a.st = rand(3, 6); } break; }
           if (a.st <= 0) { a.state = a.state === 'idle' ? 'walk' : 'idle'; a.st = rand(2, 5); if (a.state === 'walk') a.dir = pick([-1, 1]); }
@@ -175,7 +179,7 @@ const Wildlife = {
       if (def.water && !this.overWater(nx)) { a.dir = -a.dir; nx = a.x; }
       a.x = clamp(nx, 3 * TS, ((World.limitW || WORLD_W) - 3) * TS);
       a.y = lerp(a.y, this.groundY(a.x, a), Math.min(1, dt * 12));
-      if (a.kind === 'adelie' && speed) a.hop = Math.abs(Math.sin(a.t * 9)) * 8; else a.hop = 0;
+      if (a.kind === 'adelie' && speed) a.hop = Math.abs(Math.sin(a.t * 9)) * 8; else if (a.kind !== 'squirrel') a.hop = 0;
     }
   },
   // A tobogganing penguin: up the hill, belly-slide down into the sea, swim back, waddle home, again.
@@ -192,6 +196,69 @@ const Wildlife = {
     if (a.state === 'home') { a.dir = -1; if (a.x < L.back) a.state = 'uphill'; return 55; }
     return 0;
   },
+  // The little ice age squirrel and its precious acorn: a string of slapstick gags.
+  squirrel(a, dt) {
+    const ac = a.ac || (a.ac = { x: a.x, y: a.y, vx: 0, vy: 0, held: true, spin: 0 });
+    const pdx = Player.cx - a.x, pnear = Math.abs(pdx) < 170 && Math.abs(Player.cy - a.y) < 160;
+    const lo = a.home - (a.range - 1) * TS, hi = a.home + (a.range - 1) * TS;
+    a.crack = Math.max(0, (a.crack || 0) - dt * 0.3);
+    // A loose acorn bounces, rolls, and slides a long way on ice.
+    if (!ac.held) {
+      ac.vy += 1400 * dt; ac.x += ac.vx * dt; ac.y += ac.vy * dt; ac.spin += ac.vx * dt / 8;
+      const gy = this.groundY(ac.x);
+      if (ac.y > gy) { ac.y = gy; ac.vy = Math.abs(ac.vy) > 150 ? -ac.vy * 0.45 : 0; ac.vx *= World.get(Math.floor(ac.x / TS), Math.floor(gy / TS)) === T.ICE ? 0.995 : 0.95; }
+      if (ac.x < lo || ac.x > hi) { ac.x = clamp(ac.x, lo, hi); ac.vx = -ac.vx * 0.5; }
+    }
+    const launch = (vx, vy) => { ac.held = false; ac.vx = vx; ac.vy = vy; };
+    const grab = () => { ac.held = true; a.state = 'hold'; a.st = rand(2, 4); Pow.add(a.x, a.y - 90, 'MINE!'); Sound.tone(1200, 0.1, 'square', 0.04, 1600); };
+    a.hop = 0;
+    switch (a.state) {
+      case 'hide':   // you're close: hides the acorn behind its back and shivers
+        a.dir = Math.sign(pdx) || a.dir;
+        if (Math.abs(pdx) < 80) { a.state = 'flee'; a.st = 1.6; a.dir = -Math.sign(pdx) || 1; Sound.tone(1500, 0.08, 'square', 0.04, 2000); }
+        else if (!pnear) { a.state = 'hold'; a.st = rand(1, 3); }
+        return 0;
+      case 'flee':
+        a.hop = Math.abs(Math.sin(a.t * 16)) * 8;
+        if (a.st <= 0) { a.state = 'hold'; a.st = 2; }
+        return 230;
+      case 'bury':   // digs a hole, pokes the acorn in... and the ice cracks
+        if (Math.random() < 0.3) Fx.add({ x: a.x + a.dir * 14, y: a.y - 4, vx: -a.dir * rand(40, 120), vy: rand(-180, -80), g: 600, life: 0.6, r: 4, color: '#f8f9fa' });
+        if (a.st <= 0) { a.state = 'crack'; a.st = 1.2; a.crack = 1; Pow.add(a.x, a.y - 80, 'CRACK!'); Sound.noise(0.5, 0.3, 'bandpass', 900); }
+        return 0;
+      case 'crack':
+        if (a.st <= 0) { launch(pick([-1, 1]) * rand(160, 280), -560); a.state = 'chase'; a.st = 10; a.hop = 0; Pow.add(a.x, a.y - 100, 'EEK!'); }
+        return 0;
+      case 'toss':   // throws it up for joy... and it lands on its head
+        if (ac.held) launch(0, -720);
+        if (ac.vy > 0 && ac.y > a.y - 50) { ac.held = true; a.state = 'dizzy'; a.st = 1.8; Pow.add(a.x, a.y - 90, 'BONK!'); Sound.bonk(); }
+        return 0;
+      case 'dizzy':
+        if (a.st <= 0) { a.state = 'hold'; a.st = 2; }
+        return 0;
+      case 'scamper':   // a happy little run about, acorn hugged tight
+        a.hop = Math.abs(Math.sin(a.t * 14)) * 6;
+        if (Math.random() < dt * 1.5) a.dir = -a.dir;
+        if (a.st <= 0) { a.state = 'hold'; a.st = 2; }
+        return 150;
+      case 'slip':   // ran onto the ice: whoosh, on its tummy, right past the acorn
+        if (a.st <= 0) { a.state = 'chase'; a.st = 8; }
+        return 320 * Math.max(0.2, a.st);
+      case 'chase': {
+        a.dir = Math.sign(ac.x - a.x) || a.dir; a.hop = Math.abs(Math.sin(a.t * 18)) * 7;
+        const under = World.get(Math.floor(a.x / TS), Math.floor((a.y + 2) / TS));
+        if (under === T.ICE && Math.random() < dt * 2) { a.state = 'slip'; a.st = 1.2; Sound.tone(700, 0.5, 'sine', 0.05, 300); return 320; }
+        if (Math.abs(ac.x - a.x) < 22 && ac.vy === 0) grab();
+        else if (a.st <= 0) { ac.x = a.x; ac.y = a.y; grab(); }
+        return 240;
+      }
+      default:   // 'hold' or 'idle': hugs the acorn and looks about, then tries something
+        ac.held = true;
+        if (pnear) { a.state = 'hide'; return 0; }
+        if (a.st <= 0) { a.state = pick(['bury', 'bury', 'toss', 'scamper']); a.st = a.state === 'bury' ? 1.8 : a.state === 'scamper' ? 2.5 : 4; }
+        return 0;
+    }
+  },
   // A big splash where something crashed back into the sea.
   splash(x, n, k) { Fx.burst(x, SURF * TS, n, { speed: 220 * k, up: 380 * k, g: 700, life: 1.1, r: 9, color: ['#a5d8ff', '#e7f5ff', '#fff'] }); Sound.noise(0.6, 0.3 * k, 'lowpass', 600); },
   drop(x, y, dir) { Fx.add({ x, y, vx: dir * rand(60, 160), vy: rand(-260, -120), g: 700, life: 1, r: 5, color: 'rgba(116,192,252,0.9)' }); },
@@ -205,6 +272,7 @@ const Wildlife = {
       else if (a.kind === 'zebra') { a.state = 'run'; a.st = 2.5; a.dir = Math.sign(a.x - x) || 1; }
       else if (a.kind === 'penguin' || a.kind === 'adelie' || a.kind === 'chick') { a.flap = 1; }
       else if (a.kind === 'mammoth' && !a.trumpet) { a.trumpet = true; setTimeout(() => { a.trumpet = false; Pow.add(a.x, a.y - 200, 'TOOT!'); Sound.tone(300, 0.7, 'sawtooth', 0.06, 560); }, 400); }
+      else if (a.kind === 'squirrel' && a.ac) { a.ac.held = false; a.ac.vx = pick([-1, 1]) * 240; a.ac.vy = -600; a.state = 'chase'; a.st = 10; Pow.add(a.x, a.y - 90, 'EEK!'); }
       else if (a.kind === 'sabretooth') { a.state = 'snarl'; a.st = 1.4; Pow.add(a.x, a.y - 100, 'GRR!'); Sound.noise(0.6, 0.2, 'lowpass', 300); }
     }
     if (lions) setTimeout(() => { Sound.roar(); Sound.noise(1, 0.25, 'lowpass', 180); }, 500);
@@ -248,8 +316,22 @@ const Wildlife = {
       c.save(); c.translate(a.x, a.y - (a.hop || 0));
       if (a.dir < 0) c.scale(-1, 1);
       c.scale(a.scale, a.scale);
+      if (a.kind === 'squirrel' && a.ac) {
+        const ac = a.ac;
+        if (ac.held) { ac.x = a.x + (a.state === 'hide' ? -a.dir * 16 : a.dir * 12); ac.y = a.y - (a.hop || 0) - (a.state === 'dizzy' ? 58 : 18); ac.vx = ac.vy = 0; }
+        if (a.state === 'hide') { c.restore(); drawAcorn(c, ac.x, ac.y, 0); c.save(); c.translate(a.x, a.y - (a.hop || 0)); if (a.dir < 0) c.scale(-1, 1); c.scale(a.scale, a.scale); }
+      }
       drawAnimal(c, a);
       c.restore();
+      if (a.kind === 'squirrel' && a.ac) {
+        if (a.state !== 'hide') drawAcorn(c, a.ac.x, a.ac.y, a.ac.spin);
+        if (a.crack > 0) {   // a crack zigzagging across the ice
+          c.strokeStyle = `rgba(30,60,90,${Math.min(1, a.crack * 1.5)})`; c.lineWidth = 3; c.beginPath();
+          const n = Math.round((1 - Math.max(0, a.crack - 0.5) * 2) * 8);
+          for (const d of [-1, 1]) { c.moveTo(a.x, a.y + 2); for (let i = 1; i <= n; i++) c.lineTo(a.x + d * i * 14, a.y + 2 + (i % 2 ? 5 : -2)); }
+          c.stroke();
+        }
+      }
       // In the water: the part below the surface is seen through the water.
       if (this.overWater(a.x) && !WILD_ANIMALS[a.kind].fly) { const span = (a.kind === 'whale' ? 200 : a.kind === 'orca' ? 130 : 110) * a.scale; for (let tx = Math.floor((a.x - span) / TS); tx <= Math.floor((a.x + span) / TS); tx++) wet.add(tx); }
     }
@@ -285,6 +367,15 @@ const Wildlife = {
   },
 };
 
+// The squirrel's acorn: a brown nut with a scaly cap and a little stalk.
+function drawAcorn(c, x, y, spin) {
+  c.save(); c.translate(x, y - 8); c.rotate(spin || 0);
+  ell(c, 0, 2, 7, 8, '#c58a3f', 2);
+  ell(c, 0, -5, 8, 4.5, '#6d4c41', 2);
+  limb(c, [0, -9, 2, -13], 2, '#5d4037', 0);
+  ell(c, -2, 1, 2, 3, 'rgba(255,255,255,0.35)', 0);
+  c.restore();
+}
 // Each animal drawn facing right with its feet at (0, 0).
 function drawAnimal(c, a) {
   const t = a.t || 0, st = a.state, walk = (st === 'walk' || st === 'run' || st === 'uphill' || st === 'home' || st === 'out' || st === 'in' || (st === 'graze' && Math.abs(a.vx || 0) > 1)) ? Math.sin(t * (st === 'run' ? 18 : 8)) : 0;
@@ -555,6 +646,38 @@ function drawAnimal(c, a) {
       if (!baby) { c.strokeStyle = OUT; c.lineWidth = 9; c.beginPath(); c.moveTo(82, -110); c.quadraticCurveTo(150, -70, 128, -140); c.stroke(); c.strokeStyle = '#f3ead2'; c.lineWidth = 6; c.stroke(); }
       drawEye(c, 72, -140, 4, false);
       for (let i = 0; i < 6; i++) limb(c, [-40 + i * 16, -136, -44 + i * 16, -126], 2, '#4e342e', 0);   // shaggy texture
+      break;
+    }
+    case 'squirrel': {
+      // A round little squirrel with a huge striped curly tail, ear tufts and rosy cheeks.
+      const dizzy = st === 'dizzy', slip = st === 'slip', dig = st === 'bury', hide = st === 'hide', running = st === 'chase' || st === 'flee' || st === 'scamper';
+      if (hide) c.translate(Math.sin(t * 50) * 1.5, 0);   // shivering
+      if (slip) { c.translate(0, -12); c.rotate(1.35); c.translate(-6, 10); }
+      const wag = Math.sin(t * (running ? 14 : 3)) * (running ? 6 : 3);
+      for (let i = 0; i < 9; i++) {   // the big fluffy tail, curling up behind
+        const k = i / 8, tx = -10 - Math.sin(k * 2.6) * 22 + wag * k, ty = -10 - k * 52 + Math.sin(k * 3.4) * 6;
+        ell(c, tx, ty, 10 - k * 2, 10 - k * 2, i % 2 ? '#d7ccc8' : '#8d6e63', i === 8 ? 2.5 : 0);
+      }
+      const leg = running ? Math.sin(t * 22) * 6 : dig ? Math.sin(t * 30) * 4 : 0;
+      ell(c, -4 + leg, -2, 7, 4, '#6d4c41', 2); ell(c, 9 - leg, -2, 7, 4, '#6d4c41', 2);
+      ell(c, 2, -20, 13, 17, '#a1887f');
+      ell(c, 6, -18, 8, 12, '#efebe9', 0);
+      // Arms: hugging the acorn, digging like mad, or behind its back.
+      if (dig) { for (const k of [0, 1]) limb(c, [6, -26, 16 + Math.sin(t * 30 + k * 3) * 5, -10 + k * 4], 4, '#8d6e63'); }
+      else if (hide) limb(c, [0, -24, -10, -18], 4, '#8d6e63');
+      else if (dizzy) { limb(c, [2, -26, -6, -40], 4, '#8d6e63'); limb(c, [10, -26, 20, -38], 4, '#8d6e63'); }
+      else { limb(c, [4, -28, 14, -20], 4, '#8d6e63'); limb(c, [8, -30, 16, -22], 4, '#8d6e63'); }
+      // Head, ears with tufts, big shiny eyes (or spinning ones), rosy cheek, nose and two buck teeth.
+      ell(c, 8, -42, 13, 12, '#a1887f');
+      for (const ex of [0, 10]) { ell(c, ex, -54, 4, 5, '#8d6e63', 2); limb(c, [ex, -58, ex - 1, -64], 2, '#5d4037', 0); }
+      if (dizzy) { c.strokeStyle = OUT; c.lineWidth = 1.6; c.beginPath(); c.arc(12, -44, 3.5, 0, t * 12 % TAU + 4); c.stroke(); }
+      else if ((t % 3.5) < 0.12) limb(c, [9, -44, 15, -44], 1.6, OUT, 0);
+      else { ell(c, 12, -44, 3.5, 4.2, OUT, 0); ell(c, 13.4, -45.6, 1.3, 1.3, '#fff', 0); }
+      ell(c, 15, -37, 3, 2, '#ffa8a8', 0);
+      ell(c, 20, -41, 2.6, 2, '#5d4037', 0);
+      c.fillStyle = '#fff'; c.fillRect(17, -38, 2.2, 3.5); c.fillRect(19.4, -38, 2.2, 3.5);
+      if (hide) ell(c, -2, -50, 2.5, 3.5, '#74c0fc', 1);   // a nervous sweat drop
+      if (dizzy) for (let i = 0; i < 3; i++) { const ang = t * 6 + i * TAU / 3; drawStar(c, 8 + Math.cos(ang) * 16, -66 + Math.sin(ang) * 5, 5, t * 4, '#ffd43b', 1.5); }
       break;
     }
     case 'sabretooth': {
