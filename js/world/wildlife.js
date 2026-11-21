@@ -237,6 +237,7 @@ const Wildlife = {
       case 'toss':   // throws it up for joy... and it lands on its head
         if (ac.held) launch(0, -720);
         if (ac.vy > 0 && ac.y > a.y - 50) { ac.held = true; a.state = 'dizzy'; a.st = 1.8; Pow.add(a.x, a.y - 90, 'BONK!'); Sound.bonk(); }
+        else if (a.st <= 0) { a.state = 'chase'; a.st = 8; }   // it went somewhere else: go and get it
         return 0;
       case 'dizzy':
         if (a.st <= 0) { a.state = 'hold'; a.st = 2; }
