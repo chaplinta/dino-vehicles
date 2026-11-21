@@ -79,7 +79,7 @@ const Antarctica = {
     for (const x of [ANT.COLONY[1] - 2, ANT.HILL[0] + 4]) W_.add('penguin', x, { slider: true, loop });
     for (const x of [204, 208, 212]) W_.add('adelie', x, { range: 5 });
     for (const [a, b] of ANT.FLOES) W_.add('seal', (a + b) / 2);
-    W_.add('orca', 236, { range: 14, bull: true }); W_.add('orca', 250, { range: 14, scale: 0.8 });
+    W_.add('orca', 244, { range: 14, bull: true }); W_.add('orca', 250, { range: 14, scale: 0.8 });
     W_.add('whale', 262, { range: 9, state: 'swim' });
     // The hidden valley: a little mammoth family and a sabre-tooth cat on the rocks.
     const m = W_.add('mammoth', 312, { range: 10 }); W_.add('mammoth', 326, { range: 10, scale: 0.9 }); W_.add('mammoth', 308, { mum: m, baby: true, scale: 0.5 });

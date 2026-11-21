@@ -42,7 +42,7 @@ const VEHICLE_WORDS = {
   digger: 'DIG', dumptruck: 'DUMP', firetruck: 'FIRE', tractor: 'FARM', train: 'RAIL', bulldozer: 'PUSH', crane: 'LIFT',
   ambulance: 'HELP', police: 'COP', tugboat: 'TUG', helicopter: 'FLY', harvester: 'CORN', wrecker: 'BALL', garbage: 'BIN',
   drill: 'HOLE', fishboat: 'FISH', submarine: 'SUB', plane: 'WING', rocket: 'ZOOM', moonbuggy: 'MOON', pirateship: 'SHIP',
-  jet: 'JET', motorbike: 'BIKE', sportscar: 'FAST', racecar: 'RACE', citybike: 'RIDE', tram: 'TRAM', car: 'CAR', ute: 'UTE', bus: 'BUS', van: 'VAN', icecream: 'YUM', skateboard: 'FLIP', ufo: 'UFO', brachioride: 'TALL', mixer: 'MIX', roller: 'ROLL', forklift: 'FORK', monster: 'BIG', jetski: 'SKI', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD', chargetruck: 'BANG', goldtruck: 'GOLD', plough: 'PLOW', safari: 'SAFE', snowmobile: 'SLED', hagglunds: 'BV', icebreaker: 'SHIP',
+  jet: 'JET', motorbike: 'BIKE', sportscar: 'FAST', racecar: 'RACE', citybike: 'RIDE', tram: 'TRAM', car: 'CAR', ute: 'UTE', bus: 'BUS', van: 'VAN', icecream: 'YUM', skateboard: 'FLIP', ufo: 'UFO', brachioride: 'TALL', mixer: 'MIX', roller: 'ROLL', forklift: 'FORK', monster: 'BIG', jetski: 'SKI', blastrig: 'BORE', haultruck: 'HAUL', oretrain: 'ORE', shiploader: 'LOAD', chargetruck: 'BANG', goldtruck: 'GOLD', plough: 'PLOW', safari: 'SAFE', snowmobile: 'SLED', hagglunds: 'BV', icebreaker: 'SHIP', mammothride: 'TUSK',
 };
 
 const DEFAULT_VEHICLES = [

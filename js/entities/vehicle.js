@@ -232,7 +232,7 @@ const Vehicles = {
       const mount = !near && ride;
       const table = !near && !Game.away && World.props.find(t => t.type === 'chess' && Math.abs(t.x * TS - p.body.x) < 110 && Math.abs(t.y * TS - p.body.y) < 80);
       const cafe = !near && Game.away === 'melbourne' && Melbourne.nearCafe();
-      UI.setEnter(!!near || !!mount || !!table || cafe, table ? '♟️' : cafe ? '☕' : mount ? '🦕' : '🚪');
+      UI.setEnter(!!near || !!mount || !!table || cafe, table ? '♟️' : cafe ? '☕' : mount ? (mount.wild ? '🦣' : '🦕') : '🚪');
       if (mount && Input.pressed.enter) { mountDino(p, mount); return; }
       if (table && Input.pressed.enter) { Chess.open(); return; }
       if (cafe && Input.pressed.enter) { Melbourne.coffee(); return; }

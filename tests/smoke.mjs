@@ -1134,6 +1134,15 @@ async function stickDrag(page, dx, dy, ms) {
     Player.body.x = q.x - 300; Player.roar(); run(2); const flew = !q.ac.held && q.state === 'chase';
     let got = false; for (let i = 0; i < 60 * 14 && !got; i++) { run(1); Player.body.x = q.x - 600; got = q.ac.held && q.state === 'hold'; }
     return bonk && flew && got; }), 'the little squirrel tosses its acorn and gets bonked; roar and it chases the acorn and grabs it back');
+  check(await page.evaluate(() => Wildlife.list.filter(a => a.kind === 'orca' || a.kind === 'whale').every(a => {
+    a.home = 236 * TS; a.x = 235 * TS; a.dir = 1; a.turnT = 0; let flips = 0, d = a.dir; const seen = new Set();
+    for (let i = 0; i < 300; i++) { run(1); if (a.dir !== d) { flips++; d = a.dir; } seen.add(Math.floor(a.x / TS)); }
+    return flips <= 6 && (a.kind === 'whale' || seen.size > 4); })), 'orcas and the whale swim under the ice floes, never stuck flipping back and forth');
+  check(await page.evaluate(() => { if (Player.vehicle) Vehicles.exit(Player); const m = Wildlife.list.find(a => a.kind === 'mammoth' && !a.baby), baby = Wildlife.list.find(a => a.kind === 'mammoth' && a.baby);
+    Player.body.x = m.x - 60; Player.body.y = m.y - 0.01; Game.snapCamera(); run(2); run(1, { enter: 1 }); const v = Player.vehicle;
+    if (!v || v.kind !== 'mammothride' || Wildlife.list.includes(m)) return false; const x0 = v.body.x; run(120, { right: 1 }); run(60);
+    const ok = v.body.x - x0 > 3 * TS && Math.abs(baby.x - v.body.x) < 300; run(1, { enter: 1 }); run(5);
+    return ok && !Player.vehicle && Wildlife.list.includes(m) && !Vehicles.list.includes(v); }), 'ride a woolly mammoth: the baby follows, hop off and it wanders again');
   check(await page.evaluate(() => fly() && !Game.away && World.get(20, 30) === T.BRICK), 'fly home from Antarctica');
   check(page.errors.length === 0, 'no page errors: ' + page.errors.join(' | '));
   await page.close();

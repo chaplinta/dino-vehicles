@@ -2,11 +2,23 @@
 const RIDES = { brachio: 'brachioride' };
 // Is there a dino here you could climb on?
 function rideableNear(x, y) {
-  return NPCs.list.find(n => RIDES[n.type] && !n.baby && !n.vehicle && !n.ride && !n.need && !(n.angry > 0) && !n.leaving && !(n.scaredT > 0) && !n.crew
+  const n = NPCs.list.find(n => RIDES[n.type] && !n.baby && !n.vehicle && !n.ride && !n.need && !(n.angry > 0) && !n.leaving && !(n.scaredT > 0) && !n.crew
     && Math.abs(n.body.x - x) < 120 && Math.abs(n.body.y - y) < 90);
+  if (n) return n;
+  // A grown-up woolly mammoth on the Antarctica trip.
+  const m = Wildlife.list.find(a => a.kind === 'mammoth' && !a.baby && Math.abs(a.x - x) < 130 && Math.abs(a.y - y) < 120);
+  return m ? { wild: m, body: { x: m.x, y: m.y } } : null;
 }
 // Swap the dino for a rideable "vehicle" and climb on.
 function mountDino(p, n) {
+  if (n.wild) {
+    const a = n.wild, v = Vehicles.spawn('mammothride', a.x, a.y - 0.01, a.dir || 1);
+    Wildlife.list.splice(Wildlife.list.indexOf(a), 1);
+    v.s.wild = a; a.ridden = v;
+    Vehicles.enter(p, v);
+    Sound.tone(300, 0.6, 'sawtooth', 0.06, 520);
+    return v;
+  }
   NPCs.remove(n);
   const v = Vehicles.spawn(RIDES[n.type], n.body.x, n.body.y, n.facing || 1);
   v.s.npc = n;
@@ -14,6 +26,38 @@ function mountDino(p, n) {
   Sound.tone(220, 0.3, 'sawtooth', 0.06, 160);
   return v;
 }
+
+// Riding a woolly mammoth: big, slow and shaggy. The button gives a mighty TOOT and a stomp.
+defVehicle('mammothride', {
+  name: 'Woolly mammoth', say: 'Up on a woolly mammoth!', icon: '🎺', w: 150, h: 120, speed: 140, accel: 2, step: 2, look: 200, camY: -50, noSave: true,
+  init(v) { v.s.toot = 0; },
+  act(v, dt, inp) {
+    const s = v.s, b = v.body;
+    s.toot = Math.max(0, s.toot - dt);
+    if (!inp.actionP || s.toot > 0) return;
+    s.toot = 1.2;
+    Sound.tone(300, 0.7, 'sawtooth', 0.07, 560); Sound.noise(0.3, 0.3, 'lowpass', 160, 0.3);
+    Pow.add(b.x + v.facing * 120, b.y - 190, 'TOOT!');
+    Fx.burst(b.x, b.y, 16, { speed: 200, up: 120, g: 500, life: 0.8, r: 8, color: ['#f8f9fa', '#e7f5ff'] });
+    for (const a of Wildlife.list) if (Math.abs(a.x - b.x) < 360) { a.hop = 14; if (a.kind === 'penguin' || a.kind === 'adelie' || a.kind === 'chick') a.flap = 1; }
+  },
+  onExit(v) {
+    // Hop off: it wanders the valley again from here.
+    const a = v.s.wild;
+    Vehicles.list = Vehicles.list.filter(o => o !== v);
+    if (!a) return;
+    a.ridden = null; a.x = v.body.x; a.y = v.body.y; a.home = a.x; a.dir = v.facing; a.state = 'idle'; a.st = 2;
+    Wildlife.list.push(a);
+  },
+  draw(c, v) {
+    const a = v.s.wild || { scale: 1 }, moving = Math.abs(v.body.vx) > 10;
+    c.save(); c.scale(a.scale || 1, a.scale || 1);
+    drawAnimal(c, { kind: 'mammoth', t: v.t, state: moving ? 'walk' : 'idle' });
+    if (v.s.toot > 0.4) limb(c, [86, -120, 112, -150, 126, -170], 11, '#6d4c41');   // trunk up for the toot
+    v.drawDriver(c, -6, -150, 0.42);
+    c.restore();
+  },
+});
 
 defVehicle('brachioride', {
   name: 'Brachiosaurus', say: 'Up you go! Riding a Brachiosaurus!', icon: '🌿', w: 100, h: 60, speed: 150, accel: 2, step: 2, look: 200, camY: -40, noSave: true,

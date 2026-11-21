@@ -30,6 +30,11 @@ const VEHICLE_FACTS = {
     'On safari people shoot animals with cameras, not guns. Photos are the best trophies!',
     'Safari is a Swahili word. It means a journey.',
   ],
+  mammothride: [
+    'Woolly mammoths lived in the ice age, thousands of years ago.',
+    'Their shaggy fur could grow as long as a metre, to keep them warm.',
+    'Mammoth tusks curled round and were used to sweep away snow to find grass.',
+  ],
   hagglunds: [
     'A Hägglunds has two cabins joined in the middle, so it bends like a caterpillar over bumpy snow.',
     'It can float! Scientists drive it straight into the water and across.',

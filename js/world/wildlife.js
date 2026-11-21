@@ -44,6 +44,8 @@ const Wildlife = {
     return World.surfaceAt(tx) * TS;
   },
   overWater(x) { return World.get(Math.floor(x / TS), SURF) === T.WATER; },
+  // Sea a swimmer can be in: open water, or under an ice floe floating on it.
+  seaAt(x) { const tx = Math.floor(x / TS); return World.get(tx, SURF) === T.WATER || World.get(tx, SURF + 1) === T.WATER; },
 
   update(dt) {
     const pb = Player.vehicle ? Player.vehicle.body : Player.body, fast = Math.abs(pb.vx) > 150;
@@ -147,8 +149,8 @@ const Wildlife = {
           break;
         case 'mammoth':
           if (a.mum) {   // a baby mammoth sticks close to a grown-up
-            const m = a.mum, goal = m.x - m.dir * 110;
-            a.dir = Math.sign(goal - a.x) || a.dir; speed = Math.abs(goal - a.x) > 20 ? 55 : 0; a.state = speed ? 'walk' : 'idle';
+            const m = a.mum, mx = m.ridden ? m.ridden.body.x : m.x, md = m.ridden ? m.ridden.facing : m.dir, goal = mx - md * 110;   // follows mum, even with you riding her
+            a.dir = Math.sign(goal - a.x) || a.dir; speed = Math.abs(goal - a.x) > 20 ? (m.ridden ? 120 : 55) : 0; a.state = speed ? 'walk' : 'idle';
             break;
           }
           if (a.st <= 0) { a.state = a.state === 'idle' ? 'walk' : 'idle'; a.st = rand(3, 7); if (a.state === 'walk') a.dir = pick([-1, 1]); }
@@ -174,9 +176,12 @@ const Wildlife = {
       a.vx = a.dir * speed;
       let nx = a.x + a.vx * dt;
       // Stay near home (unless following you or sliding), never walk into the sea unless a swimmer, never off the world.
-      if (!a.follow && !a.slider && !a.mum && Math.abs(nx - a.home) > a.range * TS) { a.dir = Math.sign(a.home - a.x); nx = a.x; }
-      if (!def.water && !def.amphib && !a.slider && !a.follow && this.overWater(nx) !== this.overWater(a.x)) { a.dir = -a.dir; nx = a.x; }
-      if (def.water && !this.overWater(nx)) { a.dir = -a.dir; nx = a.x; }
+      // After turning round, wait a moment before turning again, so two rules can never flip it back and forth.
+      a.turnT = Math.max(0, (a.turnT || 0) - dt);
+      const turn = d => { if (a.turnT > 0) return false; a.dir = d; a.turnT = 0.5; return true; };
+      if (!a.follow && !a.slider && !a.mum && Math.abs(nx - a.home) > a.range * TS && Math.sign(a.home - a.x) !== a.dir) { turn(Math.sign(a.home - a.x)); nx = a.x; }
+      if (!def.water && !def.amphib && !a.slider && !a.follow && this.overWater(nx) !== this.overWater(a.x)) { turn(-a.dir); nx = a.x; }
+      if (def.water && !this.seaAt(nx)) { turn(-a.dir); nx = a.x; }
       a.x = clamp(nx, 3 * TS, ((World.limitW || WORLD_W) - 3) * TS);
       a.y = lerp(a.y, this.groundY(a.x, a), Math.min(1, dt * 12));
       if (a.kind === 'adelie' && speed) a.hop = Math.abs(Math.sin(a.t * 9)) * 8; else if (a.kind !== 'squirrel') a.hop = 0;
