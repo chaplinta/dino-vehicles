@@ -324,7 +324,7 @@ const Wildlife = {
       c.scale(a.scale, a.scale);
       if (a.kind === 'squirrel' && a.ac) {
         const ac = a.ac;
-        if (ac.held) { ac.x = a.x + (a.state === 'hide' ? -a.dir * 16 : a.dir * 12); ac.y = a.y - (a.hop || 0) - (a.state === 'dizzy' ? 58 : 18); ac.vx = ac.vy = 0; }
+        if (ac.held) { const k = a.scale || 1; ac.x = a.x + (a.state === 'hide' ? -a.dir * 16 : a.dir * 12) * k; ac.y = a.y - (a.hop || 0) - (a.state === 'dizzy' ? 58 : 18) * k; ac.vx = ac.vy = 0; }
         if (a.state === 'hide') { c.restore(); drawAcorn(c, ac.x, ac.y, 0); c.save(); c.translate(a.x, a.y - (a.hop || 0)); if (a.dir < 0) c.scale(-1, 1); c.scale(a.scale, a.scale); }
       }
       drawAnimal(c, a);

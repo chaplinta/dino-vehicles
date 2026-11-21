@@ -84,7 +84,7 @@ const Antarctica = {
     // The hidden valley: a little mammoth family and a sabre-tooth cat on the rocks.
     const m = W_.add('mammoth', 312, { range: 10 }); W_.add('mammoth', 326, { range: 10, scale: 0.9 }); W_.add('mammoth', 308, { mum: m, baby: true, scale: 0.5 });
     W_.add('sabretooth', ANT.ROCKS[0] + 7, { range: 2 });
-    W_.add('squirrel', (ANT.LAKE[0] + ANT.LAKE[1]) / 2, { range: 12, state: 'hold', scale: 1.2 });   // and a little squirrel with its acorn
+    W_.add('squirrel', (ANT.LAKE[0] + ANT.LAKE[1]) / 2, { range: 12, state: 'hold', scale: 0.85 });   // and a little squirrel with its acorn
     W_.add('skua', 120, { range: 70, y0: (SURF - 14) * TS });
     jet.facing = 1;
     VEHICLE_DEFS.jet.landAt(jet, 18);
